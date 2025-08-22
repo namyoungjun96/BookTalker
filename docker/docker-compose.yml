@@ -1,7 +1,6 @@
 services:
   redis:
     image: "redis:8-alpine"
-    # TODO: 이미지 선택 필요
     container_name: "redis-book-talker"
     ports:
       - "6379:6379"
@@ -9,3 +8,13 @@ services:
       - "redis-server"
 #    volumes:
 #      - redis_volume_data:/data
+
+  postgresql:
+    image: "postgres:13.10-alpine"
+    container_name: "postgresql-book-talker"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: "book_talker_db"
+      POSTGRES_USER: "user"
+      POSTGRES_PASSWORD: "password"
