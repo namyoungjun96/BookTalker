@@ -1,31 +1,30 @@
 package com.example.book_talker_backend;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
 public class Controller {
+    @GetMapping(value = "/")
+    public String userInfo(@AuthenticationPrincipal OAuth2User oauth2User) {
+        Map<String, Object> attributes = oauth2User.getAttributes();
 
-    @GetMapping
-    public String hello() {
-        return "Hello World";
+        return attributes.toString();
     }
 
-    @GetMapping(value = "/save/{name}")
-    public String save(HttpServletRequest request, @PathVariable String name) {
-        HttpSession session = request.getSession();
-        session.setAttribute("name", name);
-        return "success";
-    }
+    public boolean isProfileComplete(OAuth2AuthenticationToken authentication) {
+        OAuth2User oauth2User = authentication.getPrincipal();
 
-    @GetMapping(value = "/session-info")
-    public String sessionInfo(HttpServletRequest request) {
-        HttpSession session = request.getSession();
-        return session.getAttribute("name").toString();
+        boolean hasEmail = oauth2User.getAttribute("email") != null;
+        boolean hasName = oauth2User.getAttribute("name") != null;
+
+        return hasEmail && hasName;
     }
 }
