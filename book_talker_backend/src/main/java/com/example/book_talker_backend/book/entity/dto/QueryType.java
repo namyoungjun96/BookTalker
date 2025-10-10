@@ -24,10 +24,6 @@ public enum QueryType {
         return value;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
     @JsonCreator
     public static QueryType of(String value) {
         if (null == value) {
@@ -40,6 +36,6 @@ public enum QueryType {
             }
         }
 
-        throw new UnknownEnumValueException("GenderEnum: unknown value: " + value);
+        throw new UnknownEnumValueException("QueryTypeEnum: unknown value: " + value);
     }
 }

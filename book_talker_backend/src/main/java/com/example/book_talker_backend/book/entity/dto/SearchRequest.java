@@ -11,7 +11,6 @@ public record SearchRequest(
         @NotBlank
         @Max(100)
         String maxResults,
-        @NotBlank
-        String cover
+        CoverSizeEnum cover
 ) {
 }
