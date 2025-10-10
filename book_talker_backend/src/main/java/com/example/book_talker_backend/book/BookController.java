@@ -4,6 +4,7 @@ import com.example.book_talker_backend.book.dao.BookRepository;
 import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.entity.dto.AladinBook;
 import com.example.book_talker_backend.book.entity.dto.AladinResponse;
+import com.example.book_talker_backend.book.entity.dto.ListRequest;
 import com.example.book_talker_backend.book.entity.dto.SearchRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,11 +26,30 @@ public class BookController {
 
     private final static String ALADIN_BASE_URL = "http://www.aladin.co.kr/ttb/api";
 
-    @GetMapping
-    public ResponseEntity<List<Book>> getAllBooks() {
-        List<Book> bookList = bookRepository.findAll();
+    @GetMapping("/list")
+    public ResponseEntity<List<AladinBook>> getAllBooks(@Valid ListRequest request) {
+        // TODO: enum 값에 대한 검증은 어떻게 해야할까?
 
-        return ResponseEntity.ok(bookList);
+        String url = UriComponentsBuilder.fromUriString(ALADIN_BASE_URL + "/ItemList.aspx")
+                .queryParam("TTBKey", "ttbehdgornltls1927001")
+                .queryParam("QueryType", request.queryType().getValue())
+                .queryParam("SearchTarget", "Book")
+                .queryParam("Start", request.start())
+                .queryParam("MaxResults", request.maxResults())
+                .queryParam("cover", request.cover())
+                .queryParam("Output", "js")
+                .queryParam("Version", "20131101")
+                .toUriString();
+
+        AladinResponse response = restTemplate.getForObject(url, AladinResponse.class);
+
+        if (response == null) {
+            return ResponseEntity.internalServerError().build();
+        } else if (response.item().isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(response.item());
     }
 
     @GetMapping("/search")
