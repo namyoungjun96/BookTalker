@@ -7,13 +7,11 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table
-@IdClass(BookId.class)
 public class Book {
     @Id
+    private String isbn;
     private String title;
-    @Id
     private String author;
-    private Integer isbn;
     private String genre;
     private String publisher;
     private String cover;
