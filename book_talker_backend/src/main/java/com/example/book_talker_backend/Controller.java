@@ -6,17 +6,31 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class Controller {
     @GetMapping(value = "/")
     public String userInfo(@AuthenticationPrincipal OAuth2User oauth2User) {
         Map<String, Object> attributes = oauth2User.getAttributes();
 
         return attributes.toString();
+    }
+
+    @GetMapping(value = "/api/auth/session")
+    public ResponseEntity<Void> checkSession(@AuthenticationPrincipal OAuth2User authentication) {
+        log.debug("Auth info: {}", authentication);
+
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok().build();
     }
 
     public boolean isProfileComplete(OAuth2AuthenticationToken authentication) {

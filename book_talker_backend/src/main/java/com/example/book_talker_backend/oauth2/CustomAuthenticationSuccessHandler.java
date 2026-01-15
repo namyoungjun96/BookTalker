@@ -35,13 +35,10 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         }
 
         if (!oAuth2UserRepository.findByUserId(((String) userInfo.get("userId"))).isEmpty()) {
-            response.sendRedirect("/");
-            return ;
+            OAuth2UserEntity oAuth2UserEntity = OAuth2UserMapper.toOAuth2UserEntity(userInfo, oauth2Token.getAuthorizedClientRegistrationId());
+            oAuth2UserRepository.save(oAuth2UserEntity);
         }
 
-        OAuth2UserEntity oAuth2UserEntity = OAuth2UserMapper.toOAuth2UserEntity(userInfo, oauth2Token.getAuthorizedClientRegistrationId());
-        oAuth2UserRepository.save(oAuth2UserEntity);
-
-        response.sendRedirect("/");
+        response.sendRedirect("http://localhost:5173/");
     }
 }
