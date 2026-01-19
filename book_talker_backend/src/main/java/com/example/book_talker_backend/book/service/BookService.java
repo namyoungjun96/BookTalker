@@ -1,5 +1,7 @@
 package com.example.book_talker_backend.book.service;
 
+import com.example.book_talker_backend.book.dao.BookRepository;
+import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.entity.dto.AladinResponse;
 import com.example.book_talker_backend.book.entity.dto.ListRequest;
 import com.example.book_talker_backend.book.entity.dto.SearchRequest;
@@ -12,6 +14,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RequiredArgsConstructor
 public class BookService {
     private final RestTemplate restTemplate;
+    private final BookRepository bookRepository;
 
     private final static String ALADIN_BASE_URL = "http://www.aladin.co.kr/ttb/api";
 
@@ -47,5 +50,10 @@ public class BookService {
                 .toUriString();
 
         return restTemplate.getForObject(url, AladinResponse.class);
+    }
+
+    public int insertBook(Book book) {
+        int response = bookRepository.save(book);
+        return response;
     }
 }
