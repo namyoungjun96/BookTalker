@@ -2,6 +2,7 @@ package com.example.book_talker_backend.book;
 
 import com.example.book_talker_backend.book.entity.dto.AladinBook;
 import com.example.book_talker_backend.book.entity.dto.AladinResponse;
+import com.example.book_talker_backend.book.entity.dto.BookSearchResponse;
 import com.example.book_talker_backend.book.entity.dto.ListRequest;
 import com.example.book_talker_backend.book.entity.dto.SearchRequest;
 import com.example.book_talker_backend.book.service.BookService;
@@ -39,7 +40,7 @@ public class BookController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<AladinBook>> search(@Valid SearchRequest request) {
+    public ResponseEntity<BookSearchResponse> search(@Valid SearchRequest request) {
         log.info("검색어: {}", request.query());
         AladinResponse response = bookService.search(request);
 
@@ -47,10 +48,18 @@ public class BookController {
             log.debug("[search] internal server error: {}", request);
             return ResponseEntity.internalServerError().build();
         } else if (response.item().isEmpty()) {
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok(new BookSearchResponse(
+                    List.of(),
+                    response.totalResults(),
+                    response.startIndex()
+            ));
         }
 
         log.info("검색 결과: {} 건", response.totalResults());
-        return ResponseEntity.ok(response.item());
+        return ResponseEntity.ok(new BookSearchResponse(
+                response.item(),
+                response.totalResults(),
+                response.startIndex()
+        ));
     }
 }

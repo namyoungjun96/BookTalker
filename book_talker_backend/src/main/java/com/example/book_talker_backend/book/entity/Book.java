@@ -2,7 +2,6 @@ package com.example.book_talker_backend.book.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 
 @Entity
