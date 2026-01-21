@@ -6,6 +6,7 @@ import com.example.book_talker_backend.book.entity.dto.AladinResponse;
 import com.example.book_talker_backend.book.entity.dto.ListRequest;
 import com.example.book_talker_backend.book.entity.dto.SearchRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -53,7 +54,12 @@ public class BookService {
     }
 
     public int insertBook(Book book) {
-        int response = bookRepository.save(book);
-        return response;
+        try {
+            bookRepository.save(book);
+        } catch (IllegalArgumentException | OptimisticLockingFailureException e) {
+            return 0;
+        }
+
+        return 1;
     }
 }
