@@ -11,7 +11,7 @@ public record ReviewRequest (
         String content,
         String rating
 ) {
-    Review to() {
+    public Review to() {
         Review review = new Review();
         review.setWriter(this.writer);
         review.setContent(this.content);
