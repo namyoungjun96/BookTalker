@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
+import com.example.book_talker_backend.user.entity.dto.UserResponse;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,6 +22,14 @@ public class Controller {
         Map<String, Object> attributes = oauth2User.getAttributes();
 
         return attributes.toString();
+    }
+
+    @GetMapping("/api/user/me")
+    public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal OAuth2User oauth2User) {
+        if (oauth2User == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(UserResponse.from(oauth2User));
     }
 
     @GetMapping(value = "/api/auth/session")
