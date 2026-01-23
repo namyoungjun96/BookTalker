@@ -1,269 +1,141 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gray-50">
-    <!-- 상단 네비게이션 메뉴 -->
-    <header class="w-full border-b bg-white shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <!-- 로고/제목 -->
-          <div class="flex items-center">
-            <h1 class="text-xl font-bold text-gray-900">
-              BookTalker
-            </h1>
-          </div>
-
-          <!-- 네비게이션 탭 메뉴 -->
-          <nav
-            class="flex items-center space-x-0 rounded-full bg-gray-100 px-1 py-1 border-2 border-gray-300"
-          >
-            <router-link
-              to="/"
-              class="px-4 py-2 text-sm font-medium rounded-l-full transition-colors border-r border-gray-300"
-              :class="isActiveRoute('/') 
-                ? 'text-white bg-indigo-600 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-white'"
-            >
-              홈
-            </router-link>
-            <router-link
-              to="/book-search"
-              class="px-4 py-2 text-sm font-medium rounded-r-full transition-colors"
-              :class="isActiveRoute('/book-search') 
-                ? 'text-white bg-indigo-600 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900 hover:bg-white'"
-            >
-              책 검색
-            </router-link>
-            <button
-              type="button"
-              @click="onLogout"
-              class="ml-4 px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-500 transition-colors"
-            >
-              로그아웃
-            </button>
-          </nav>
-        </div>
+  <div class="app-container">
+    <!-- 미니멀 헤더 -->
+    <header class="app-header">
+      <div class="header-content">
+        <h1 class="logo">BookTalker</h1>
+        <nav class="nav-links">
+          <router-link to="/" class="nav-link" :class="{ active: isActiveRoute('/') }">
+            홈
+          </router-link>
+          <router-link to="/book-search" class="nav-link" :class="{ active: isActiveRoute('/book-search') }">
+            검색
+          </router-link>
+          <button type="button" @click="onLogout" class="nav-link logout-btn">
+            로그아웃
+          </button>
+        </nav>
       </div>
     </header>
 
-    <!-- 메인 콘텐츠 -->
-    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-      <!-- 검색 섹션 -->
-      <div class="mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">책 검색</h2>
+    <!-- 메인 콘텐츠 (max-width: 720px) -->
+    <main class="main-content">
+      <div class="content-wrapper">
+        <h2 class="page-title">책 검색</h2>
 
-        <form
-          @submit.prevent="onSearch"
-          class="flex items-center gap-0"
-        >
-          <div class="flex-1 relative">
+        <!-- 검색 입력 (노션 스타일) -->
+        <form @submit.prevent="onSearch" class="search-form">
+          <div class="search-input-wrapper">
             <input
               v-model="searchQuery"
               type="text"
               placeholder="책 제목을 입력하세요..."
-              class="w-full rounded-l-lg border border-gray-300 border-r-0 px-4 py-3 pr-12
-                     text-gray-900 shadow-sm
-                     focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
-                     placeholder:text-gray-400"
+              class="search-input"
             />
-            <!-- 검색 아이콘 -->
             <button
               type="submit"
               :disabled="isLoading || !searchQuery.trim()"
-              class="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-indigo-600
-                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              class="search-button"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              {{ isLoading ? '검색 중...' : '검색' }}
             </button>
           </div>
-          <button
-            type="submit"
-            :disabled="isLoading || !searchQuery.trim()"
-            class="px-6 py-3 rounded-r-lg border border-l-0 border-indigo-600 text-indigo-600 font-semibold
-                   bg-white hover:bg-indigo-50
-                   focus:outline-none focus:ring-2 focus:ring-indigo-500
-                   transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {{ isLoading ? '검색 중...' : '검색' }}
-          </button>
         </form>
-      </div>
 
-      <!-- 검색 결과 -->
-      <div v-if="hasSearched">
-        <div v-if="isLoading" class="text-center py-12">
-          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-          <p class="mt-4 text-gray-600">검색 중...</p>
-        </div>
+        <!-- 검색 결과 -->
+        <div v-if="hasSearched">
+          <!-- 로딩 -->
+          <div v-if="isLoading" class="loading-state">
+            <div class="spinner"></div>
+            <p class="loading-text">검색 중...</p>
+          </div>
 
-        <div v-else-if="books.length === 0" class="text-center py-12">
-          <p class="text-gray-500 text-lg">검색 결과가 없습니다.</p>
-          <p class="text-gray-400 text-sm mt-2">다른 검색어로 시도해보세요.</p>
-        </div>
+          <!-- 결과 없음 -->
+          <div v-else-if="books.length === 0" class="empty-state">
+            <p class="empty-title">검색 결과가 없습니다</p>
+            <p class="empty-subtitle">다른 검색어로 시도해보세요</p>
+          </div>
 
-        <div v-else>
-          <div class="flex items-center justify-between mb-4">
-            <p class="text-sm text-gray-600">
-              총 {{ totalResults }}개의 결과 (페이지 {{ currentPage }})
-            </p>
-
+          <!-- 검색 결과 카드 리스트 -->
+          <div v-else>
             <!-- 페이지네이션 -->
-            <div class="inline-flex items-center gap-2">
-              <button
-                type="button"
-                @click="goToPrevPage"
-                :disabled="currentPage === 1 || isLoading"
-                class="px-3 py-1.5 text-xs sm:text-sm rounded-full border border-gray-300 text-gray-600
-                       bg-white hover:bg-gray-50
-                       disabled:opacity-40 disabled:cursor-not-allowed"
+            <div class="pagination-info">
+              <span class="result-count">총 {{ totalResults }}개의 결과</span>
+              <div class="pagination-controls">
+                <button
+                  type="button"
+                  @click="goToPrevPage"
+                  :disabled="currentPage === 1 || isLoading"
+                  class="page-button"
+                >
+                  이전
+                </button>
+                <span class="page-number">{{ currentPage }} 페이지</span>
+                <button
+                  type="button"
+                  @click="goToNextPage"
+                  :disabled="!canGoNext || isLoading"
+                  class="page-button"
+                >
+                  다음
+                </button>
+              </div>
+            </div>
+
+            <!-- 책 카드 리스트 -->
+            <div class="book-list">
+              <article
+                v-for="book in books"
+                :key="book.itemId"
+                class="book-card"
               >
-                이전
-              </button>
-              <span class="text-xs text-gray-500">
-                {{ currentPage }} 페이지
-              </span>
-              <button
-                type="button"
-                @click="goToNextPage"
-                :disabled="!canGoNext || isLoading"
-                class="px-3 py-1.5 text-xs sm:text-sm rounded-full border border-gray-300 text-gray-600
-                       bg-white hover:bg-gray-50
-                       disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                다음
-              </button>
+                <div class="book-card-content">
+                  <!-- 책 표지 -->
+                  <div class="book-cover">
+                    <img
+                      v-if="book.cover"
+                      :src="book.cover"
+                      :alt="book.title"
+                      @error="handleImageError"
+                    />
+                    <div v-else class="cover-placeholder">📖</div>
+                  </div>
+
+                  <!-- 책 정보 -->
+                  <div class="book-info">
+                    <h3 class="book-title">{{ book.title }}</h3>
+                    <p class="book-meta">
+                      <span v-if="book.author">{{ book.author }}</span>
+                      <span v-if="book.author && book.publisher"> · </span>
+                      <span v-if="book.publisher">{{ book.publisher }}</span>
+                    </p>
+                    <p v-if="book.pubDate" class="book-date">
+                      {{ formatDate(book.pubDate) }}
+                    </p>
+                    <p v-if="book.priceSales" class="book-price">
+                      {{ formatPrice(book.priceSales) }}원
+                    </p>
+                  </div>
+                </div>
+
+                <!-- 독후감 쓰기 버튼 -->
+                <button
+                  type="button"
+                  @click="goToReviewCreate(book)"
+                  class="review-button"
+                >
+                  독후감 쓰기
+                </button>
+              </article>
             </div>
           </div>
-
-          <!-- 책 목록 테이블 -->
-          <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
-                    표지
-                  </th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    책 이름
-                  </th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    지은이
-                  </th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    출판사
-                  </th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    출간날짜
-                  </th>
-                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    가격
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr
-                  v-for="book in books"
-                  :key="book.itemId"
-                  class="hover:bg-gray-50 transition-colors"
-                >
-                  <!-- 책 표지 -->
-                  <td class="px-4 py-3 whitespace-nowrap">
-                    <div class="w-16 h-20 bg-gray-200 rounded overflow-hidden flex-shrink-0">
-                      <img
-                        v-if="book.cover"
-                        :src="book.cover"
-                        :alt="book.title"
-                        class="w-full h-full object-cover"
-                        @error="handleImageError"
-                      />
-                      <div v-else class="w-full h-full flex items-center justify-center text-gray-400 text-xs p-1 text-center">
-                        이미지 없음
-                      </div>
-                    </div>
-                  </td>
-                  
-                  <!-- 책 이름 -->
-                  <td class="px-4 py-3">
-                    <div class="text-sm font-medium text-gray-900 max-w-xs">
-                      {{ book.title }}
-                    </div>
-                    <div class="text-xs text-gray-500 mt-1">
-                      <a
-                        :href="book.link"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="text-indigo-600 hover:text-indigo-700"
-                      >
-                        책 정보 →
-                      </a>
-                    </div>
-                  </td>
-                  
-                  <!-- 지은이 -->
-                  <td class="px-4 py-3">
-                    <div class="text-sm text-gray-900">
-                      {{ book.author || '-' }}
-                    </div>
-                  </td>
-                  
-                  <!-- 출판사 -->
-                  <td class="px-4 py-3">
-                    <div class="text-sm text-gray-900">
-                      {{ book.publisher || '-' }}
-                    </div>
-                  </td>
-                  
-                  <!-- 출간날짜 -->
-                  <td class="px-4 py-3 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">
-                      {{ formatDate(book.pubDate) || '-' }}
-                    </div>
-                  </td>
-                  
-                  <!-- 가격 -->
-                  <td class="px-4 py-3 whitespace-nowrap">
-                    <div class="text-sm font-semibold text-indigo-600">
-                      {{ formatPrice(book.priceSales) }}원
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </div>
-      </div>
 
-      <!-- 초기 상태 -->
-      <div v-else class="text-center py-12">
-        <div class="max-w-md mx-auto">
-          <svg
-            class="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          <h3 class="mt-4 text-lg font-medium text-gray-900">책을 검색해보세요</h3>
-          <p class="mt-2 text-sm text-gray-500">
-            위의 검색창에 책 제목을 입력하고 검색 버튼을 클릭하세요.
-          </p>
+        <!-- 초기 상태 -->
+        <div v-else class="initial-state">
+          <div class="initial-icon">🔍</div>
+          <h3 class="initial-title">책을 검색해보세요</h3>
+          <p class="initial-subtitle">위의 검색창에 책 제목을 입력하고 검색 버튼을 클릭하세요</p>
         </div>
       </div>
     </main>
@@ -274,9 +146,11 @@
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
+import { useSelectionStore } from '../stores/selectionStore';
 
 const router = useRouter();
 const route = useRoute();
+const selectionStore = useSelectionStore();
 
 const searchQuery = ref('');
 const books = ref([]);
@@ -291,13 +165,18 @@ const isActiveRoute = (path) => {
   return route.path === path;
 };
 
+const goToReviewCreate = (book) => {
+  if (!book) return;
+  selectionStore.setSelectedBook(book);
+  router.push({ name: 'review-create' });
+};
+
 const fetchBooks = async (page = 1) => {
   if (!searchQuery.value.trim()) return;
 
   isLoading.value = true;
   hasSearched.value = true;
 
-  // 페이지에 따른 start 값 계산 (1부터 시작해서 1씩 증가)
   const startIndex = page;
 
   try {
@@ -311,7 +190,6 @@ const fetchBooks = async (page = 1) => {
       withCredentials: true,
     });
 
-    // 응답 형식: { items: [], totalResults: string, startIndex: number }
     const data = response.data.items || [];
     const total = parseInt(response.data.totalResults || '0', 10);
     const responseStartIndex = response.data.startIndex || startIndex;
@@ -320,9 +198,6 @@ const fetchBooks = async (page = 1) => {
     totalResults.value = total;
     currentPage.value = page;
 
-    // 다음 페이지 가능 여부 계산
-    // 현재 startIndex부터 시작해서 pageSize만큼 가져왔을 때
-    // 남은 결과가 있으면 다음 페이지 가능
     const currentStartIndex = responseStartIndex;
     const remainingResults = total - (currentStartIndex - 1) - data.length;
     canGoNext.value = remainingResults > 0;
@@ -330,7 +205,6 @@ const fetchBooks = async (page = 1) => {
     console.error('책 검색 실패:', error);
 
     if (error.response?.status === 204) {
-      // No Content - 검색 결과 없음
       books.value = [];
       totalResults.value = 0;
       canGoNext.value = false;
@@ -391,15 +265,376 @@ const formatDate = (date) => {
 
 const handleImageError = (event) => {
   event.target.style.display = 'none';
-  event.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400">이미지 없음</div>';
 };
 </script>
 
 <style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.app-container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+/* 헤더 (HomeView와 동일) */
+.app-header {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.nav-link {
+  font-size: 15px;
+  color: #6b7280;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.nav-link:hover {
+  color: #1f2937;
+}
+
+.nav-link.active {
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.logout-btn {
+  color: #9ca3af;
+}
+
+.logout-btn:hover {
+  color: #ef4444;
+}
+
+/* 메인 콘텐츠 */
+.main-content {
+  padding: 48px 24px;
+}
+
+.content-wrapper {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 32px 0;
+  line-height: 1.3;
+}
+
+/* 검색 폼 (노션 스타일) */
+.search-form {
+  margin-bottom: 32px;
+}
+
+.search-input-wrapper {
+  display: flex;
+  gap: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
   overflow: hidden;
+  background: white;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  padding: 12px 16px;
+  font-size: 15px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #2563eb;
+}
+
+.search-button {
+  padding: 12px 24px;
+  background: #2563eb;
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.search-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.search-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 로딩/빈 상태 (HomeView와 동일) */
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 64px 24px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.empty-subtitle {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* 초기 상태 */
+.initial-state {
+  text-align: center;
+  padding: 80px 24px;
+}
+
+.initial-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.initial-title {
+  font-size: 20px;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+}
+
+.initial-subtitle {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* 페이지네이션 */
+.pagination-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 0;
+}
+
+.result-count {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-button {
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #1f2937;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.page-button:hover:not(:disabled) {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.page-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-number {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* 책 카드 리스트 */
+.book-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.book-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.book-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.book-card-content {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.book-cover {
+  width: 60px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-placeholder {
+  font-size: 32px;
+  color: #9ca3af;
+}
+
+.book-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.book-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.book-meta {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 4px 0;
+}
+
+.book-date {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0 0 4px 0;
+}
+
+.book-price {
+  font-size: 15px;
+  font-weight: 500;
+  color: #2563eb;
+  margin: 0;
+}
+
+.review-button {
+  width: 100%;
+  padding: 10px 20px;
+  background: #2563eb;
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.review-button:hover {
+  background: #1d4ed8;
+}
+
+@media (max-width: 640px) {
+  .main-content {
+    padding: 32px 16px;
+  }
+
+  .page-title {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
+
+  .book-card {
+    padding: 16px;
+  }
+
+  .book-card-content {
+    gap: 12px;
+  }
+
+  .book-cover {
+    width: 50px;
+    height: 70px;
+  }
+
+  .pagination-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 }
 </style>

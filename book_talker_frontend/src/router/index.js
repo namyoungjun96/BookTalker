@@ -4,6 +4,8 @@ import axios from 'axios';
 import LoginView from '../views/LoginView.vue';
 import HomeView from '../views/HomeView.vue';
 import BookSearchView from '../views/BookSearchView.vue';
+import ReviewCreateView from '../views/ReviewCreateView.vue';
+import { useSelectionStore } from '../stores/selectionStore';
 
 const routes = [
   {
@@ -20,6 +22,11 @@ const routes = [
     path: '/book-search',
     name: 'book-search',
     component: BookSearchView,
+  },
+  {
+    path: '/reviews/new',
+    name: 'review-create',
+    component: ReviewCreateView,
   },
 ];
 
@@ -42,8 +49,34 @@ async function checkSession() {
   }
 }
 
+let userLoadPromise = null;
+let userLoaded = false;
+
+async function ensureCurrentUserLoaded() {
+  if (userLoaded) return;
+  if (userLoadPromise) return userLoadPromise;
+
+  const store = useSelectionStore();
+
+  userLoadPromise = axios
+    .get('http://localhost:8010/api/user/me', { withCredentials: true })
+    .then((res) => {
+      store.setCurrentUser(res.data);
+      userLoaded = true;
+    })
+    .catch(() => {
+      // /api/user/me 가 아직 없거나(개발중), 일시적 오류여도 라우팅은 계속 진행
+    })
+    .finally(() => {
+      userLoadPromise = null;
+    });
+
+  return userLoadPromise;
+}
+
 router.beforeEach(async (to, from, next) => {
   const isAuthenticated = await checkSession();
+  const store = useSelectionStore();
 
   // 이미 로그인된 사용자가 /login 으로 가려 하면 홈으로 보냄
   if (to.name === 'login' && isAuthenticated) {
@@ -52,7 +85,14 @@ router.beforeEach(async (to, from, next) => {
 
   // 로그인 안 된 사용자가 보호된 페이지(로그인 페이지 제외)를 가려 하면 /login 으로
   if (to.name !== 'login' && !isAuthenticated) {
+    store.setCurrentUser(null);
+    userLoaded = false;
     return next({ name: 'login' });
+  }
+
+  // 로그인 상태라면(세션 유효), 최초 1회 /api/user/me 를 호출해 작성자 이름을 상태에 저장
+  if (isAuthenticated) {
+    await ensureCurrentUserLoaded();
   }
 
   return next();
