@@ -4,7 +4,8 @@ import com.example.book_talker_backend.book.entity.Book;
 import jakarta.persistence.*;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Entity
 @Table
@@ -19,5 +20,6 @@ public class Review {
     private String writer;
     private String content;
     private String rating;
-    private LocalDate regDate;
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime regDate;
 }

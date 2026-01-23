@@ -11,8 +11,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
@@ -25,7 +28,6 @@ public class BookController {
 
     @GetMapping("/list")
     public ResponseEntity<List<AladinBook>> list(@Valid ListRequest request) {
-        // TODO: enum 값에 대한 검증은 어떻게 해야할까?
         log.info("검색 유형: {}", request.queryType());
         AladinResponse response = bookService.list(request);
 
@@ -61,5 +63,18 @@ public class BookController {
                 response.totalResults(),
                 response.startIndex()
         ));
+    }
+
+    @PostMapping
+    public ResponseEntity<Void> insertBook(@RequestBody AladinBook request) {
+        log.info("insert books... (isbn13: {})", request.isbn13());
+        int res = bookService.cachedBook(request);
+
+        if (res == 0) {
+            log.error("Book caching failed! (isbn13: {})", request.isbn13());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }
