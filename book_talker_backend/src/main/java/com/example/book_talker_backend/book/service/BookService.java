@@ -92,6 +92,8 @@ public class BookService {
     }
 
     public int checkExistBook(String isbn13) {
+        log.debug("Checking existence of book with ISBN13: {}", isbn13);
+
         if (bookRepository.existsById(isbn13)) {
             return 1;
         }

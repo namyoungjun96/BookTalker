@@ -4,10 +4,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Setter;
+import lombok.Getter;
 
 @Entity
 @Table
 @Setter
+@Getter
 public class Book {
     @Id
     private String isbn13;
