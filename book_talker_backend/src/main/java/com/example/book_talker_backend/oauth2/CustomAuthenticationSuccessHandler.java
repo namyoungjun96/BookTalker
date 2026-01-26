@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -20,17 +21,23 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+    @Value("${base-url.frontend}")
+    private String BASE_URL;
+
     private final UserRepository userRepository;
     private final OAuth2UserRepository oAuth2UserRepository;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+        log.debug("onAuthenticationSuccess!");
         OAuth2AuthenticationToken oauth2Token = (OAuth2AuthenticationToken) authentication;
         OAuth2User oauth2User = oauth2Token.getPrincipal();
         Map<String, Object> userInfo = (Map<String, Object>) oauth2User.getAttributes().get("response");
 
+        log.debug("user exist or not exist: {}", userInfo.get("email"));
         if(!userRepository.existsByEmail((String) userInfo.get("email"))) {
             Person person = OAuth2UserMapper.toPerson(userInfo);
+            log.debug("user does not exist .. save user: {}", person.getEmail());
             userRepository.save(person);
         }
 
@@ -39,6 +46,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             oAuth2UserRepository.save(oAuth2UserEntity);
         }
 
-        response.sendRedirect("http://localhost:5173/");
+        log.debug("baseURL: {}", BASE_URL);
+        response.sendRedirect(BASE_URL);
     }
 }

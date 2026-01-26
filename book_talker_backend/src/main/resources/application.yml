@@ -1,18 +1,9 @@
 spring:
   profiles:
-    active: local
+    active: prod
 
   application:
     name: book_talker_backend
-
-  session:
-    redis:
-      namespace: book_talker:session
-
-  data:
-    redis:
-      host: localhost
-      port: 6379
 
 server:
   port: 8010

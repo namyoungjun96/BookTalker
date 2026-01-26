@@ -34,7 +34,17 @@ spring:
                 - profile_image
                 - birthyear
                 - mobile
+#    session:
+#      redis:
+#        namespace: book_talker:session
+#    data:
+#      redis:
+#        host: localhost
+#        port: 6379
 
 logging:
   level:
     root: debug
+
+base-url:
+  frontend: http://localhost:5173

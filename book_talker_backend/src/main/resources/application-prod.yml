@@ -2,7 +2,7 @@ spring:
     jpa:
         database: postgresql
         hibernate:
-          ddl-auto: update
+          ddl-auto: create
     datasource:
         driver-class-name: org.postgresql.Driver
         username: talker
@@ -34,7 +34,17 @@ spring:
                 - profile_image
                 - birthyear
                 - mobile
+#    session:
+#      redis:
+#        namespace: book_talker:session
+#    data:
+#      redis:
+#        host: 193.123.244.199
+#        port: 6379
 
 logging:
   level:
     root: debug
+
+base-url:
+  frontend: http://161.118.143.129

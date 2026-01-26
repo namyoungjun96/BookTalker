@@ -17,7 +17,7 @@ export default defineConfig({
         name: 'BookTalker',
         short_name: 'BookTalker',
         description: '나만의 독후감 작성 어플리케이션',
-        start_url: '/',  // 이게 중요!
+        start_url: 'http://161.118.143.129',  // 이게 중요!
         scope: '/',
         theme_color: '#3B82F6',
         background_color: '#ffffff',
