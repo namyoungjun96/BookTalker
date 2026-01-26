@@ -1,6 +1,7 @@
 package com.example.book_talker_backend.user.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table
 @Setter
+@Getter
 public class Person {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

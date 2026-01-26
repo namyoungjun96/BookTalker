@@ -41,7 +41,8 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             userRepository.save(person);
         }
 
-        if (!oAuth2UserRepository.findByUserId(((String) userInfo.get("userId"))).isEmpty()) {
+        if (oAuth2UserRepository.findByProviderEmail(((String) userInfo.get("email"))) == null) {
+            log.debug("oauth2 user does not exist .. save user: {}", userInfo.get("email"));
             OAuth2UserEntity oAuth2UserEntity = OAuth2UserMapper.toOAuth2UserEntity(userInfo, oauth2Token.getAuthorizedClientRegistrationId());
             oAuth2UserRepository.save(oAuth2UserEntity);
         }
