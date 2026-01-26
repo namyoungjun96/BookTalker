@@ -52,6 +52,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import { API_BASE_URL } from '../api/client';
 
 const email = ref('');
 const password = ref('');
@@ -61,7 +62,7 @@ const onSubmit = () => {
 };
 
 const onNaverLogin = () => {
-  window.location.href = 'http://localhost:8010/oauth2/authorization/naver';
+  window.location.href = `${API_BASE_URL}/oauth2/authorization/naver`;
   console.log('네이버 로그인 시도');
 };
 </script>

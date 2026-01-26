@@ -119,7 +119,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import axios from 'axios';
+import apiClient from '../api/client';
 import { useSelectionStore } from '../stores/selectionStore';
 
 const router = useRouter();
@@ -160,9 +160,7 @@ const checkBookInBackend = async () => {
     };
 
     try {
-      await axios.post('http://localhost:8010/api/book', bookData, {
-        withCredentials: true,
-      });
+      await apiClient.post('/api/book', bookData);
       bookExists.value = false;
     } catch (error) {
       if (error.response?.status === 409 || error.response?.status === 400) {
@@ -185,9 +183,7 @@ const fetchCurrentUser = async () => {
 
   isLoadingUser.value = true;
   try {
-    const response = await axios.get('http://localhost:8010/api/user/me', {
-      withCredentials: true,
-    });
+    const response = await apiClient.get('/api/user/me');
     setCurrentUser(response.data);
   } catch (error) {
     console.error('로그인 사용자 정보 조회 실패:', error);
@@ -214,9 +210,7 @@ const onSubmitReview = async () => {
       };
 
       try {
-        await axios.post('http://localhost:8010/api/book', bookData, {
-          withCredentials: true,
-        });
+        await apiClient.post('/api/book', bookData);
         bookExists.value = true;
       } catch (error) {
         if (error.response?.status !== 409) {
@@ -233,9 +227,7 @@ const onSubmitReview = async () => {
       rating: String(rating.value),
     };
 
-    await axios.post('http://localhost:8010/api/review', reviewData, {
-      withCredentials: true,
-    });
+    await apiClient.post('/api/review', reviewData);
 
     alert('독후감이 성공적으로 등록되었습니다!');
     router.push({ name: 'book-search' });

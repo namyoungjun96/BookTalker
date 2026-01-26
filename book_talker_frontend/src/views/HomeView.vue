@@ -79,7 +79,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import axios from 'axios';
+import apiClient from '../api/client';
 
 const router = useRouter();
 const route = useRoute();
@@ -94,9 +94,7 @@ const isActiveRoute = (path) => {
 const fetchReviews = async () => {
   isLoading.value = true;
   try {
-    const response = await axios.get('http://localhost:8010/api/review/list', {
-      withCredentials: true,
-    });
+    const response = await apiClient.get('/api/review/list');
     reviews.value = response.data || [];
   } catch (error) {
     console.error('리뷰 목록 조회 실패:', error);
@@ -129,9 +127,7 @@ const handleImageError = (event) => {
 
 const onLogout = async () => {
   try {
-    await axios.get('http://localhost:8010/logout', {
-      withCredentials: true
-    });
+    await apiClient.get('/logout');
     router.push({ name: 'login' });
   } catch (error) {
     console.error('로그아웃 실패:', error);

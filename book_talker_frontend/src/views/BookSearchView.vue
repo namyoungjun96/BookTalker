@@ -145,7 +145,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import axios from 'axios';
+import apiClient from '../api/client';
 import { useSelectionStore } from '../stores/selectionStore';
 
 const router = useRouter();
@@ -180,14 +180,13 @@ const fetchBooks = async (page = 1) => {
   const startIndex = page;
 
   try {
-    const response = await axios.get('http://localhost:8010/api/book/search', {
+    const response = await apiClient.get('/api/book/search', {
       params: {
         query: searchQuery.value.trim(),
         start: String(startIndex),
         maxResults: String(pageSize),
         cover: 'Small',
       },
-      withCredentials: true,
     });
 
     const data = response.data.items || [];
@@ -240,9 +239,7 @@ const goToNextPage = async () => {
 
 const onLogout = async () => {
   try {
-    await axios.get('http://localhost:8010/logout', {
-      withCredentials: true
-    });
+    await apiClient.get('/logout');
     router.push({ name: 'login' });
   } catch (error) {
     console.error('로그아웃 실패:', error);
