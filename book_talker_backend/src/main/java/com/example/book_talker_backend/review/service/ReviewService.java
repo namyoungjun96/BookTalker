@@ -7,6 +7,7 @@ import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Review;
 import com.example.book_talker_backend.review.entity.dto.ReviewRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -46,6 +47,15 @@ public class ReviewService {
             return 0;
         }
 
+        return 1;
+    }
+
+    @Transactional
+    public int updateReview(ReviewRequest request) {
+        Review review = reviewRepository.findByBookIsbn13(request.isbn13());
+        review.setContent(request.content());
+        review.setRating(request.rating());
+        review.setModDate(java.time.LocalDateTime.now());
         return 1;
     }
 

@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,6 +36,13 @@ public class ReviewController {
         }
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @PutMapping
+    public ResponseEntity<Void> updateReview(@RequestBody ReviewRequest request) {
+        reviewService.updateReview(request);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 
     @GetMapping("/list")
     public ResponseEntity<List<Review>> getUserReviews(@AuthenticationPrincipal OAuth2User oauth2User) {

@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
-@EnableRedisHttpSession(redisNamespace = "book_talker:session")
+// @EnableRedisHttpSession(redisNamespace = "book_talker:session")
 @RequiredArgsConstructor
 public class SecurityConfig implements WebMvcConfigurer {
     private final OAuth2UserRepository oAuth2UserRepository;
@@ -52,7 +52,6 @@ public class SecurityConfig implements WebMvcConfigurer {
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
                 .logout(logout -> logout
                     .logoutUrl("/logout")
-                    .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET")) // GET 허용
                     .logoutSuccessHandler((request, response, authentication) -> {
                         response.setStatus(HttpServletResponse.SC_OK);
                         response.setContentType("application/json");
@@ -95,17 +94,17 @@ public class SecurityConfig implements WebMvcConfigurer {
         return new HttpSessionOAuth2AuthorizedClientRepository();
     }
 
-    @Bean
-    public LettuceConnectionFactory lettuceConnectionFactory() {
-        return new LettuceConnectionFactory();
-    }
+    // @Bean
+    // public LettuceConnectionFactory lettuceConnectionFactory() {
+    //     return new LettuceConnectionFactory();
+    // }
 
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-        return template;
-    }
+    // @Bean
+    // public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+    //     RedisTemplate<String, Object> template = new RedisTemplate<>();
+    //     template.setConnectionFactory(connectionFactory);
+    //     template.setKeySerializer(new StringRedisSerializer());
+    //     template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+    //     return template;
+    // }
 }

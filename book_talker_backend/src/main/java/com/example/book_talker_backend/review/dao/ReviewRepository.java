@@ -9,4 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByWriter(String writer);
+    Review findByBookIsbn13(String isbn13);
 }
