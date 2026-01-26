@@ -20,8 +20,8 @@ spring:
           registration:
             naver:
               client-name: Naver
-              client-id: gP9iCmsiOkKQNSlQRkqt
-              client-secret: VhPBrEXpPt
+              client-id: uCoS8KzKduaXBhiQWA35
+              client-secret: QO_zFeyOfy
               authorization-grant-type: authorization_code
               redirect-uri: http://localhost:8010/login/oauth2/code/naver
               scope:
@@ -41,10 +41,6 @@ spring:
 #      redis:
 #        host: localhost
 #        port: 6379
-
-logging:
-  level:
-    root: debug
 
 base-url:
   frontend: http://localhost:5173

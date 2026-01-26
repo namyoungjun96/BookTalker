@@ -2,7 +2,7 @@ spring:
     jpa:
         database: postgresql
         hibernate:
-          ddl-auto: create
+          ddl-auto: update
     datasource:
         driver-class-name: org.postgresql.Driver
         username: talker
@@ -41,10 +41,6 @@ spring:
 #      redis:
 #        host: 193.123.244.199
 #        port: 6379
-
-logging:
-  level:
-    root: debug
 
 base-url:
   frontend: http://161.118.143.129

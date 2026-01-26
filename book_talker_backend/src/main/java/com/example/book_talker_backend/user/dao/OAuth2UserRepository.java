@@ -7,7 +7,5 @@ import java.util.List;
 import java.util.Map;
 
 public interface OAuth2UserRepository extends JpaRepository<OAuth2UserEntity, Long> {
-    List<OAuth2UserEntity> findByUserId(String userId);
-
     OAuth2UserEntity findByProviderEmail(String email);
 }
