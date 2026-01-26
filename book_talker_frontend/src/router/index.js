@@ -85,8 +85,11 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'home' });
   }
 
-  // 로그인 안 된 사용자가 보호된 페이지(로그인 페이지 제외)를 가려 하면 /login 으로
-  if (to.name !== 'login' && !isAuthenticated) {
+  // 로그인이 필요 없는 페이지 목록 (홈, 로그인 페이지)
+  const publicPages = ['login', 'home'];
+  
+  // 로그인 안 된 사용자가 보호된 페이지를 가려 하면 /login 으로
+  if (!publicPages.includes(to.name) && !isAuthenticated) {
     store.setCurrentUser(null);
     userLoaded = false;
     return next({ name: 'login' });
@@ -95,6 +98,10 @@ router.beforeEach(async (to, from, next) => {
   // 로그인 상태라면(세션 유효), 최초 1회 /api/user/me 를 호출해 작성자 이름을 상태에 저장
   if (isAuthenticated) {
     await ensureCurrentUserLoaded();
+  } else {
+    // 로그인 안 된 상태면 store 초기화
+    store.setCurrentUser(null);
+    userLoaded = false;
   }
 
   return next();

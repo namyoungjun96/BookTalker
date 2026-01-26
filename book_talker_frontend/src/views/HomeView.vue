@@ -8,12 +8,15 @@
           <router-link to="/" class="nav-link" :class="{ active: isActiveRoute('/') }">
             홈
           </router-link>
-          <router-link to="/book-search" class="nav-link" :class="{ active: isActiveRoute('/book-search') }">
+          <router-link v-if="isLoggedIn" to="/book-search" class="nav-link" :class="{ active: isActiveRoute('/book-search') }">
             검색
           </router-link>
-          <button type="button" @click="onLogout" class="nav-link logout-btn">
+          <button v-if="isLoggedIn" type="button" @click="onLogout" class="nav-link logout-btn">
             로그아웃
           </button>
+          <router-link v-else to="/login" class="nav-link login-btn">
+            로그인
+          </router-link>
         </nav>
       </div>
     </header>
@@ -21,56 +24,68 @@
     <!-- 메인 콘텐츠 (max-width: 720px, 단일 컬럼) -->
     <main class="main-content">
       <div class="content-wrapper">
-        <h2 class="page-title">내가 작성한 리뷰</h2>
-
-        <!-- 로딩 중 -->
-        <div v-if="isLoading" class="loading-state">
-          <div class="spinner"></div>
-          <p class="loading-text">리뷰를 불러오는 중...</p>
+        <!-- 로그인하지 않은 사용자에게 보여줄 메시지 -->
+        <div v-if="!isLoggedIn" class="welcome-section">
+          <h2 class="welcome-title">BookTalker에 오신 것을 환영합니다</h2>
+          <p class="welcome-subtitle">독서 후기를 기록하고 공유하세요</p>
+          <router-link to="/login" class="welcome-login-btn">
+            로그인하고 시작하기
+          </router-link>
         </div>
 
-        <!-- 리뷰가 없을 때 -->
-        <div v-else-if="reviews.length === 0" class="empty-state">
-          <p class="empty-title">작성한 리뷰가 없습니다</p>
-          <p class="empty-subtitle">책을 검색해서 첫 리뷰를 작성해보세요</p>
-        </div>
+        <!-- 로그인한 사용자에게만 리뷰 목록 표시 -->
+        <template v-else>
+          <h2 class="page-title">내가 작성한 리뷰</h2>
 
-        <!-- 리뷰 카드 리스트 (브런치 스타일) -->
-        <div v-else class="review-list">
-          <article
-            v-for="review in reviews"
-            :key="review.id"
-            class="review-card"
-          >
-            <!-- 책 정보 -->
-            <div class="book-info">
-              <div class="book-cover">
-                <img
-                  v-if="review.book?.cover"
-                  :src="review.book.cover"
-                  :alt="review.book.title"
-                  @error="handleImageError"
-                />
-                <div v-else class="cover-placeholder">📖</div>
+          <!-- 로딩 중 -->
+          <div v-if="isLoading" class="loading-state">
+            <div class="spinner"></div>
+            <p class="loading-text">리뷰를 불러오는 중...</p>
+          </div>
+
+          <!-- 리뷰가 없을 때 -->
+          <div v-else-if="reviews.length === 0" class="empty-state">
+            <p class="empty-title">작성한 리뷰가 없습니다</p>
+            <p class="empty-subtitle">책을 검색해서 첫 리뷰를 작성해보세요</p>
+          </div>
+
+          <!-- 리뷰 카드 리스트 (브런치 스타일) -->
+          <div v-else class="review-list">
+            <article
+              v-for="review in reviews"
+              :key="review.id"
+              class="review-card"
+            >
+              <!-- 책 정보 -->
+              <div class="book-info">
+                <div class="book-cover">
+                  <img
+                    v-if="review.book?.cover"
+                    :src="review.book.cover"
+                    :alt="review.book.title"
+                    @error="handleImageError"
+                  />
+                  <div v-else class="cover-placeholder">📖</div>
+                </div>
+                <div class="book-details">
+                  <h3 class="book-title">{{ review.book?.title || '-' }}</h3>
+                  <p class="book-author">{{ review.book?.author || '-' }}</p>
+                </div>
               </div>
-              <div class="book-details">
-                <h3 class="book-title">{{ review.book?.title || '-' }}</h3>
-                <p class="book-author">{{ review.book?.author || '-' }}</p>
+
+              <!-- 리뷰 내용 -->
+              <div class="review-content">
+                <p class="review-text">{{ review.content || '-' }}</p>
               </div>
-            </div>
 
-            <!-- 리뷰 내용 -->
-            <div class="review-content">
-              <p class="review-text">{{ review.content || '-' }}</p>
-            </div>
-
-            <!-- 리뷰 메타 정보 -->
-            <div class="review-meta">
-              <span class="rating">⭐ {{ review.rating || '-' }}</span>
-              <span class="date">{{ formatDate(review.regDate) }}</span>
-            </div>
-          </article>
-        </div>
+              <!-- 리뷰 메타 정보 -->
+              <div class="review-meta">
+                <span class="rating">⭐ {{ review.rating || '-' }}</span>
+                <span class="date">{{ formatDate(review.regDate) }}</span>
+              </div>
+            </article>
+          </div>
+        </template>
       </div>
     </main>
   </div>
@@ -79,16 +94,30 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import apiClient from '../api/client';
+import apiClient, { API_BASE_URL } from '../api/client';
+import axios from 'axios';
 
 const router = useRouter();
 const route = useRoute();
 
 const reviews = ref([]);
 const isLoading = ref(false);
+const isLoggedIn = ref(false);
 
 const isActiveRoute = (path) => {
   return route.path === path;
+};
+
+// 로그인 상태 체크 함수
+const checkLoginStatus = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/auth/session`, {
+      withCredentials: true,
+    });
+    isLoggedIn.value = response.status === 200;
+  } catch (error) {
+    isLoggedIn.value = false;
+  }
 };
 
 const fetchReviews = async () => {
@@ -135,8 +164,12 @@ const onLogout = async () => {
   }
 };
 
-onMounted(() => {
-  fetchReviews();
+onMounted(async () => {
+  await checkLoginStatus();
+  // 로그인한 사용자에게만 리뷰 목록 API 호출
+  if (isLoggedIn.value) {
+    fetchReviews();
+  }
 });
 </script>
 
@@ -206,6 +239,14 @@ onMounted(() => {
   color: #ef4444;
 }
 
+.login-btn {
+  color: #2563eb;
+}
+
+.login-btn:hover {
+  color: #1d4ed8;
+}
+
 /* 메인 콘텐츠 (max-width: 720px, 노션 스타일 여백) */
 .main-content {
   padding: 48px 24px;
@@ -214,6 +255,44 @@ onMounted(() => {
 .content-wrapper {
   max-width: 720px;
   margin: 0 auto;
+}
+
+/* 환영 섹션 (로그인 안 한 사용자용) */
+.welcome-section {
+  text-align: center;
+  padding: 80px 24px;
+}
+
+.welcome-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+  line-height: 1.3;
+}
+
+.welcome-subtitle {
+  font-size: 18px;
+  color: #6b7280;
+  margin: 0 0 32px 0;
+}
+
+.welcome-login-btn {
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  color: white;
+  background: #2563eb;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.welcome-login-btn:hover {
+  background: #1d4ed8;
 }
 
 .page-title {
@@ -377,6 +456,18 @@ onMounted(() => {
 @media (max-width: 640px) {
   .main-content {
     padding: 32px 16px;
+  }
+
+  .welcome-section {
+    padding: 60px 16px;
+  }
+
+  .welcome-title {
+    font-size: 28px;
+  }
+
+  .welcome-subtitle {
+    font-size: 16px;
   }
 
   .page-title {
