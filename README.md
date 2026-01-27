@@ -14,6 +14,8 @@
 - Vue3, PWA
 
 ### Infra
+<img src="./document/image.png" width="auto" height="auto" title="Architecture"/>
+
 - Oracle Cloud Infrastructure(OCI)
 - Nginx (리버스 프록시)
 - Docker (개발 환경)
@@ -25,5 +27,6 @@
 ## 기술적 의사결정
 
 ## 트러블슈팅
+
 
 ## 회고

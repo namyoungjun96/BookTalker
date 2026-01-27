@@ -119,12 +119,14 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
 import { useSelectionStore } from '../stores/selectionStore';
 
 const router = useRouter();
 const route = useRoute();
 const { selectedBook, currentUser, setCurrentUser } = useSelectionStore();
+const toast = useToast();
 
 const reviewContent = ref('');
 const rating = ref(5);
@@ -229,11 +231,13 @@ const onSubmitReview = async () => {
 
     await apiClient.post('/api/review', reviewData);
 
-    alert('독후감이 성공적으로 등록되었습니다!');
-    router.push({ name: 'book-search' });
+    toast.success('독후감이 성공적으로 등록되었습니다!');
+    setTimeout(() => {
+      router.push({ name: 'book-search' });
+    }, 500);
   } catch (error) {
     console.error('독후감 등록 실패:', error);
-    alert('독후감 등록 중 오류가 발생했습니다: ' + (error.response?.data?.message || error.message));
+    toast.error('독후감 등록 중 오류가 발생했습니다: ' + (error.response?.data?.message || error.message));
   } finally {
     isSubmitting.value = false;
   }

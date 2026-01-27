@@ -94,11 +94,13 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import apiClient, { API_BASE_URL } from '../api/client';
 import axios from 'axios';
 
 const router = useRouter();
 const route = useRoute();
+const toast = useToast();
 
 const reviews = ref([]);
 const isLoading = ref(false);
@@ -123,13 +125,19 @@ const checkLoginStatus = async () => {
 const fetchReviews = async () => {
   isLoading.value = true;
   try {
-    const response = await apiClient.get('/api/review/list');
+    const response = await apiClient.get('/api/review/list', {
+      skipErrorCodes: [404]  // 404는 "리뷰 없음"이라 정상
+    });
     reviews.value = response.data || [];
   } catch (error) {
     console.error('리뷰 목록 조회 실패:', error);
-    reviews.value = [];
-    if (error.response?.status !== 404) {
-      alert('리뷰 목록을 불러오는 중 오류가 발생했습니다.');
+    
+    if (error.response?.status === 404) {
+      // 404는 정상 - 리뷰 없음
+      reviews.value = [];
+    } else {
+      // 다른 에러는 Interceptor가 자동 처리함
+      reviews.value = [];
     }
   } finally {
     isLoading.value = false;
@@ -157,15 +165,29 @@ const handleImageError = (event) => {
 const onLogout = async () => {
   try {
     await apiClient.get('/logout');
-    router.push({ name: 'login' });
+    toast.success('로그아웃되었습니다.');
+    setTimeout(() => {
+      router.push({ name: 'login' });
+    }, 500);
   } catch (error) {
     console.error('로그아웃 실패:', error);
+    // Interceptor가 에러 메시지를 이미 표시함
     router.push({ name: 'login' });
   }
 };
 
 onMounted(async () => {
+  // 로그인 성공 체크
+  const loginAttempt = sessionStorage.getItem('login-attempt');
+  
   await checkLoginStatus();
+  
+  // 로그인 시도 후 첫 방문이고 로그인 성공했다면
+  if (loginAttempt === 'true' && isLoggedIn.value) {
+    sessionStorage.removeItem('login-attempt');
+    toast.success('로그인되었습니다!');
+  }
+  
   // 로그인한 사용자에게만 리뷰 목록 API 호출
   if (isLoggedIn.value) {
     fetchReviews();

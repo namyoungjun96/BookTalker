@@ -145,12 +145,14 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
 import { useSelectionStore } from '../stores/selectionStore';
 
 const router = useRouter();
 const route = useRoute();
 const selectionStore = useSelectionStore();
+const toast = useToast();
 
 const searchQuery = ref('');
 const books = ref([]);
@@ -187,6 +189,7 @@ const fetchBooks = async (page = 1) => {
         maxResults: String(pageSize),
         cover: 'Small',
       },
+      skipErrorCodes: [204]  // 204는 "검색 결과 없음"이라 정상
     });
 
     const data = response.data.items || [];
@@ -204,11 +207,13 @@ const fetchBooks = async (page = 1) => {
     console.error('책 검색 실패:', error);
 
     if (error.response?.status === 204) {
+      // 204는 정상 - 검색 결과 없음
       books.value = [];
       totalResults.value = 0;
       canGoNext.value = false;
+      toast.info('검색 결과가 없습니다.');
     } else {
-      alert('책 검색 중 오류가 발생했습니다.');
+      // 다른 에러는 Interceptor가 자동 처리함
       totalResults.value = 0;
       canGoNext.value = false;
     }
@@ -240,9 +245,13 @@ const goToNextPage = async () => {
 const onLogout = async () => {
   try {
     await apiClient.get('/logout');
-    router.push({ name: 'login' });
+    toast.success('로그아웃되었습니다.');
+    setTimeout(() => {
+      router.push({ name: 'login' });
+    }, 500);
   } catch (error) {
     console.error('로그아웃 실패:', error);
+    // Interceptor가 에러 메시지를 이미 표시함
     router.push({ name: 'login' });
   }
 };
