@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,32 +21,30 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final BookService bookService;
 
-    public int insertReview(ReviewRequest request) {
+    @Transactional
+    public void insertReview(ReviewRequest request) {
         log.debug("Inserting review for book with ISBN13: {}", request.isbn13());
 
-        if (bookService.checkExistBook(request.isbn13()) == 0) {
-            AladinBook aladinBook = bookService.getBookByIsbn13WithApi(request.isbn13()).item().get(0);
-
-            if (aladinBook == null) {
-                return 0;
-            }
-
-            Book book = aladinBook.to();
-
-            if (bookService.insertBook(book) == 0) {
-                return 0;
-            }
-        }
-
+        getOrFetchBook(request.isbn13());
         Review review = request.to();
 
-        try {
-            reviewRepository.save(review);
-        } catch (IllegalArgumentException | OptimisticLockingFailureException e) {
-            return 0;
+        reviewRepository.save(review);
+    }
+
+    public void getOrFetchBook(String isbn13) {
+        Book existingBook = bookService.getBookByIsbn13(isbn13);
+
+        if (existingBook != null)
+            return;
+
+        List<AladinBook> aladinBooks = bookService.getBookByIsbn13WithApi(isbn13).item();
+
+        if (aladinBooks.isEmpty()) {
+            throw new IllegalArgumentException("Book with ISBN13 " + isbn13 + " does not exist");
         }
 
-        return 1;
+        Book newBbook = aladinBooks.get(0).to();
+        bookService.insertBook(newBbook);
     }
 
     @Transactional

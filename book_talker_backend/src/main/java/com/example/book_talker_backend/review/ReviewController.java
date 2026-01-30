@@ -29,11 +29,7 @@ public class ReviewController {
 
     @PostMapping
     public ResponseEntity<Void> insertReview(@RequestBody ReviewRequest request) {
-        int response = reviewService.insertReview(request);
-
-        if(response == 0){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        reviewService.insertReview(request);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
