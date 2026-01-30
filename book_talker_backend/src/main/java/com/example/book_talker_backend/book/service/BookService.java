@@ -59,7 +59,23 @@ public class BookService {
         return restTemplate.getForObject(url, AladinResponse.class);
     }
 
-    public AladinResponse getBookByIsbn13WithApi(String isbn13) {
+    public Book getBookByIsbn13WithApi(String isbn13) {
+        AladinResponse response = searchByIsbn13(isbn13);
+
+        if(response == null) {
+            throw new IllegalArgumentException("[BookTalker] Book with ISBN13 " + isbn13 + " does not exist");
+        }
+
+        List<AladinBook> aladinBooks = response.item();
+
+        if (aladinBooks.isEmpty()) {
+            throw new IllegalArgumentException("[Aladin] Book with ISBN13 " + isbn13 + " does not exist");
+        }
+
+        return aladinBooks.get(0).to();
+    }
+
+    public AladinResponse searchByIsbn13(String isbn13) {
         String url = UriComponentsBuilder
                 .fromUriString(ALADIN_BASE_URL + "/ItemLookUp.aspx")
                 .queryParam("TTBKey", "ttbehdgornltls1927001")
@@ -73,15 +89,6 @@ public class BookService {
                 .toUriString();
 
         return restTemplate.getForObject(url, AladinResponse.class);
-    }
-
-    public int checkExistBook(String isbn13) {
-        log.debug("Checking existence of book with ISBN13: {}", isbn13);
-
-        if (bookRepository.existsById(isbn13)) {
-            return 1;
-        }
-        return 0;
     }
 
     public Book getBookByIsbn13(String isbn13) {
