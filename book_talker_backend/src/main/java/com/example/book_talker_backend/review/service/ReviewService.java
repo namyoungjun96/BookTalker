@@ -25,40 +25,34 @@ public class ReviewService {
     public void insertReview(ReviewRequest request) {
         log.debug("Inserting review for book with ISBN13: {}", request.isbn13());
 
-        getOrFetchBook(request.isbn13());
+        Book book = getOrFetchBook(request.isbn13());
         Review review = request.to();
+        review.setBook(book);
 
         reviewRepository.save(review);
     }
 
-    public void getOrFetchBook(String isbn13) {
+    private Book getOrFetchBook(String isbn13) {
         Book existingBook = bookService.getBookByIsbn13(isbn13);
-
         if (existingBook != null)
-            return;
+            return existingBook;
 
-        List<AladinBook> aladinBooks = bookService.getBookByIsbn13WithApi(isbn13).item();
-
-        if (aladinBooks.isEmpty()) {
-            throw new IllegalArgumentException("Book with ISBN13 " + isbn13 + " does not exist");
-        }
-
-        Book newBbook = aladinBooks.get(0).to();
-        bookService.insertBook(newBbook);
+        Book newBook = bookService.getBookByIsbn13WithApi(isbn13);
+        bookService.insertBook(newBook);
+        return newBook;
     }
 
     @Transactional
-    public int updateReview(ReviewRequest request) {
+    public void updateReview(ReviewRequest request) {
         Review review = reviewRepository.findByBookIsbn13(request.isbn13());
         review.setContent(request.content());
         review.setRating(request.rating());
         review.setModDate(java.time.LocalDateTime.now());
-        return 1;
     }
 
     public List<Review> getReviews(String email) {
         List<Review> reviews = reviewRepository.findByWriter(email);
-        log.debug("Gettting reviews for user with email: {}, {}", email, reviews.size());
+        log.debug("Getting reviews for user with email: {}, {}", email, reviews.size());
         return reviews;
     }
 
