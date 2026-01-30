@@ -75,22 +75,6 @@ public class BookService {
         return restTemplate.getForObject(url, AladinResponse.class);
     }
 
-    public int cachedBook(AladinBook aladinBook) {
-        if (getBookByIsbn13(aladinBook.isbn13()) != null) {
-            return 1;
-        }
-
-        Book book = new Book();
-        book.setIsbn13(aladinBook.isbn13());
-        book.setTitle(aladinBook.title());
-        book.setAuthor(aladinBook.author());
-        book.setGenre(aladinBook.categoryName());
-        book.setPublisher(aladinBook.publisher());
-        book.setCover(aladinBook.cover());
-
-        return insertBook(book);
-    }
-
     public int checkExistBook(String isbn13) {
         log.debug("Checking existence of book with ISBN13: {}", isbn13);
 
@@ -104,23 +88,31 @@ public class BookService {
         return bookRepository.findById(isbn13).orElse(null);
     }
 
-    public int insertAllBooks(List<Book> books) {
+    public void cacheBook(AladinBook aladinBook) {
         try {
-            bookRepository.saveAll(books);
-        } catch (IllegalArgumentException | OptimisticLockingFailureException e) {
-            return 0;
-        }
+            Book exsitingBook = getBookByIsbn13(aladinBook.isbn13());
 
-        return 1;
+            if (exsitingBook == null) {
+                Book book = new Book();
+                book.setIsbn13(aladinBook.isbn13());
+                book.setTitle(aladinBook.title());
+                book.setAuthor(aladinBook.author());
+                book.setGenre(aladinBook.categoryName());
+                book.setPublisher(aladinBook.publisher());
+                book.setCover(aladinBook.cover());
+
+                insertBook(book);
+            }
+        } catch (IllegalArgumentException | OptimisticLockingFailureException e) {
+            log.warn("Failed to cache book, but continuing: {}", aladinBook.isbn13(), e);
+        }
     }
 
-    public int insertBook(Book book) {
-        try {
-            bookRepository.save(book);
-        } catch (IllegalArgumentException | OptimisticLockingFailureException e) {
-            return 0;
-        }
+    public List<Book> insertAllBooks(List<Book> books) {
+        return bookRepository.saveAll(books);
+    }
 
-        return 1;
+    public void insertBook(Book book) {
+        bookRepository.save(book);
     }
 }

@@ -68,13 +68,7 @@ public class BookController {
     @PostMapping
     public ResponseEntity<Void> insertBook(@RequestBody AladinBook request) {
         log.info("insert books... (isbn13: {})", request.isbn13());
-        int res = bookService.cachedBook(request);
-
-        if (res == 0) {
-            log.error("Book caching failed! (isbn13: {})", request.isbn13());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
+        bookService.cacheBook(request);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }
