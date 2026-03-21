@@ -8,6 +8,9 @@
           <router-link to="/" class="nav-link" :class="{ active: isActiveRoute('/') }">
             홈
           </router-link>
+          <router-link to="/mypage" class="nav-link" :class="{ active: isActiveRoute('/mypage') }">
+            마이페이지
+          </router-link>
           <router-link to="/book-search" class="nav-link" :class="{ active: isActiveRoute('/book-search') }">
             검색
           </router-link>

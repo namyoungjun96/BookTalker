@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import axios from 'axios';
 import LoginView from '../views/LoginView.vue';
 import HomeView from '../views/HomeView.vue';
+import MyPageView from '../views/MyPageView.vue';
 import BookSearchView from '../views/BookSearchView.vue';
 import ReviewCreateView from '../views/ReviewCreateView.vue';
 import { useSelectionStore } from '../stores/selectionStore';
@@ -19,6 +20,11 @@ const routes = [
     path: '/',
     name: 'home',
     component: HomeView,
+  },
+  {
+    path: '/mypage',
+    name: 'mypage',
+    component: MyPageView,
   },
   {
     path: '/book-search',
