@@ -2,8 +2,6 @@ package com.example.book_talker_backend.book.entity.dto;
 
 import java.time.LocalDate;
 
-import com.example.book_talker_backend.book.entity.Book;
-
 public record AladinBook(
         String title,
         String link,
@@ -28,14 +26,4 @@ public record AladinBook(
         long customerReviewRank
 //                subInfo
 ) {
-        public Book to() {
-                Book book = new Book();
-                book.setIsbn13(this.isbn13);
-                book.setTitle(this.title);
-                book.setAuthor(this.author);
-                book.setGenre(this.categoryName);
-                book.setPublisher(this.publisher);
-                book.setCover(this.cover);
-                return book;
-        }
 }

@@ -21,9 +21,11 @@ public class Review {
     private Book book;
     private String writer;
     private String content;
-    private String rating;
+    private String headline;  // 필수, 항상 공개
+    private Integer rating;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime regDate;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime modDate;
+    private Boolean isPublic; // content 공개 여부, 기본 false
 }

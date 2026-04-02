@@ -4,6 +4,7 @@ import com.example.book_talker_backend.book.dao.BookRepository;
 import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.entity.dto.AladinResponse;
 import com.example.book_talker_backend.book.entity.dto.AladinBook;
+import com.example.book_talker_backend.book.infrastructure.AladinBookMapper;
 import com.example.book_talker_backend.book.entity.dto.ListRequest;
 import com.example.book_talker_backend.book.entity.dto.SearchRequest;
 import lombok.RequiredArgsConstructor;
@@ -72,7 +73,7 @@ public class BookService {
             throw new IllegalArgumentException("[Aladin] Book with ISBN13 " + isbn13 + " does not exist");
         }
 
-        return aladinBooks.get(0).to();
+        return AladinBookMapper.toDomain(aladinBooks.get(0));
     }
 
     public AladinResponse searchByIsbn13(String isbn13) {
@@ -100,15 +101,7 @@ public class BookService {
             Book exsitingBook = getBookByIsbn13(aladinBook.isbn13());
 
             if (exsitingBook == null) {
-                Book book = new Book();
-                book.setIsbn13(aladinBook.isbn13());
-                book.setTitle(aladinBook.title());
-                book.setAuthor(aladinBook.author());
-                book.setGenre(aladinBook.categoryName());
-                book.setPublisher(aladinBook.publisher());
-                book.setCover(aladinBook.cover());
-
-                insertBook(book);
+                insertBook(AladinBookMapper.toDomain(aladinBook));
             }
         } catch (IllegalArgumentException | OptimisticLockingFailureException e) {
             log.warn("Failed to cache book, but continuing: {}", aladinBook.isbn13(), e);
