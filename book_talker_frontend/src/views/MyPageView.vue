@@ -36,14 +36,23 @@
                 <div v-else class="cover-placeholder">📖</div>
               </div>
               <div class="book-details">
-                <h3 class="book-title">{{ review.bookTitle || '-' }}</h3>
+                <div class="book-title-row">
+                  <h3 class="book-title">{{ review.bookTitle || '-' }}</h3>
+                  <span class="date">{{ formatDate(review.regDate) }}</span>
+                </div>
                 <p class="headline-text">{{ review.headline || '-' }}</p>
               </div>
             </div>
 
             <div class="review-meta">
               <span class="rating">⭐ {{ review.rating || '-' }}</span>
-              <span class="date">{{ formatDate(review.regDate) }}</span>
+              <button
+                class="delete-btn"
+                @click.stop="onDeleteReview(review.id)"
+                :disabled="deletingId === review.id"
+              >
+                {{ deletingId === review.id ? '삭제 중...' : '🗑 삭제하기' }}
+              </button>
             </div>
           </article>
         </div>
@@ -55,14 +64,17 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import apiClient, { API_BASE_URL } from '../api/client';
 import axios from 'axios';
 
 const router = useRouter();
+const toast = useToast();
 
 const reviews = ref([]);
 const isLoading = ref(false);
 const isLoggedIn = ref(false);
+const deletingId = ref(null);
 
 const checkLoginStatus = async () => {
   try {
@@ -104,6 +116,24 @@ const formatDate = (dateString) => {
 
 const goToDetail = (reviewId) => {
   router.push({ name: 'review-detail', params: { id: reviewId } });
+};
+
+const onDeleteReview = async (reviewId) => {
+  if (!confirm('독후감을 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
+  deletingId.value = reviewId;
+  try {
+    await apiClient.delete('/api/review', { params: { reviewId } });
+    reviews.value = reviews.value.filter((r) => r.id !== reviewId);
+    toast.success('독후감이 삭제되었습니다.');
+  } catch (e) {
+    if (e.response?.status === 403) {
+      toast.error('삭제 권한이 없습니다.');
+    } else {
+      toast.error('삭제 중 오류가 발생했습니다.');
+    }
+  } finally {
+    deletingId.value = null;
+  }
 };
 
 const handleImageError = (event) => {
@@ -258,12 +288,29 @@ onMounted(async () => {
   min-width: 0;
 }
 
+.book-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
 .book-title {
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
-  margin: 0 0 4px 0;
+  margin: 0;
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.date {
+  font-size: 13px;
+  color: #9ca3af;
+  flex-shrink: 0;
 }
 
 .headline-text {
@@ -281,17 +328,35 @@ onMounted(async () => {
   align-items: center;
   padding-top: 16px;
   border-top: 1px solid #f3f4f6;
-  font-size: 14px;
-  color: #6b7280;
+  margin-top: 20px;
 }
 
 .rating {
+  font-size: 14px;
   color: #2563eb;
   font-weight: 500;
 }
 
-.date {
-  color: #9ca3af;
+.delete-btn {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ef4444;
+  background: none;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 7px 16px;
+  transition: all 0.15s ease;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {

@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,6 +53,16 @@ public class ReviewController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteReview(
+            @RequestParam Long reviewId,
+            @AuthenticationPrincipal OAuth2User oauth2User) {
+        Map<String, Object> response = oauth2User.getAttribute("response");
+        String email = (String) response.get("email");
+        reviewService.deleteReview(reviewId, email);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 
     @GetMapping("/list")
     public ResponseEntity<List<ReviewListResponse>> getUserReviews(@AuthenticationPrincipal OAuth2User oauth2User) {

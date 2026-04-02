@@ -84,6 +84,16 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public void deleteReview(Long reviewId, String email) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 독후감입니다: " + reviewId));
+        if (!review.getWriter().equals(email)) {
+            throw new AccessDeniedException("해당 독후감에 접근 권한이 없습니다.");
+        }
+        reviewRepository.delete(review);
+    }
+
     public ReviewDetailResponse getReviewDetail(Long reviewId, String email) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new IllegalArgumentException("Review not found: " + reviewId));
