@@ -1,29 +1,5 @@
 <template>
   <div class="app-container">
-    <!-- 헤더 -->
-    <header class="app-header">
-      <div class="header-content">
-        <h1 class="logo">BookTalker</h1>
-        <nav class="nav-links">
-          <router-link to="/" class="nav-link" :class="{ active: isActiveRoute('/') }">
-            홈
-          </router-link>
-          <router-link v-if="isLoggedIn" to="/mypage" class="nav-link" :class="{ active: isActiveRoute('/mypage') }">
-            마이페이지
-          </router-link>
-          <router-link v-if="isLoggedIn" to="/book-search" class="nav-link" :class="{ active: isActiveRoute('/book-search') }">
-            검색
-          </router-link>
-          <button v-if="isLoggedIn" type="button" @click="onLogout" class="nav-link logout-btn">
-            로그아웃
-          </button>
-          <router-link v-else to="/login" class="nav-link login-btn">
-            로그인
-          </router-link>
-        </nav>
-      </div>
-    </header>
-
     <main class="main-content">
       <div class="content-wrapper">
         <h2 class="page-title">내가 작성한 리뷰</h2>
@@ -47,25 +23,22 @@
             v-for="review in reviews"
             :key="review.id"
             class="review-card"
+            @click="goToDetail(review.id)"
           >
             <div class="book-info">
               <div class="book-cover">
                 <img
-                  v-if="review.book?.cover"
-                  :src="review.book.cover"
-                  :alt="review.book.title"
+                  v-if="review.bookCover"
+                  :src="review.bookCover"
+                  :alt="review.bookTitle"
                   @error="handleImageError"
                 />
                 <div v-else class="cover-placeholder">📖</div>
               </div>
               <div class="book-details">
-                <h3 class="book-title">{{ review.book?.title || '-' }}</h3>
-                <p class="book-author">{{ review.book?.author || '-' }}</p>
+                <h3 class="book-title">{{ review.bookTitle || '-' }}</h3>
+                <p class="headline-text">{{ review.headline || '-' }}</p>
               </div>
-            </div>
-
-            <div class="review-content">
-              <p class="review-text">{{ review.content || '-' }}</p>
             </div>
 
             <div class="review-meta">
@@ -81,20 +54,15 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useToast } from 'vue-toastification';
+import { useRouter } from 'vue-router';
 import apiClient, { API_BASE_URL } from '../api/client';
 import axios from 'axios';
 
 const router = useRouter();
-const route = useRoute();
-const toast = useToast();
 
 const reviews = ref([]);
 const isLoading = ref(false);
 const isLoggedIn = ref(false);
-
-const isActiveRoute = (path) => route.path === path;
 
 const checkLoginStatus = async () => {
   try {
@@ -134,18 +102,12 @@ const formatDate = (dateString) => {
   }
 };
 
-const handleImageError = (event) => {
-  event.target.style.display = 'none';
+const goToDetail = (reviewId) => {
+  router.push({ name: 'review-detail', params: { id: reviewId } });
 };
 
-const onLogout = async () => {
-  try {
-    await apiClient.get('/logout');
-    toast.success('로그아웃되었습니다.');
-    setTimeout(() => router.push({ name: 'login' }), 500);
-  } catch {
-    router.push({ name: 'login' });
-  }
+const handleImageError = (event) => {
+  event.target.style.display = 'none';
 };
 
 onMounted(async () => {
@@ -162,65 +124,6 @@ onMounted(async () => {
 .app-container {
   min-height: 100vh;
   background-color: #f9fafb;
-}
-
-.app-header {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 16px 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-content {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.nav-links {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-}
-
-.nav-link {
-  font-size: 15px;
-  color: #6b7280;
-  text-decoration: none;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.15s ease;
-}
-
-.nav-link:hover {
-  color: #1f2937;
-}
-
-.nav-link.active {
-  color: #2563eb;
-  font-weight: 500;
-}
-
-.logout-btn:hover {
-  color: #ef4444;
-}
-
-.login-btn {
-  color: #2563eb;
 }
 
 .main-content {
@@ -312,12 +215,13 @@ onMounted(async () => {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 24px;
+  cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .review-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
 }
 
 .book-info {
@@ -362,23 +266,13 @@ onMounted(async () => {
   line-height: 1.4;
 }
 
-.book-author {
+.headline-text {
   font-size: 14px;
   color: #6b7280;
   margin: 0;
-}
-
-.review-content {
-  margin-bottom: 16px;
-}
-
-.review-text {
-  font-size: 16px;
-  line-height: 1.7;
-  color: #1f2937;
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .review-meta {

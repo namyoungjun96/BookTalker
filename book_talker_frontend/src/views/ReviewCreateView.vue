@@ -1,23 +1,5 @@
 <template>
   <div class="app-container">
-    <!-- 미니멀 헤더 -->
-    <header class="app-header">
-      <div class="header-content">
-        <h1 class="logo">BookTalker</h1>
-        <nav class="nav-links">
-          <router-link to="/" class="nav-link" :class="{ active: isActiveRoute('/') }">
-            홈
-          </router-link>
-          <router-link to="/mypage" class="nav-link" :class="{ active: isActiveRoute('/mypage') }">
-            마이페이지
-          </router-link>
-          <router-link to="/book-search" class="nav-link" :class="{ active: isActiveRoute('/book-search') }">
-            검색
-          </router-link>
-        </nav>
-      </div>
-    </header>
-
     <!-- 메인 콘텐츠 (브런치 글쓰기 스타일) -->
     <main class="main-content">
       <div class="content-wrapper">
@@ -66,9 +48,30 @@
 
         <!-- 독후감 작성 폼 (브런치 스타일) -->
         <form @submit.prevent="onSubmitReview" class="review-form">
+          <!-- 헤드라인 -->
+          <div class="form-section">
+            <label class="form-label">
+              한 줄 요약
+              <span class="form-label-desc">랭킹 화면에 공개됩니다</span>
+            </label>
+            <input
+              type="text"
+              v-model="reviewHeadline"
+              class="headline-input"
+              placeholder="이 책을 한 문장으로 요약한다면?"
+              maxlength="100"
+            />
+            <p class="char-count">{{ reviewHeadline.length }} / 100</p>
+          </div>
+
+          <div class="section-divider"></div>
+
           <!-- 독후감 내용 -->
           <div class="form-section">
-            <label class="form-label">독후감 내용</label>
+            <label class="form-label">
+              독후감 본문
+              <span class="form-label-desc">나만 보기 기본값</span>
+            </label>
             <textarea
               v-model="reviewContent"
               rows="12"
@@ -107,7 +110,7 @@
             </button>
             <button
               type="submit"
-              :disabled="!selectedBook || !reviewContent.trim() || isSubmitting"
+              :disabled="!selectedBook || !reviewHeadline.trim() || !reviewContent.trim() || isSubmitting"
               class="action-button primary"
             >
               {{ isSubmitting ? '등록 중...' : '등록하기' }}
@@ -121,16 +124,16 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
 import { useSelectionStore } from '../stores/selectionStore';
 
 const router = useRouter();
-const route = useRoute();
 const { selectedBook, currentUser, setCurrentUser } = useSelectionStore();
 const toast = useToast();
 
+const reviewHeadline = ref('');
 const reviewContent = ref('');
 const rating = ref(5);
 const isCheckingBook = ref(false);
@@ -138,10 +141,6 @@ const bookExists = ref(null);
 const bookAddError = ref(null);
 const isLoadingUser = ref(false);
 const isSubmitting = ref(false);
-
-const isActiveRoute = (path) => {
-  return route.path === path;
-};
 
 const goBackToSearch = () => {
   router.push({ name: 'book-search' });
@@ -198,7 +197,7 @@ const fetchCurrentUser = async () => {
 };
 
 const onSubmitReview = async () => {
-  if (!selectedBook.value || !reviewContent.value.trim() || isSubmitting.value) return;
+  if (!selectedBook.value || !reviewHeadline.value.trim() || !reviewContent.value.trim() || isSubmitting.value) return;
 
   isSubmitting.value = true;
 
@@ -228,8 +227,9 @@ const onSubmitReview = async () => {
     const reviewData = {
       isbn13: selectedBook.value.isbn13 || selectedBook.value.isbn || '',
       writer: currentUser.value?.email || 'anonymous',
+      headline: reviewHeadline.value.trim(),
       content: reviewContent.value.trim(),
-      rating: String(rating.value),
+      rating: rating.value,
     };
 
     await apiClient.post('/api/review', reviewData);
@@ -260,54 +260,6 @@ onMounted(async () => {
 .app-container {
   min-height: 100vh;
   background-color: #f9fafb;
-}
-
-/* 헤더 (공통) */
-.app-header {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 16px 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-content {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.nav-links {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-}
-
-.nav-link {
-  font-size: 15px;
-  color: #6b7280;
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
-
-.nav-link:hover {
-  color: #1f2937;
-}
-
-.nav-link.active {
-  color: #2563eb;
-  font-weight: 500;
 }
 
 /* 메인 콘텐츠 */
@@ -447,6 +399,47 @@ onMounted(async () => {
 }
 
 /* 독후감 폼 (브런치 스타일) */
+.form-label-desc {
+  font-size: 12px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-left: 8px;
+}
+
+.headline-input {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 12px 16px;
+  font-size: 16px;
+  color: #1f2937;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.headline-input:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.headline-input::placeholder {
+  color: #9ca3af;
+}
+
+.char-count {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: right;
+  margin: 6px 0 0 0;
+}
+
+.section-divider {
+  border: none;
+  border-top: 1px dashed #e5e7eb;
+  margin: 8px 0 32px 0;
+}
+
 .review-form {
   background: white;
   border: 1px solid #e5e7eb;

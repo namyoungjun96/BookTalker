@@ -1,55 +1,61 @@
 <template>
   <div class="app-container">
-    <!-- 헤더 -->
-    <header class="app-header">
-      <div class="header-content">
-        <h1 class="logo">BookTalker</h1>
-        <nav class="nav-links">
-          <router-link to="/" class="nav-link" :class="{ active: isActiveRoute('/') }">
-            홈
-          </router-link>
-          <router-link v-if="isLoggedIn" to="/mypage" class="nav-link" :class="{ active: isActiveRoute('/mypage') }">
-            마이페이지
-          </router-link>
-          <router-link v-if="isLoggedIn" to="/book-search" class="nav-link" :class="{ active: isActiveRoute('/book-search') }">
-            검색
-          </router-link>
-          <button v-if="isLoggedIn" type="button" @click="onLogout" class="nav-link logout-btn">
-            로그아웃
-          </button>
-          <router-link v-else to="/login" class="nav-link login-btn">
-            로그인
-          </router-link>
-        </nav>
-      </div>
-    </header>
-
     <main class="main-content">
       <div class="content-wrapper">
-        <!-- 헤더 섹션 -->
         <div class="hero-section">
           <h2 class="hero-title">장르별 평점 TOP 10</h2>
           <p class="hero-subtitle">독자들이 가장 높게 평가한 책을 장르별로 만나보세요</p>
         </div>
 
-        <!-- 장르 탭 -->
-        <div class="genre-tabs">
-          <button
-            v-for="genre in genres"
-            :key="genre.id"
-            class="genre-tab"
-            :class="{ active: selectedGenre === genre.id }"
-            @click="selectedGenre = genre.id"
-          >
-            {{ genre.label }}
-          </button>
+        <!-- 로딩 -->
+        <div v-if="isLoading" class="loading-container">
+          <div class="spinner"></div>
         </div>
 
-        <!-- 준비 중 안내 -->
-        <div class="coming-soon">
-          <div class="coming-soon-icon">📚</div>
-          <p class="coming-soon-title">서비스 준비 중입니다</p>
-          <p class="coming-soon-desc">장르별 평점 TOP 10 기능을 곧 오픈할 예정입니다.<br>먼저 책을 검색하고 리뷰를 남겨보세요!</p>
+        <!-- 데이터 있음 -->
+        <template v-else-if="genres.length > 0">
+          <div class="genre-tabs">
+            <button
+              v-for="genre in genres"
+              :key="genre"
+              class="genre-tab"
+              :class="{ active: selectedGenre === genre }"
+              @click="selectedGenre = genre"
+            >
+              {{ genre }}
+            </button>
+          </div>
+
+          <ul class="rank-list">
+            <li
+              v-for="(book, index) in currentBooks"
+              :key="book.isbn13"
+              class="rank-item"
+            >
+              <span class="rank-number" :class="{ top3: index < 3 }">{{ index + 1 }}</span>
+              <img
+                v-if="book.cover"
+                :src="book.cover"
+                :alt="book.title"
+                class="book-cover"
+              />
+              <div v-else class="book-cover-placeholder">📖</div>
+              <div class="book-info">
+                <p class="book-title">{{ book.title }}</p>
+                <div class="book-meta">
+                  <span class="rating">★ {{ book.avgRating.toFixed(1) }}</span>
+                  <span class="review-count">리뷰 {{ book.reviewCount }}개</span>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </template>
+
+        <!-- 데이터 없음 -->
+        <div v-else class="empty-state">
+          <div class="empty-icon">📚</div>
+          <p class="empty-title">아직 랭킹 데이터가 없습니다</p>
+          <p class="empty-desc">리뷰가 쌓이면 장르별 TOP 10이 표시됩니다.<br>먼저 책을 검색하고 리뷰를 남겨보세요!</p>
           <router-link v-if="isLoggedIn" to="/book-search" class="action-btn">
             책 검색하러 가기
           </router-link>
@@ -63,29 +69,38 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient, { API_BASE_URL } from '../api/client';
 import axios from 'axios';
 
 const router = useRouter();
-const route = useRoute();
 const toast = useToast();
 
 const isLoggedIn = ref(false);
-const selectedGenre = ref('fiction');
+const isLoading = ref(true);
+const rankData = ref({});
+const selectedGenre = ref(null);
 
-const genres = [
-  { id: 'fiction', label: '소설' },
-  { id: 'nonfiction', label: '비문학' },
-  { id: 'selfdev', label: '자기계발' },
-  { id: 'science', label: '과학' },
-  { id: 'history', label: '역사' },
-  { id: 'essay', label: '에세이' },
-];
+const genres = computed(() => Object.keys(rankData.value));
+const currentBooks = computed(() => rankData.value[selectedGenre.value] ?? []);
 
-const isActiveRoute = (path) => route.path === path;
+const fetchRank = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/review/rank/genres`, {
+      withCredentials: true,
+    });
+    rankData.value = response.data;
+    if (genres.value.length > 0) {
+      selectedGenre.value = genres.value[0];
+    }
+  } catch {
+    rankData.value = {};
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 const checkLoginStatus = async () => {
   try {
@@ -98,19 +113,9 @@ const checkLoginStatus = async () => {
   }
 };
 
-const onLogout = async () => {
-  try {
-    await apiClient.get('/logout');
-    toast.success('로그아웃되었습니다.');
-    setTimeout(() => router.push({ name: 'login' }), 500);
-  } catch {
-    router.push({ name: 'login' });
-  }
-};
-
 onMounted(async () => {
   const loginAttempt = sessionStorage.getItem('login-attempt');
-  await checkLoginStatus();
+  await Promise.all([checkLoginStatus(), fetchRank()]);
   if (loginAttempt === 'true' && isLoggedIn.value) {
     sessionStorage.removeItem('login-attempt');
     toast.success('로그인되었습니다!');
@@ -124,65 +129,6 @@ onMounted(async () => {
   background-color: #f9fafb;
 }
 
-.app-header {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 16px 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-content {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.nav-links {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-}
-
-.nav-link {
-  font-size: 15px;
-  color: #6b7280;
-  text-decoration: none;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.15s ease;
-}
-
-.nav-link:hover {
-  color: #1f2937;
-}
-
-.nav-link.active {
-  color: #2563eb;
-  font-weight: 500;
-}
-
-.logout-btn:hover {
-  color: #ef4444;
-}
-
-.login-btn {
-  color: #2563eb;
-}
-
 .main-content {
   padding: 48px 24px;
 }
@@ -192,7 +138,6 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
-/* 히어로 섹션 */
 .hero-section {
   margin-bottom: 32px;
 }
@@ -211,12 +156,30 @@ onMounted(async () => {
   margin: 0;
 }
 
+/* 로딩 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 80px 0;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* 장르 탭 */
 .genre-tabs {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .genre-tab {
@@ -231,19 +194,101 @@ onMounted(async () => {
   transition: all 0.15s ease;
 }
 
-.genre-tab:hover {
-  border-color: #2563eb;
+.genre-tab:hover { border-color: #2563eb; color: #2563eb; }
+.genre-tab.active { background: #2563eb; border-color: #2563eb; color: white; }
+
+/* 랭킹 리스트 */
+.rank-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: box-shadow 0.15s ease;
+}
+
+.rank-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+.rank-number {
+  font-size: 18px;
+  font-weight: 700;
+  color: #9ca3af;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.rank-number.top3 {
   color: #2563eb;
 }
 
-.genre-tab.active {
-  background: #2563eb;
-  border-color: #2563eb;
-  color: white;
+.book-cover {
+  width: 52px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
-/* 준비 중 안내 */
-.coming-soon {
+.book-cover-placeholder {
+  width: 52px;
+  height: 72px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.book-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.book-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0 0 6px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.book-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.rating {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+.review-count {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* 빈 상태 */
+.empty-state {
   text-align: center;
   padding: 80px 24px;
   background: white;
@@ -251,19 +296,19 @@ onMounted(async () => {
   border-radius: 12px;
 }
 
-.coming-soon-icon {
+.empty-icon {
   font-size: 48px;
   margin-bottom: 20px;
 }
 
-.coming-soon-title {
+.empty-title {
   font-size: 20px;
   font-weight: 600;
   color: #1f2937;
   margin: 0 0 12px 0;
 }
 
-.coming-soon-desc {
+.empty-desc {
   font-size: 15px;
   color: #6b7280;
   line-height: 1.7;
@@ -282,30 +327,12 @@ onMounted(async () => {
   transition: background-color 0.15s ease;
 }
 
-.action-btn:hover {
-  background: #1d4ed8;
-}
+.action-btn:hover { background: #1d4ed8; }
 
 @media (max-width: 640px) {
-  .main-content {
-    padding: 32px 16px;
-  }
-
-  .hero-title {
-    font-size: 24px;
-  }
-
-  .genre-tabs {
-    gap: 6px;
-  }
-
-  .genre-tab {
-    padding: 6px 12px;
-    font-size: 13px;
-  }
-
-  .coming-soon {
-    padding: 60px 16px;
-  }
+  .main-content { padding: 32px 16px; }
+  .hero-title { font-size: 24px; }
+  .genre-tabs { gap: 6px; }
+  .genre-tab { padding: 6px 12px; font-size: 13px; }
 }
 </style>

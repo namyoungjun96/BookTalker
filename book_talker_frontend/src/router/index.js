@@ -6,6 +6,7 @@ import HomeView from '../views/HomeView.vue';
 import MyPageView from '../views/MyPageView.vue';
 import BookSearchView from '../views/BookSearchView.vue';
 import ReviewCreateView from '../views/ReviewCreateView.vue';
+import ReviewDetailView from '../views/ReviewDetailView.vue';
 import { useSelectionStore } from '../stores/selectionStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -35,6 +36,12 @@ const routes = [
     path: '/reviews/new',
     name: 'review-create',
     component: ReviewCreateView,
+  },
+  {
+    path: '/reviews/:id',
+    name: 'review-detail',
+    component: ReviewDetailView,
+    meta: { activeNav: '/mypage' },
   },
 ];
 

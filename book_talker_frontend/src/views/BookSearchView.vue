@@ -1,26 +1,5 @@
 <template>
   <div class="app-container">
-    <!-- 미니멀 헤더 -->
-    <header class="app-header">
-      <div class="header-content">
-        <h1 class="logo">BookTalker</h1>
-        <nav class="nav-links">
-          <router-link to="/" class="nav-link" :class="{ active: isActiveRoute('/') }">
-            홈
-          </router-link>
-          <router-link to="/mypage" class="nav-link" :class="{ active: isActiveRoute('/mypage') }">
-            마이페이지
-          </router-link>
-          <router-link to="/book-search" class="nav-link" :class="{ active: isActiveRoute('/book-search') }">
-            검색
-          </router-link>
-          <button type="button" @click="onLogout" class="nav-link logout-btn">
-            로그아웃
-          </button>
-        </nav>
-      </div>
-    </header>
-
     <!-- 메인 콘텐츠 (max-width: 720px) -->
     <main class="main-content">
       <div class="content-wrapper">
@@ -147,13 +126,12 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
 import { useSelectionStore } from '../stores/selectionStore';
 
 const router = useRouter();
-const route = useRoute();
 const selectionStore = useSelectionStore();
 const toast = useToast();
 
@@ -165,10 +143,6 @@ const currentPage = ref(1);
 const pageSize = 10;
 const canGoNext = ref(false);
 const totalResults = ref(0);
-
-const isActiveRoute = (path) => {
-  return route.path === path;
-};
 
 const goToReviewCreate = (book) => {
   if (!book) return;
@@ -245,20 +219,6 @@ const goToNextPage = async () => {
   await fetchBooks(target);
 };
 
-const onLogout = async () => {
-  try {
-    await apiClient.get('/logout');
-    toast.success('로그아웃되었습니다.');
-    setTimeout(() => {
-      router.push({ name: 'login' });
-    }, 500);
-  } catch (error) {
-    console.error('로그아웃 실패:', error);
-    // Interceptor가 에러 메시지를 이미 표시함
-    router.push({ name: 'login' });
-  }
-};
-
 const formatPrice = (price) => {
   if (!price) return '0';
   return new Intl.NumberFormat('ko-KR').format(price);
@@ -281,66 +241,6 @@ const handleImageError = (event) => {
 .app-container {
   min-height: 100vh;
   background-color: #f9fafb;
-}
-
-/* 헤더 (HomeView와 동일) */
-.app-header {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 16px 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-content {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.nav-links {
-  display: flex;
-  gap: 24px;
-  align-items: center;
-}
-
-.nav-link {
-  font-size: 15px;
-  color: #6b7280;
-  text-decoration: none;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.15s ease;
-}
-
-.nav-link:hover {
-  color: #1f2937;
-}
-
-.nav-link.active {
-  color: #2563eb;
-  font-weight: 500;
-}
-
-.logout-btn {
-  color: #9ca3af;
-}
-
-.logout-btn:hover {
-  color: #ef4444;
 }
 
 /* 메인 콘텐츠 */
