@@ -31,6 +31,7 @@
               v-for="(book, index) in currentBooks"
               :key="book.isbn13"
               class="rank-item"
+              @click="goToBookReviews(book)"
             >
               <span class="rank-number" :class="{ top3: index < 3 }">{{ index + 1 }}</span>
               <img
@@ -86,9 +87,17 @@ const selectedGenre = ref(null);
 const genres = computed(() => Object.keys(rankData.value));
 const currentBooks = computed(() => rankData.value[selectedGenre.value] ?? []);
 
+const goToBookReviews = (book) => {
+  router.push({
+    name: 'book-reviews',
+    params: { isbn13: book.isbn13 },
+    query: { title: book.title, cover: book.cover },
+  });
+};
+
 const fetchRank = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/review/rank/genres`, {
+    const response = await axios.get(`${API_BASE_URL}/api/rank/genres`, {
       withCredentials: true,
     });
     rankData.value = response.data;
@@ -218,8 +227,13 @@ onMounted(async () => {
   transition: box-shadow 0.15s ease;
 }
 
+.rank-item {
+  cursor: pointer;
+}
+
 .rank-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
 }
 
 .rank-number {

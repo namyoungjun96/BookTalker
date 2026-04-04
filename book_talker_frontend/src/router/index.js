@@ -7,6 +7,7 @@ import MyPageView from '../views/MyPageView.vue';
 import BookSearchView from '../views/BookSearchView.vue';
 import ReviewCreateView from '../views/ReviewCreateView.vue';
 import ReviewDetailView from '../views/ReviewDetailView.vue';
+import BookReviewsView from '../views/BookReviewsView.vue';
 import { useSelectionStore } from '../stores/selectionStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -42,6 +43,11 @@ const routes = [
     name: 'review-detail',
     component: ReviewDetailView,
     meta: { activeNav: '/mypage' },
+  },
+  {
+    path: '/books/:isbn13/reviews',
+    name: 'book-reviews',
+    component: BookReviewsView,
   },
 ];
 
@@ -99,7 +105,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // 로그인이 필요 없는 페이지 목록 (홈, 로그인 페이지)
-  const publicPages = ['login', 'home'];
+  const publicPages = ['login', 'home', 'book-reviews'];
   
   // 로그인 안 된 사용자가 보호된 페이지를 가려 하면 /login 으로
   if (!publicPages.includes(to.name) && !isAuthenticated) {
