@@ -4,9 +4,13 @@ import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.service.BookService;
 import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Review;
+import com.example.book_talker_backend.review.entity.dto.PublicReviewResponse;
 import com.example.book_talker_backend.review.entity.dto.ReviewDetailResponse;
 import com.example.book_talker_backend.review.entity.dto.ReviewListResponse;
 import com.example.book_talker_backend.review.entity.dto.ReviewRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -92,6 +96,12 @@ public class ReviewService {
             throw new AccessDeniedException("해당 독후감에 접근 권한이 없습니다.");
         }
         reviewRepository.delete(review);
+    }
+
+    public Page<PublicReviewResponse> getPublicReviews(String isbn13, int page) {
+        Pageable pageable = PageRequest.of(page, 10);
+        return reviewRepository.findPublicReviews(isbn13, pageable)
+                .map(PublicReviewResponse::from);
     }
 
     public ReviewDetailResponse getReviewDetail(Long reviewId, String email) {

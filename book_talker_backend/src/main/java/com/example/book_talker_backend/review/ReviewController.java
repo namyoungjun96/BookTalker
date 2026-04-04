@@ -1,11 +1,9 @@
 package com.example.book_talker_backend.review;
 
-import com.example.book_talker_backend.review.entity.Rank;
 import com.example.book_talker_backend.review.entity.dto.ReviewDetailResponse;
 import com.example.book_talker_backend.review.entity.dto.ReviewListResponse;
 import com.example.book_talker_backend.review.entity.dto.ReviewRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import com.example.book_talker_backend.review.service.RankService;
 import com.example.book_talker_backend.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +29,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 @RequestMapping("/api/review")
 public class ReviewController {
     private final ReviewService reviewService;
-    private final RankService rankService;
 
     @PostMapping
     public ResponseEntity<Void> insertReview(
@@ -80,14 +77,4 @@ public class ReviewController {
         return new ResponseEntity<>(reviewService.getReviewDetail(reviewId, email), HttpStatus.OK);
     }
 
-    @GetMapping("/rank")
-    public ResponseEntity<List<Rank>> getRank(@RequestParam(required = false) String genre) {
-        List<Rank> ranks = rankService.getRank(genre);
-        return new ResponseEntity<>(ranks, HttpStatus.OK);
-    }
-
-    @GetMapping("/rank/genres")
-    public ResponseEntity<Map<String, List<Rank>>> getRankByGenre() {
-        return new ResponseEntity<>(rankService.getRankByGenre(), HttpStatus.OK);
-    }
 }
