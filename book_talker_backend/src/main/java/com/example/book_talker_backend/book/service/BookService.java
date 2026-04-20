@@ -4,6 +4,7 @@ import com.example.book_talker_backend.book.dao.BookRepository;
 import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.entity.dto.AladinResponse;
 import com.example.book_talker_backend.book.entity.dto.AladinBook;
+import com.example.book_talker_backend.book.infrastructure.AladinBookMapper;
 import com.example.book_talker_backend.book.entity.dto.ListRequest;
 import com.example.book_talker_backend.book.entity.dto.SearchRequest;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +60,23 @@ public class BookService {
         return restTemplate.getForObject(url, AladinResponse.class);
     }
 
-    public AladinResponse getBookByIsbn13WithApi(String isbn13) {
+    public Book getBookByIsbn13WithApi(String isbn13) {
+        AladinResponse response = searchByIsbn13(isbn13);
+
+        if(response == null) {
+            throw new IllegalArgumentException("[BookTalker] Book with ISBN13 " + isbn13 + " does not exist");
+        }
+
+        List<AladinBook> aladinBooks = response.item();
+
+        if (aladinBooks.isEmpty()) {
+            throw new IllegalArgumentException("[Aladin] Book with ISBN13 " + isbn13 + " does not exist");
+        }
+
+        return AladinBookMapper.toDomain(aladinBooks.get(0));
+    }
+
+    public AladinResponse searchByIsbn13(String isbn13) {
         String url = UriComponentsBuilder
                 .fromUriString(ALADIN_BASE_URL + "/ItemLookUp.aspx")
                 .queryParam("TTBKey", "ttbehdgornltls1927001")
@@ -75,52 +92,27 @@ public class BookService {
         return restTemplate.getForObject(url, AladinResponse.class);
     }
 
-    public int cachedBook(AladinBook aladinBook) {
-        if (getBookByIsbn13(aladinBook.isbn13()) != null) {
-            return 1;
-        }
-
-        Book book = new Book();
-        book.setIsbn13(aladinBook.isbn13());
-        book.setTitle(aladinBook.title());
-        book.setAuthor(aladinBook.author());
-        book.setGenre(aladinBook.categoryName());
-        book.setPublisher(aladinBook.publisher());
-        book.setCover(aladinBook.cover());
-
-        return insertBook(book);
-    }
-
-    public int checkExistBook(String isbn13) {
-        log.debug("Checking existence of book with ISBN13: {}", isbn13);
-
-        if (bookRepository.existsById(isbn13)) {
-            return 1;
-        }
-        return 0;
-    }
-
     public Book getBookByIsbn13(String isbn13) {
         return bookRepository.findById(isbn13).orElse(null);
     }
 
-    public int insertAllBooks(List<Book> books) {
+    public void cacheBook(AladinBook aladinBook) {
         try {
-            bookRepository.saveAll(books);
-        } catch (IllegalArgumentException | OptimisticLockingFailureException e) {
-            return 0;
-        }
+            Book exsitingBook = getBookByIsbn13(aladinBook.isbn13());
 
-        return 1;
+            if (exsitingBook == null) {
+                insertBook(AladinBookMapper.toDomain(aladinBook));
+            }
+        } catch (IllegalArgumentException | OptimisticLockingFailureException e) {
+            log.warn("Failed to cache book, but continuing: {}", aladinBook.isbn13(), e);
+        }
     }
 
-    public int insertBook(Book book) {
-        try {
-            bookRepository.save(book);
-        } catch (IllegalArgumentException | OptimisticLockingFailureException e) {
-            return 0;
-        }
+    public List<Book> insertAllBooks(List<Book> books) {
+        return bookRepository.saveAll(books);
+    }
 
-        return 1;
+    public void insertBook(Book book) {
+        bookRepository.save(book);
     }
 }

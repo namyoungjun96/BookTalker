@@ -51,8 +51,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useToast } from 'vue-toastification';
 import { API_BASE_URL } from '../api/client';
+import axios from 'axios';
+
+const router = useRouter();
+const toast = useToast();
 
 const email = ref('');
 const password = ref('');
@@ -62,9 +68,41 @@ const onSubmit = () => {
 };
 
 const onNaverLogin = () => {
+  // 로그인 시도 플래그 저장
+  sessionStorage.setItem('login-attempt', 'true');
   window.location.href = `${API_BASE_URL}/oauth2/authorization/naver`;
-  console.log('네이버 로그인 시도');
 };
+
+// 로그인 성공 체크
+const checkLoginSuccess = async () => {
+  const loginAttempt = sessionStorage.getItem('login-attempt');
+  
+  if (loginAttempt === 'true') {
+    try {
+      // 세션 확인
+      const response = await axios.get(`${API_BASE_URL}/api/auth/session`, {
+        withCredentials: true,
+      });
+      
+      if (response.status === 200) {
+        // 로그인 성공!
+        sessionStorage.removeItem('login-attempt');
+        toast.success('로그인되었습니다!');
+        
+        setTimeout(() => {
+          router.push({ name: 'home' });
+        }, 500);
+      }
+    } catch (error) {
+      // 아직 로그인 안 됨
+      sessionStorage.removeItem('login-attempt');
+    }
+  }
+};
+
+onMounted(() => {
+  checkLoginSuccess();
+});
 </script>
 
 <style scoped>
