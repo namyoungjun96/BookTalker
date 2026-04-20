@@ -40,6 +40,16 @@ public class ReviewController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PostMapping("/next-reading")
+    public ResponseEntity<Void> insertNextReading(
+            @RequestBody ReviewRequest request,
+            @AuthenticationPrincipal OAuth2User oauth2User) {
+        Map<String, Object> response = oauth2User.getAttribute("response");
+        String email = (String) response.get("email");
+        reviewService.insertNextReading(request, email);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
     @PutMapping
     public ResponseEntity<Void> updateReview(
             @RequestBody ReviewRequest request,

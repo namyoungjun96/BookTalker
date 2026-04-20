@@ -9,7 +9,12 @@ import java.time.LocalDateTime;
 import org.springframework.format.annotation.DateTimeFormat;
 
 @Entity
-@Table
+@Table(
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_review_writer_isbn13_reading_count",
+        columnNames = {"writer", "isbn13", "reading_count"}
+    )
+)
 @Setter
 @Getter
 public class Review {
@@ -28,4 +33,6 @@ public class Review {
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime modDate;
     private Boolean isPublic; // content 공개 여부, 기본 false
+    @Column(name = "reading_count", nullable = false, columnDefinition = "integer default 1")
+    private Integer readingCount; // 회독 수, 1부터 시작
 }
