@@ -1,0 +1,3 @@
+[submodule "external/BookTalkerChat"]
+	path = external/BookTalkerChat
+	url = https://github.com/goemgo/BookTalkerChat.git
