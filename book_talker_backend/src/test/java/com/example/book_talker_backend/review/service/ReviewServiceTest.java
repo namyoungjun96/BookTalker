@@ -159,7 +159,7 @@ class ReviewServiceTest {
             given(bookService.getBookByIsbn13(ISBN13)).willReturn(createBook());
 
             // isPublic=true로 요청해도
-            ReviewRequest requestWithPublic = new ReviewRequest(null, ISBN13, WRITER, "꿀잼!", "재밌었음", 3, true);
+            ReviewRequest requestWithPublic = new ReviewRequest(null, ISBN13, "꿀잼!", "재밌었음", 3, true);
 
             ArgumentCaptor<Review> captor = ArgumentCaptor.forClass(Review.class);
             reviewService.insertNextReading(requestWithPublic, WRITER);
@@ -195,7 +195,7 @@ class ReviewServiceTest {
 
             given(reviewRepository.findById(1L)).willReturn(Optional.of(existing));
 
-            ReviewRequest request = new ReviewRequest(1L, ISBN13, WRITER, "수정 요약", "수정 본문", 4, true);
+            ReviewRequest request = new ReviewRequest(1L, ISBN13, "수정 요약", "수정 본문", 4, true);
             reviewService.updateReview(request, WRITER);
 
             assertThat(existing.getHeadline()).isEqualTo("수정 요약");
@@ -213,7 +213,7 @@ class ReviewServiceTest {
             given(reviewRepository.findById(2L)).willReturn(Optional.of(existing));
 
             // isPublic=true로 요청해도
-            ReviewRequest request = new ReviewRequest(2L, ISBN13, WRITER, "수정 요약", "수정 본문", 4, true);
+            ReviewRequest request = new ReviewRequest(2L, ISBN13, "수정 요약", "수정 본문", 4, true);
             reviewService.updateReview(request, WRITER);
 
             assertThat(existing.getIsPublic()).isFalse();
@@ -224,7 +224,7 @@ class ReviewServiceTest {
         void 실패_독후감_없음() {
             given(reviewRepository.findById(99L)).willReturn(Optional.empty());
 
-            ReviewRequest request = new ReviewRequest(99L, ISBN13, WRITER, "요약", "본문", 3, false);
+            ReviewRequest request = new ReviewRequest(99L, ISBN13, "요약", "본문", 3, false);
             assertThatThrownBy(() -> reviewService.updateReview(request, WRITER))
                     .isInstanceOf(IllegalArgumentException.class);
         }
@@ -235,7 +235,7 @@ class ReviewServiceTest {
             Review existing = createReviewInDb(1L, WRITER, 1);
             given(reviewRepository.findById(1L)).willReturn(Optional.of(existing));
 
-            ReviewRequest request = new ReviewRequest(1L, ISBN13, OTHER_WRITER, "요약", "본문", 3, false);
+            ReviewRequest request = new ReviewRequest(1L, ISBN13, "요약", "본문", 3, false);
             assertThatThrownBy(() -> reviewService.updateReview(request, OTHER_WRITER))
                     .isInstanceOf(AccessDeniedException.class);
         }
@@ -243,7 +243,7 @@ class ReviewServiceTest {
         @Test
         @DisplayName("실패 - reviewId 없이 요청")
         void 실패_reviewId_없음() {
-            ReviewRequest request = new ReviewRequest(null, ISBN13, WRITER, "요약", "본문", 3, false);
+            ReviewRequest request = new ReviewRequest(null, ISBN13, "요약", "본문", 3, false);
             assertThatThrownBy(() -> reviewService.updateReview(request, WRITER))
                     .isInstanceOf(IllegalArgumentException.class);
         }
@@ -293,7 +293,7 @@ class ReviewServiceTest {
     // 헬퍼
     // ─────────────────────────────────────────────
     private ReviewRequest createInsertRequest() {
-        return new ReviewRequest(null, ISBN13, WRITER, "꿀잼!", "재밌었음", 3, true);
+        return new ReviewRequest(null, ISBN13, "꿀잼!", "재밌었음", 3, true);
     }
 
     private Book createBook() {

@@ -118,9 +118,10 @@
             >
               취소
             </button>
+            <p v-if="!currentUser" class="auth-warning">로그인 상태를 확인할 수 없습니다. 새로고침 후 다시 시도해주세요.</p>
             <button
               type="submit"
-              :disabled="!activeBook || !reviewHeadline.trim() || !reviewContent.trim() || isSubmitting"
+              :disabled="!activeBook || !currentUser || !reviewHeadline.trim() || !reviewContent.trim() || isSubmitting"
               class="action-button primary"
             >
               {{ isSubmitting ? '등록 중...' : '등록하기' }}
@@ -273,7 +274,6 @@ const onSubmitReview = async () => {
 
       const reviewData = {
         isbn13: selectedBook.value.isbn13 || selectedBook.value.isbn || '',
-        writer: currentUser.value?.email || 'anonymous',
         headline: reviewHeadline.value.trim(),
         content: reviewContent.value.trim(),
         rating: rating.value,
@@ -634,11 +634,27 @@ onMounted(async () => {
 /* 버튼 영역 */
 .form-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
   padding-top: 24px;
   border-top: 1px solid #f3f4f6;
   margin-top: 32px;
+}
+
+.form-actions > .action-button {
+  align-self: flex-end;
+}
+
+.auth-warning {
+  font-size: 13px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 8px 12px;
+  width: 100%;
+  text-align: center;
 }
 
 .action-button {
