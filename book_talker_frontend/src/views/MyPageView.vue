@@ -41,18 +41,29 @@
                   <span class="date">{{ formatDate(review.regDate) }}</span>
                 </div>
                 <p class="headline-text">{{ review.headline || '-' }}</p>
+                <span v-if="review.readingCount" class="reading-badge">{{ review.readingCount }}회독</span>
               </div>
             </div>
 
             <div class="review-meta">
               <span class="rating">⭐ {{ review.rating || '-' }}</span>
-              <button
-                class="delete-btn"
-                @click.stop="onDeleteReview(review.id)"
-                :disabled="deletingId === review.id"
-              >
-                {{ deletingId === review.id ? '삭제 중...' : '🗑 삭제하기' }}
-              </button>
+              <div class="meta-actions">
+                <button
+                  class="reread-btn"
+                  @click.stop="onNextReading(review)"
+                  :disabled="nextReadingId === review.id"
+                  title="이 책을 다시 읽고 새 독후감 작성"
+                >
+                  {{ nextReadingId === review.id ? '이동 중...' : '한 번 더 봤어요' }}
+                </button>
+                <button
+                  class="delete-btn"
+                  @click.stop="onDeleteReview(review.id)"
+                  :disabled="deletingId === review.id"
+                >
+                  {{ deletingId === review.id ? '삭제 중...' : '🗑 삭제하기' }}
+                </button>
+              </div>
             </div>
           </article>
         </div>
@@ -75,6 +86,7 @@ const reviews = ref([]);
 const isLoading = ref(false);
 const isLoggedIn = ref(false);
 const deletingId = ref(null);
+const nextReadingId = ref(null);
 
 const checkLoginStatus = async () => {
   try {
@@ -134,6 +146,19 @@ const onDeleteReview = async (reviewId) => {
   } finally {
     deletingId.value = null;
   }
+};
+
+const onNextReading = (review) => {
+  nextReadingId.value = review.id;
+  router.push({
+    name: 'review-create',
+    query: {
+      mode: 'next-reading',
+      isbn13: review.bookIsbn13,
+      title: review.bookTitle,
+      cover: review.bookCover || '',
+    },
+  });
 };
 
 const handleImageError = (event) => {
@@ -316,10 +341,21 @@ onMounted(async () => {
 .headline-text {
   font-size: 14px;
   color: #6b7280;
-  margin: 0;
+  margin: 0 0 6px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.reading-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 2px 10px;
 }
 
 .review-meta {
@@ -335,6 +371,34 @@ onMounted(async () => {
   font-size: 14px;
   color: #2563eb;
   font-weight: 500;
+}
+
+.meta-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.reread-btn {
+  font-size: 13px;
+  font-weight: 500;
+  color: #059669;
+  background: none;
+  border: 1px solid #6ee7b7;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 7px 14px;
+  transition: all 0.15s ease;
+}
+
+.reread-btn:hover:not(:disabled) {
+  background: #ecfdf5;
+  border-color: #059669;
+}
+
+.reread-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .delete-btn {

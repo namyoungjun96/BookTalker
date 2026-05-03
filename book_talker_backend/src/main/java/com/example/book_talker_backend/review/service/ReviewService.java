@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,12 +32,37 @@ public class ReviewService {
 
     @Transactional
     public void insertReview(ReviewRequest request, String writer) {
-        log.debug("Inserting review for book with ISBN13: {}", request.isbn13());
+        log.debug("Inserting 1st reading review for book with ISBN13: {}", request.isbn13());
+
+        if (reviewRepository.existsByWriterAndBookIsbn13AndReadingCount(writer, request.isbn13(), 1)) {
+            throw new DataIntegrityViolationException("이미 해당 책의 1회독 독후감이 존재합니다.");
+        }
 
         Book book = getOrFetchBook(request.isbn13());
         Review review = request.to();
         review.setWriter(writer);
         review.setBook(book);
+        review.setReadingCount(1);
+
+        reviewRepository.save(review);
+    }
+
+    @Transactional
+    public void insertNextReading(ReviewRequest request, String writer) {
+        log.debug("Inserting next reading review for book with ISBN13: {}", request.isbn13());
+
+        Integer maxReadingCount = reviewRepository.findMaxReadingCount(writer, request.isbn13());
+        if (maxReadingCount == null) {
+            throw new IllegalArgumentException("1회독 독후감이 없으면 다음 회독을 작성할 수 없습니다.");
+        }
+
+        Book book = getOrFetchBook(request.isbn13());
+        Review review = request.to();
+        review.setWriter(writer);
+        review.setBook(book);
+        review.setReadingCount(maxReadingCount + 1);
+        // 2회독 이상은 isPublic 강제 false
+        review.setIsPublic(false);
 
         reviewRepository.save(review);
     }
@@ -76,7 +102,14 @@ public class ReviewService {
         review.setHeadline(request.headline());
         review.setContent(request.content());
         review.setRating(request.rating());
-        review.setIsPublic(request.isPublic() != null ? request.isPublic() : review.getIsPublic());
+
+        // 2회독 이상은 isPublic 변경 불가 (강제 false 유지)
+        if (review.getReadingCount() != null && review.getReadingCount() > 1) {
+            review.setIsPublic(false);
+        } else {
+            review.setIsPublic(request.isPublic() != null ? request.isPublic() : review.getIsPublic());
+        }
+
         review.setModDate(LocalDateTime.now());
     }
 

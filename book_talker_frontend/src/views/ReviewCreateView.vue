@@ -3,23 +3,23 @@
     <!-- 메인 콘텐츠 (브런치 글쓰기 스타일) -->
     <main class="main-content">
       <div class="content-wrapper">
-        <h2 class="page-title">독후감 작성</h2>
+        <h2 class="page-title">{{ isNextReading ? `${nextReadingCount}회독 독후감 작성` : '독후감 작성' }}</h2>
 
         <!-- 선택된 책 정보 카드 -->
-        <div class="info-card" v-if="selectedBook">
+        <div class="info-card" v-if="activeBook">
           <div class="book-preview">
             <div class="book-cover-small">
               <img
-                v-if="selectedBook.cover"
-                :src="selectedBook.cover"
-                :alt="selectedBook.title"
+                v-if="activeBook.cover"
+                :src="activeBook.cover"
+                :alt="activeBook.title"
               />
               <div v-else class="cover-placeholder-small">📖</div>
             </div>
             <div class="book-preview-info">
-              <h3 class="book-preview-title">{{ selectedBook.title }}</h3>
-              <p class="book-preview-meta">
-                {{ selectedBook.author || '-' }} · {{ selectedBook.publisher || '-' }}
+              <h3 class="book-preview-title">{{ activeBook.title }}</h3>
+              <p v-if="!isNextReading" class="book-preview-meta">
+                {{ activeBook.author || '-' }} · {{ activeBook.publisher || '-' }}
               </p>
             </div>
           </div>
@@ -68,10 +68,20 @@
 
           <!-- 독후감 내용 -->
           <div class="form-section">
-            <label class="form-label">
-              독후감 본문
-              <span class="form-label-desc">나만 보기 기본값</span>
-            </label>
+            <div class="form-label-row">
+              <label class="form-label">독후감 본문</label>
+              <template v-if="!isNextReading">
+                <label class="toggle-label">
+                  <input type="checkbox" v-model="isPublic" class="toggle-input" />
+                  <span class="visibility-badge" :class="isPublic ? 'public' : 'private'">
+                    {{ isPublic ? '공개' : '나만 보기' }}
+                  </span>
+                </label>
+              </template>
+              <template v-else>
+                <span class="visibility-badge private locked">나만 보기 (2회독+는 비공개)</span>
+              </template>
+            </div>
             <textarea
               v-model="reviewContent"
               rows="12"
@@ -110,7 +120,7 @@
             </button>
             <button
               type="submit"
-              :disabled="!selectedBook || !reviewHeadline.trim() || !reviewContent.trim() || isSubmitting"
+              :disabled="!activeBook || !reviewHeadline.trim() || !reviewContent.trim() || isSubmitting"
               class="action-button primary"
             >
               {{ isSubmitting ? '등록 중...' : '등록하기' }}
@@ -123,19 +133,39 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
 import { useSelectionStore } from '../stores/selectionStore';
 
 const router = useRouter();
+const route = useRoute();
 const { selectedBook, currentUser, setCurrentUser } = useSelectionStore();
 const toast = useToast();
+
+// next-reading 모드 판별
+const isNextReading = computed(() => route.query.mode === 'next-reading');
+const nextReadingCount = ref('?'); // 서버에서 받아올 수도 있지만, 표시용으로만 사용
+
+// next-reading 모드일 때 query params로 책 정보 구성
+const activeBook = computed(() => {
+  if (isNextReading.value) {
+    return {
+      isbn13: route.query.isbn13,
+      title: route.query.title || route.query.isbn13,
+      cover: route.query.cover || null,
+      author: null,
+      publisher: null,
+    };
+  }
+  return selectedBook.value;
+});
 
 const reviewHeadline = ref('');
 const reviewContent = ref('');
 const rating = ref(5);
+const isPublic = ref(false);
 const isCheckingBook = ref(false);
 const bookExists = ref(null);
 const bookAddError = ref(null);
@@ -143,7 +173,11 @@ const isLoadingUser = ref(false);
 const isSubmitting = ref(false);
 
 const goBackToSearch = () => {
-  router.push({ name: 'book-search' });
+  if (isNextReading.value) {
+    router.push({ name: 'mypage' });
+  } else {
+    router.push({ name: 'book-search' });
+  }
 };
 
 const checkBookInBackend = async () => {
@@ -197,56 +231,84 @@ const fetchCurrentUser = async () => {
 };
 
 const onSubmitReview = async () => {
-  if (!selectedBook.value || !reviewHeadline.value.trim() || !reviewContent.value.trim() || isSubmitting.value) return;
+  if (!activeBook.value || !reviewHeadline.value.trim() || !reviewContent.value.trim() || isSubmitting.value) return;
 
   isSubmitting.value = true;
 
   try {
-    if (bookExists.value === false) {
-      const bookData = {
-        title: selectedBook.value.title,
-        author: selectedBook.value.author || '',
-        isbn: selectedBook.value.isbn || selectedBook.value.isbn13 || '',
-        isbn13: selectedBook.value.isbn13 || selectedBook.value.isbn || '',
-        cover: selectedBook.value.cover || '',
-        categoryName: selectedBook.value.categoryName || '',
-        publisher: selectedBook.value.publisher || '',
+    if (isNextReading.value) {
+      // 회독 독후감: next-reading 엔드포인트, isPublic 강제 false
+      const reviewData = {
+        isbn13: activeBook.value.isbn13,
+        headline: reviewHeadline.value.trim(),
+        content: reviewContent.value.trim(),
+        rating: rating.value,
+        isPublic: false,
       };
-
-      try {
-        await apiClient.post('/api/book', bookData);
-        bookExists.value = true;
-      } catch (error) {
-        if (error.response?.status !== 409) {
-          throw new Error('책 추가 실패: ' + (error.response?.data?.message || error.message));
+      await apiClient.post('/api/review/next-reading', reviewData);
+      toast.success('회독 독후감이 등록되었습니다!');
+      router.push({ name: 'mypage' });
+    } else {
+      // 1회독: 기존 플로우
+      if (bookExists.value === false) {
+        const bookData = {
+          title: selectedBook.value.title,
+          author: selectedBook.value.author || '',
+          isbn: selectedBook.value.isbn || selectedBook.value.isbn13 || '',
+          isbn13: selectedBook.value.isbn13 || selectedBook.value.isbn || '',
+          cover: selectedBook.value.cover || '',
+          categoryName: selectedBook.value.categoryName || '',
+          publisher: selectedBook.value.publisher || '',
+        };
+        try {
+          await apiClient.post('/api/book', bookData);
+          bookExists.value = true;
+        } catch (error) {
+          if (error.response?.status !== 409) {
+            throw new Error('책 추가 실패: ' + (error.response?.data?.message || error.message));
+          }
+          bookExists.value = true;
         }
-        bookExists.value = true;
       }
+
+      const reviewData = {
+        isbn13: selectedBook.value.isbn13 || selectedBook.value.isbn || '',
+        writer: currentUser.value?.email || 'anonymous',
+        headline: reviewHeadline.value.trim(),
+        content: reviewContent.value.trim(),
+        rating: rating.value,
+        isPublic: isPublic.value,
+      };
+      await apiClient.post('/api/review', reviewData);
+      toast.success('독후감이 성공적으로 등록되었습니다!');
+      setTimeout(() => {
+        router.push({ name: 'book-search' });
+      }, 500);
     }
-
-    const reviewData = {
-      isbn13: selectedBook.value.isbn13 || selectedBook.value.isbn || '',
-      writer: currentUser.value?.email || 'anonymous',
-      headline: reviewHeadline.value.trim(),
-      content: reviewContent.value.trim(),
-      rating: rating.value,
-    };
-
-    await apiClient.post('/api/review', reviewData);
-
-    toast.success('독후감이 성공적으로 등록되었습니다!');
-    setTimeout(() => {
-      router.push({ name: 'book-search' });
-    }, 500);
   } catch (error) {
-    console.error('독후감 등록 실패:', error);
-    toast.error('독후감 등록 중 오류가 발생했습니다: ' + (error.response?.data?.message || error.message));
+    if (error.response?.status === 409) {
+      toast.error('이미 이 책의 독후감이 존재합니다.');
+    } else if (error.response?.status === 400) {
+      toast.error('선행 회독 독후감이 없습니다. 1회독부터 작성해주세요.');
+    } else {
+      toast.error('독후감 등록 중 오류가 발생했습니다.');
+    }
   } finally {
     isSubmitting.value = false;
   }
 };
 
 onMounted(async () => {
+  if (isNextReading.value) {
+    if (!route.query.isbn13) {
+      router.push({ name: 'mypage' });
+      return;
+    }
+    // next-reading 모드: 사용자 정보만 로드
+    await fetchCurrentUser();
+    return;
+  }
+
   if (!selectedBook.value) {
     router.push({ name: 'book-search' });
     return;
@@ -399,6 +461,37 @@ onMounted(async () => {
 }
 
 /* 독후감 폼 (브런치 스타일) */
+.form-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.form-label-row .form-label {
+  margin-bottom: 0;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.toggle-input { display: none; }
+
+.visibility-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.visibility-badge.public { background: #dbeafe; color: #2563eb; }
+.visibility-badge.private { background: #f3f4f6; color: #6b7280; }
+.visibility-badge.locked { cursor: default; }
+
 .form-label-desc {
   font-size: 12px;
   font-weight: 400;

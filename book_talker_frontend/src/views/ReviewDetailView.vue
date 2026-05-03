@@ -35,6 +35,7 @@
             </div>
             <div class="book-info">
               <h2 class="book-title">{{ review.bookTitle || '-' }}</h2>
+              <span v-if="review.readingCount" class="reading-badge">{{ review.readingCount }}회독</span>
             </div>
           </div>
 
@@ -93,9 +94,14 @@
               <div class="content-header">
                 <label class="section-label">
                   독후감 본문
-                  <span class="label-desc">공개 여부를 설정하세요</span>
+                  <span class="label-desc">
+                    {{ review.readingCount > 1 ? '2회독+는 공개 불가' : '공개 여부를 설정하세요' }}
+                  </span>
                 </label>
-                <label class="toggle-label">
+                <template v-if="review.readingCount > 1">
+                  <span class="visibility-badge private locked">나만 보기</span>
+                </template>
+                <label v-else class="toggle-label">
                   <input type="checkbox" v-model="editForm.isPublic" class="toggle-input" />
                   <span class="visibility-badge" :class="editForm.isPublic ? 'public' : 'private'">
                     {{ editForm.isPublic ? '공개' : '나만 보기' }}
@@ -387,8 +393,19 @@ onMounted(fetchDetail);
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
-  margin: 0;
+  margin: 0 0 6px 0;
   line-height: 1.4;
+}
+
+.reading-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 2px 10px;
 }
 
 /* 공통 카드 */
@@ -449,6 +466,7 @@ onMounted(fetchDetail);
 
 .visibility-badge.public { background: #dbeafe; color: #2563eb; }
 .visibility-badge.private { background: #f3f4f6; color: #6b7280; }
+.visibility-badge.locked { cursor: default; }
 
 .meta-section {
   display: flex;
