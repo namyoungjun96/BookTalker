@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 public record ReviewRequest (
         Long reviewId,   // update 시 필수, insert 시 null
         String isbn13,
-        String writer,
         String headline,
         String content,
         Integer rating,
@@ -15,7 +14,7 @@ public record ReviewRequest (
 ) {
     public Review to() {
         Review review = new Review();
-        review.setWriter(this.writer);
+        // writer는 서비스 레이어에서 @AuthenticationPrincipal OAuth2User로부터 설정
         review.setHeadline(this.headline);
         review.setContent(this.content);
         review.setRating(this.rating);

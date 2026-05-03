@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -27,13 +26,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnknownEnum(UnknownEnumValueException e) {
         log.warn("Unknown enum value: {}", e.getMessage());
         return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
-    }
-
-    /** 403 — 리소스 소유자 불일치 */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException e) {
-        log.warn("Access denied: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(e.getMessage()));
     }
 
     /** 409 — 중복 리소스 (1회독 이미 존재 등) */

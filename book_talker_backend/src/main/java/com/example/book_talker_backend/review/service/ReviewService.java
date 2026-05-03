@@ -64,7 +64,12 @@ public class ReviewService {
         // 2회독 이상은 isPublic 강제 false
         review.setIsPublic(false);
 
-        reviewRepository.save(review);
+        try {
+            reviewRepository.save(review);
+        } catch (DataIntegrityViolationException e) {
+            // 동시 요청으로 같은 readingCount가 충돌한 경우 사용자 친화적 메시지로 변환
+            throw new DataIntegrityViolationException("이미 동일한 회독 독후감이 존재합니다. 잠시 후 다시 시도해주세요.");
+        }
     }
 
     private Book getOrFetchBook(String isbn13) {
