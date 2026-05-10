@@ -9,7 +9,17 @@ export default defineConfig(({ mode }) => {
   const apiBaseUrl = env.VITE_API_BASE_URL || 'http://localhost:8010'
   const appUrl = env.VITE_APP_URL || 'http://localhost:5173'
 
+  const backendUrl = 'http://localhost:8010'
+
   return {
+    server: {
+      proxy: {
+        '^/(book|rank|review|user|auth|login|logout)': {
+          target: backendUrl,
+          changeOrigin: true,
+        },
+      },
+    },
     plugins: [
       vue(),
       VitePWA({
