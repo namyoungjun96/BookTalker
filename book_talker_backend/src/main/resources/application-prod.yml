@@ -44,3 +44,7 @@ spring:
 
 base-url:
   frontend: http://161.118.143.129
+
+app:
+  discord:
+    webhook-url: ${DISCORD_WEBHOOK_URL:}
