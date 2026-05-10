@@ -22,7 +22,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/book")
+@RequestMapping("/book")
 public class BookController {
     private final BookService bookService;
 

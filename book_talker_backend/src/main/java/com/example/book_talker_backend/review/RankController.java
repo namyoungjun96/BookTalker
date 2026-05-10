@@ -18,7 +18,7 @@ import java.util.Map;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/rank")
+@RequestMapping("/rank")
 public class RankController {
     private final RankService rankService;
     private final ReviewService reviewService;

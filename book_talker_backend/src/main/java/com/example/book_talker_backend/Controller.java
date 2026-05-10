@@ -24,7 +24,7 @@ public class Controller {
         return attributes.toString();
     }
 
-    @GetMapping("/api/user/me")
+    @GetMapping("/user/me")
     public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal OAuth2User oauth2User) {
         if (oauth2User == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -32,7 +32,7 @@ public class Controller {
         return ResponseEntity.ok(UserResponse.from(oauth2User));
     }
 
-    @GetMapping(value = "/api/auth/session")
+    @GetMapping(value = "/auth/session")
     public ResponseEntity<Void> checkSession(@AuthenticationPrincipal OAuth2User authentication) {
         log.debug("Auth info: {}", authentication);
 
