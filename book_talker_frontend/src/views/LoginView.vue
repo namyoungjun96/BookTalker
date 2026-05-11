@@ -80,7 +80,7 @@ const checkLoginSuccess = async () => {
   if (loginAttempt === 'true') {
     try {
       // 세션 확인
-      const response = await axios.get(`${API_BASE_URL}/api/auth/session`, {
+      const response = await axios.get(`${API_BASE_URL}/auth/session`, {
         withCredentials: true,
       });
       

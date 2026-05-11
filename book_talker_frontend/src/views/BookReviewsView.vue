@@ -84,7 +84,7 @@ const totalPages = ref(1);
 const fetchReviews = async () => {
   isLoading.value = true;
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/rank/reviews`, {
+    const response = await axios.get(`${API_BASE_URL}/rank/reviews`, {
       params: { isbn13, page: page.value },
       withCredentials: true,
     });

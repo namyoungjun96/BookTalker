@@ -198,7 +198,7 @@ const checkBookInBackend = async () => {
     };
 
     try {
-      await apiClient.post('/api/book', bookData);
+      await apiClient.post('/book', bookData);
       bookExists.value = false;
     } catch (error) {
       if (error.response?.status === 409 || error.response?.status === 400) {
@@ -221,7 +221,7 @@ const fetchCurrentUser = async () => {
 
   isLoadingUser.value = true;
   try {
-    const response = await apiClient.get('/api/user/me');
+    const response = await apiClient.get('/user/me');
     setCurrentUser(response.data);
   } catch (error) {
     console.error('로그인 사용자 정보 조회 실패:', error);
@@ -245,7 +245,7 @@ const onSubmitReview = async () => {
         rating: rating.value,
         isPublic: false,
       };
-      await apiClient.post('/api/review/next-reading', reviewData);
+      await apiClient.post('/review/next-reading', reviewData);
       toast.success('회독 독후감이 등록되었습니다!');
       router.push({ name: 'mypage' });
     } else {
@@ -261,7 +261,7 @@ const onSubmitReview = async () => {
           publisher: selectedBook.value.publisher || '',
         };
         try {
-          await apiClient.post('/api/book', bookData);
+          await apiClient.post('/book', bookData);
           bookExists.value = true;
         } catch (error) {
           if (error.response?.status !== 409) {
@@ -279,7 +279,7 @@ const onSubmitReview = async () => {
         rating: rating.value,
         isPublic: isPublic.value,
       };
-      await apiClient.post('/api/review', reviewData);
+      await apiClient.post('/review', reviewData);
       toast.success('독후감이 성공적으로 등록되었습니다!');
       setTimeout(() => {
         router.push({ name: 'book-search' });

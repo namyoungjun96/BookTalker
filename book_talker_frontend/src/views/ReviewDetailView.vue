@@ -182,7 +182,7 @@ const editForm = ref({
 
 const fetchDetail = async () => {
   try {
-    const response = await apiClient.get('/api/review/detail', {
+    const response = await apiClient.get('/review/detail', {
       params: { reviewId: route.params.id },
     });
     review.value = response.data;
@@ -215,7 +215,7 @@ const onSubmitEdit = async () => {
   if (isSubmitting.value) return;
   isSubmitting.value = true;
   try {
-    await apiClient.put('/api/review', {
+    await apiClient.put('/review', {
       reviewId: review.value.id,
       headline: editForm.value.headline.trim(),
       content: editForm.value.content.trim(),

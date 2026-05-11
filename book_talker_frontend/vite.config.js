@@ -6,7 +6,6 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig(({ mode }) => {
   // 환경 변수 로드
   const env = loadEnv(mode, process.cwd(), '')
-  const apiBaseUrl = env.VITE_API_BASE_URL || 'http://localhost:8010'
   const appUrl = env.VITE_APP_URL || 'http://localhost:5173'
 
   const backendUrl = 'http://localhost:8010'
