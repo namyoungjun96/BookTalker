@@ -58,6 +58,8 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           // Service Worker 캐싱 전략
+          navigateFallback: 'index.html',
+          navigateFallbackDenylist: [/^\/api\//],  // 이거 추가!
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/cover\.aladin\.co\.kr\/.*/i,
