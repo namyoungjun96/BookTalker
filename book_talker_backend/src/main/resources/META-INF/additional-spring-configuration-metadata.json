@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "app.discord.webhook-url",
+      "type": "java.lang.String",
+      "description": "Discord webhook URL for ERROR level log notifications (prod only)."
+    }
+  ]
+}
