@@ -44,3 +44,7 @@ spring:
 
 base-url:
   frontend: https://booktalker.co.kr/
+
+app:
+  discord:
+    webhook-url: ${DISCORD_WEBHOOK_URL:}
