@@ -26,7 +26,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 @Slf4j
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/review")
+@RequestMapping("/review")
 public class ReviewController {
     private final ReviewService reviewService;
 

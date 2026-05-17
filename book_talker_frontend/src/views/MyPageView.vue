@@ -90,7 +90,7 @@ const nextReadingId = ref(null);
 
 const checkLoginStatus = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/auth/session`, {
+    const response = await axios.get(`${API_BASE_URL}/auth/session`, {
       withCredentials: true,
     });
     isLoggedIn.value = response.status === 200;
@@ -102,7 +102,7 @@ const checkLoginStatus = async () => {
 const fetchReviews = async () => {
   isLoading.value = true;
   try {
-    const response = await apiClient.get('/api/review/list', {
+    const response = await apiClient.get('/review/list', {
       skipErrorCodes: [404],
     });
     reviews.value = response.data || [];
@@ -134,7 +134,7 @@ const onDeleteReview = async (reviewId) => {
   if (!confirm('독후감을 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
   deletingId.value = reviewId;
   try {
-    await apiClient.delete('/api/review', { params: { reviewId } });
+    await apiClient.delete('/review', { params: { reviewId } });
     reviews.value = reviews.value.filter((r) => r.id !== reviewId);
     toast.success('독후감이 삭제되었습니다.');
   } catch (e) {

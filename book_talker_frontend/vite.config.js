@@ -6,10 +6,19 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig(({ mode }) => {
   // 환경 변수 로드
   const env = loadEnv(mode, process.cwd(), '')
-  const apiBaseUrl = env.VITE_API_BASE_URL || 'http://localhost:8010'
   const appUrl = env.VITE_APP_URL || 'http://localhost:5173'
 
+  const backendUrl = 'http://localhost:8010'
+
   return {
+    server: {
+      proxy: {
+        '^/(book|rank|review|user|auth|login|logout)': {
+          target: backendUrl,
+          changeOrigin: true,
+        },
+      },
+    },
     plugins: [
       vue(),
       VitePWA({
@@ -49,6 +58,8 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           // Service Worker 캐싱 전략
+          navigateFallback: 'index.html',
+          navigateFallbackDenylist: [/^\/api\//],  // 이거 추가!
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/cover\.aladin\.co\.kr\/.*/i,

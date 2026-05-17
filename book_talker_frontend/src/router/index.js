@@ -61,7 +61,7 @@ async function checkSession() {
   try {
     // 백엔드에 세션 확인용 API를 하나 두고 (예: GET /api/auth/session),
     // 로그인 상태면 200, 아니면 401/403 을 내려주도록 구현하면 됩니다.
-    const response = await axios.get(API_BASE_URL+'/api/auth/session', {
+    const response = await axios.get(API_BASE_URL+'/auth/session', {
       withCredentials: true, // 다른 도메인일 때 세션 쿠키 전송
     });
     return response.status === 200;
@@ -80,7 +80,7 @@ async function ensureCurrentUserLoaded() {
   const store = useSelectionStore();
 
   userLoadPromise = axios
-    .get(API_BASE_URL+'/api/user/me', { withCredentials: true })
+    .get(API_BASE_URL+'/user/me', { withCredentials: true })
     .then((res) => {
       store.setCurrentUser(res.data);
       userLoaded = true;
