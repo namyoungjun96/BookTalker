@@ -37,7 +37,7 @@ const isLoggedIn = ref(false);
 
 const checkLoginStatus = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/auth/session`, {
+    const response = await axios.get(`${API_BASE_URL}/auth/session`, {
       withCredentials: true,
     });
     isLoggedIn.value = response.status === 200;

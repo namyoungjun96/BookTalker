@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:staging": "vite build --mode dev",
+    "build:dev": "vite build --mode dev",
+    "build:staging": "vite build --mode staging",
     "build:prod": "vite build --mode prod",
     "preview": "vite preview"
   },

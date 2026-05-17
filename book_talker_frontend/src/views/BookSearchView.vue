@@ -159,7 +159,7 @@ const fetchBooks = async (page = 1) => {
   const startIndex = page;
 
   try {
-    const response = await apiClient.get('/api/book/search', {
+    const response = await apiClient.get('/book/search', {
       params: {
         query: searchQuery.value.trim(),
         start: String(startIndex),

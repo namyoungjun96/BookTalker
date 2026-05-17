@@ -97,7 +97,7 @@ const goToBookReviews = (book) => {
 
 const fetchRank = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/rank/genres`, {
+    const response = await axios.get(`${API_BASE_URL}/rank/genres`, {
       withCredentials: true,
     });
     rankData.value = response.data;
@@ -113,7 +113,7 @@ const fetchRank = async () => {
 
 const checkLoginStatus = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/auth/session`, {
+    const response = await axios.get(`${API_BASE_URL}/auth/session`, {
       withCredentials: true,
     });
     isLoggedIn.value = response.status === 200;
