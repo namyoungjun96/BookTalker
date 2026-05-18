@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: prod
+    active: local  # 운영서버는 SPRING_PROFILES_ACTIVE=prod 환경변수로 override
 
   application:
     name: book_talker_backend
