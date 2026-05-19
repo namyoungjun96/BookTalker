@@ -128,7 +128,7 @@ const toast = useToast();
 
 // next-reading 모드 판별
 const isNextReading = computed(() => route.query.mode === 'next-reading');
-const nextReadingCount = ref('?'); // 서버에서 받아올 수도 있지만, 표시용으로만 사용
+const nextReadingCount = computed(() => Number(route.query.readingCount || 1) + 1);
 
 // next-reading 모드일 때 query params로 책 정보 구성
 const activeBook = computed(() => {

@@ -162,6 +162,7 @@ const onNextReading = (review) => {
       isbn13: review.bookIsbn13,
       title: review.bookTitle,
       cover: review.bookCover || '',
+      readingCount: review.readingCount,
     },
   });
 };
