@@ -23,9 +23,9 @@
               </div>
               <div class="book-meta">
                 <h2 class="book-title">{{ bookInfo?.bookTitle || '-' }}</h2>
-                <button class="reread-btn" @click="onNextReading">+ 한번 더 읽기</button>
               </div>
             </div>
+            <button class="reread-btn" @click="onNextReading">한번 더 봤어요</button>
           </div>
 
           <div v-if="bookReviews.length === 0" class="empty-state">
@@ -171,14 +171,14 @@ onMounted(fetchReviews);
 .back-link { font-size: 14px; color: #6b7280; background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 20px; display: block; }
 .back-link:hover { color: #2563eb; }
 
-.book-header { margin-bottom: 32px; }
+.book-header { margin-bottom: 32px; display: flex; flex-direction: column; gap: 16px; }
 .book-header-inner { display: flex; gap: 16px; align-items: flex-start; }
 .book-cover { width: 64px; height: 86px; flex-shrink: 0; border-radius: 4px; overflow: hidden; background: #f3f4f6; display: flex; align-items: center; justify-content: center; }
 .book-cover img { width: 100%; height: 100%; object-fit: cover; }
 .cover-placeholder { font-size: 32px; color: #9ca3af; }
-.book-meta { display: flex; flex-direction: column; gap: 12px; padding-top: 4px; }
+.book-meta { display: flex; flex-direction: column; justify-content: center; }
 .book-title { font-size: 20px; font-weight: 600; color: #1f2937; margin: 0; line-height: 1.4; }
-.reread-btn { display: inline-block; font-size: 14px; font-weight: 500; color: #059669; background: none; border: 1px solid #6ee7b7; border-radius: 6px; cursor: pointer; padding: 8px 16px; transition: all 0.15s ease; width: fit-content; }
+.reread-btn { align-self: flex-start; font-size: 14px; font-weight: 500; color: #059669; background: none; border: 1px solid #6ee7b7; border-radius: 6px; cursor: pointer; padding: 8px 16px; transition: all 0.15s ease; }
 .reread-btn:hover { background: #ecfdf5; border-color: #059669; }
 
 .empty-state { text-align: center; padding: 48px; color: #6b7280; font-size: 15px; }

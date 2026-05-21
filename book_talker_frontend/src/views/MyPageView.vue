@@ -48,13 +48,21 @@
 
             <div v-if="group.reviews.length === 1" class="review-meta">
               <span class="rating">⭐ {{ group.reviews[0].rating || '-' }}</span>
-              <button
-                class="delete-btn"
-                @click="onDeleteReview(group.reviews[0].id, $event)"
-                :disabled="deletingId === group.reviews[0].id"
-              >
-                {{ deletingId === group.reviews[0].id ? '삭제 중...' : '🗑 삭제하기' }}
-              </button>
+              <div class="meta-actions">
+                <button
+                  class="reread-btn"
+                  @click="onNextReading(group.reviews[0], $event)"
+                >
+                  한번 더 봤어요
+                </button>
+                <button
+                  class="delete-btn"
+                  @click="onDeleteReview(group.reviews[0].id, $event)"
+                  :disabled="deletingId === group.reviews[0].id"
+                >
+                  {{ deletingId === group.reviews[0].id ? '삭제 중...' : '🗑 삭제하기' }}
+                </button>
+              </div>
             </div>
 
             <div v-else class="review-meta">
@@ -151,6 +159,20 @@ const onCardClick = (group) => {
   }
 };
 
+const onNextReading = (review, event) => {
+  event.stopPropagation();
+  router.push({
+    name: 'review-create',
+    query: {
+      mode: 'next-reading',
+      isbn13: review.bookIsbn13,
+      title: review.bookTitle,
+      cover: review.bookCover || '',
+      readingCount: review.readingCount,
+    },
+  });
+};
+
 const onDeleteReview = async (reviewId, event) => {
   event.stopPropagation();
   if (!confirm('독후감을 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
@@ -223,6 +245,9 @@ onMounted(async () => {
 .rating { font-size: 14px; color: #2563eb; font-weight: 500; }
 .multi-hint { font-size: 13px; color: #9ca3af; margin-left: auto; }
 
+.meta-actions { display: flex; gap: 8px; align-items: center; }
+.reread-btn { font-size: 13px; font-weight: 500; color: #059669; background: none; border: 1px solid #6ee7b7; border-radius: 6px; cursor: pointer; padding: 7px 14px; transition: all 0.15s ease; }
+.reread-btn:hover { background: #ecfdf5; border-color: #059669; }
 .delete-btn { font-size: 13px; font-weight: 500; color: #ef4444; background: none; border: 1px solid #fca5a5; border-radius: 6px; cursor: pointer; padding: 7px 16px; transition: all 0.15s ease; }
 .delete-btn:hover:not(:disabled) { background: #fef2f2; border-color: #ef4444; }
 .delete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
