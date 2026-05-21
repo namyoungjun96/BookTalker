@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[설계] API 호출 카운팅 + 일일 Discord 리포트</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 8px; }
+  .subtitle { font-size: .85rem; color: #8b949e; margin-bottom: 36px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .section { margin-bottom: 48px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+  p { font-size: .88rem; color: #c9d1d9; margin-bottom: 8px; }
+
+  /* Decision card */
+  .decision { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .decision-head { background: #1c2128; padding: 12px 18px; border-bottom: 1px solid #30363d; }
+  .decision-num { font-size: .72rem; font-weight: 700; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+  .decision-q { font-size: .95rem; font-weight: 600; color: #f0f6fc; }
+  .decision-why { font-size: .83rem; color: #8b949e; margin-top: 4px; }
+  .decision-body { padding: 14px 18px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .option { flex: 1; min-width: 200px; border: 1px solid #30363d; border-radius: 6px; padding: 12px 14px; background: #0d1117; }
+  .option.rec  { border-color: #3fb950; background: #0d1117; }
+  .option.warn { border-color: #d29922; background: #0d1117; }
+  .option-label { font-size: .75rem; font-weight: 700; margin-bottom: 6px; }
+  .label-rec  { color: #3fb950; }
+  .label-warn { color: #d29922; }
+  .label-alt  { color: #6e7681; }
+  .option-title { font-size: .88rem; font-weight: 600; color: #e6edf3; margin-bottom: 6px; }
+  .option-desc { font-size: .82rem; color: #8b949e; line-height: 1.6; }
+  .option-desc code { font-size: .8em; }
+
+  /* Flow */
+  .flow-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; font-family: 'Consolas', monospace; font-size: .82rem; color: #8b949e; white-space: pre; line-height: 1.95; overflow-x: auto; }
+  .f-green  { color: #3fb950; }
+  .f-blue   { color: #388bfd; }
+  .f-yellow { color: #d29922; }
+  .f-red    { color: #f85149; }
+
+  /* Preview */
+  .preview-box { background: #1c2128; border: 1px solid #30363d; border-radius: 8px; padding: 20px; font-family: 'Consolas', monospace; font-size: .82rem; color: #c9d1d9; line-height: 1.9; }
+  .preview-title { font-size: .75rem; font-weight: 700; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+  .p-bold   { font-weight: 700; color: #f0f6fc; }
+  .p-green  { color: #3fb950; }
+  .p-yellow { color: #d29922; }
+  .p-muted  { color: #6e7681; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  th { background: #1c2128; color: #8b949e; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid #30363d; }
+  td { padding: 10px 14px; border-bottom: 1px solid #21262d; vertical-align: top; color: #c9d1d9; }
+  tr:last-child td { border-bottom: none; }
+
+  /* Confirm */
+  .confirm-card { background: #161b22; border: 1px solid #388bfd; border-radius: 8px; padding: 18px 20px; }
+  .confirm-title { font-size: .88rem; font-weight: 600; color: #388bfd; margin-bottom: 12px; }
+  .confirm-item { font-size: .85rem; color: #c9d1d9; padding: 6px 0; border-bottom: 1px solid #21262d; display: flex; gap: 10px; }
+  .confirm-item:last-child { border-bottom: none; }
+  .ci-num { color: #6e7681; font-weight: 600; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<h1>[설계] API 호출 카운팅 + 일일 Discord 리포트</h1>
+<p class="subtitle">HandlerInterceptor 메모리 카운팅 + 매일 23:59 Discord Webhook 전송</p>
+
+<!-- 1. 전체 구조 -->
+<div class="section">
+  <h2>1 · 전체 흐름</h2>
+  <div class="flow-box"><span class="f-yellow">[ 요청 처리 ]</span>
+클라이언트 → Spring MVC → <span class="f-green">ApiUsageInterceptor</span>
+                              │  path pattern 추출 (e.g. /review/{id})
+                              │  ConcurrentHashMap에 AtomicLong +1
+                              ↓
+                         Controller 처리
+
+
+<span class="f-yellow">[ 매일 23:59 ]</span>
+<span class="f-blue">ApiUsageReportScheduler</span>
+  ├── 카운터에서 Top 3 추출
+  ├── <span class="f-green">ManagementFactory.getMemoryMXBean()</span>  →  JVM Heap 사용량
+  ├── <span class="f-green">HikariDataSource.getHikariPoolMXBean()</span> →  DB 커넥션 풀 상태
+  ├── Discord Webhook 전송
+  └── 카운터 초기화 (clear)</div>
+</div>
+
+<!-- 2. 의사결정 -->
+<div class="section">
+  <h2>2 · 의사결정</h2>
+
+  <!-- Q1 -->
+  <div class="decision">
+    <div class="decision-head">
+      <div class="decision-num">결정 ①</div>
+      <div class="decision-q">API 카운팅 단위 — URL 전체 vs Path Pattern</div>
+      <div class="decision-why">URL 전체 카운팅 시 <code>/reviews/1</code>, <code>/reviews/2</code>가 각각 집계 → Top 3 의미 없음</div>
+    </div>
+    <div class="decision-body">
+      <div class="option warn">
+        <div class="option-label label-warn">✗ 비추천</div>
+        <div class="option-title">URL 전체</div>
+        <div class="option-desc">
+          <code>/reviews/123</code> → 1<br>
+          <code>/reviews/456</code> → 1<br>
+          <code>/reviews/789</code> → 1<br>
+          Top 3가 의미 없는 값으로 채워짐
+        </div>
+      </div>
+      <div class="option rec">
+        <div class="option-label label-rec">✓ 추천</div>
+        <div class="option-title">Path Pattern</div>
+        <div class="option-desc">
+          <code>/reviews/123</code> → <code>/reviews/{id}</code> +1<br>
+          <code>/reviews/456</code> → <code>/reviews/{id}</code> +1<br>
+          <code>HandlerMethod</code>의 매핑 패턴 추출로 자동 그룹핑
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="decision">
+    <div class="decision-head">
+      <div class="decision-num">결정 ②</div>
+      <div class="decision-q">JVM·DB 정보 수집 — Actuator HTTP endpoint vs Java 내장 API</div>
+      <div class="decision-why">Actuator HTTP 노출 시 SecurityConfig에서 <code>/actuator/**</code>를 열어야 하고 외부 노출 위험 발생</div>
+    </div>
+    <div class="decision-body">
+      <div class="option warn">
+        <div class="option-label label-warn">✗ 비추천</div>
+        <div class="option-title">Actuator HTTP endpoint</div>
+        <div class="option-desc">
+          <code>/actuator/metrics/jvm.memory.used</code> 호출<br><br>
+          · SecurityConfig에 <code>/actuator/**</code> permitAll 필요<br>
+          · 외부 노출 위험<br>
+          · OCI 1GB RAM에 Actuator 전체 스택 불필요
+        </div>
+      </div>
+      <div class="option rec">
+        <div class="option-label label-rec">✓ 추천</div>
+        <div class="option-title">Java 내장 API (코드 내부 직접 호출)</div>
+        <div class="option-desc">
+          JVM: <code>ManagementFactory.getMemoryMXBean()</code><br>
+          DB: <code>HikariDataSource → getHikariPoolMXBean()</code><br><br>
+          · 보안 설정 추가 없음<br>
+          · HTTP 노출 없음<br>
+          · Actuator 의존성은 추가하되 헬스체크 전용으로만 사용
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Q3 -->
+  <div class="decision">
+    <div class="decision-head">
+      <div class="decision-num">결정 ③ — 검수 필요</div>
+      <div class="decision-q">카운팅 대상 — Allowlist vs Blocklist</div>
+      <div class="decision-why">Interceptor는 모든 요청을 가로채므로 비즈니스 무관 경로는 제외해야 함</div>
+    </div>
+    <div class="decision-body">
+      <div class="option rec">
+        <div class="option-label label-rec">A. Allowlist (추천)</div>
+        <div class="option-title">명시한 경로만 카운팅</div>
+        <div class="option-desc">
+          카운팅 대상:<br>
+          <code>/rank/**</code><br>
+          <code>/book/**</code><br>
+          <code>/review/**</code><br>
+          <code>/user/**</code><br><br>
+          새 API 추가 시 목록에 직접 추가 필요.<br>
+          카운팅 범위가 명확하고 예측 가능.
+        </div>
+      </div>
+      <div class="option">
+        <div class="option-label label-alt">B. Blocklist</div>
+        <div class="option-title">명시한 경로만 제외</div>
+        <div class="option-desc">
+          제외 대상:<br>
+          <code>/login/**</code>, <code>/logout</code><br>
+          <code>/oauth2/**</code><br>
+          <code>/auth/session</code><br>
+          <code>/actuator/**</code><br><br>
+          새 API 추가 시 자동 카운팅.<br>
+          제외 누락 시 노이즈 데이터 발생 가능.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 3. Discord 메시지 미리보기 -->
+<div class="section">
+  <h2>3 · Discord 리포트 미리보기</h2>
+  <div class="preview-box">
+    <div class="preview-title">매일 23:59 전송 예시</div>
+<span class="p-bold">📊 BookTalker 일일 API 리포트 (2026-05-21)</span>
+
+<span class="p-bold">🔥 API 호출 Top 3</span>
+1위  <span class="p-green">GET /rank</span>  ·  <span class="p-yellow">142회</span>
+2위  <span class="p-green">GET /book/search</span>  ·  <span class="p-yellow">87회</span>
+3위  <span class="p-green">GET /review/list</span>  ·  <span class="p-yellow">34회</span>
+
+<span class="p-bold">🧠 JVM Heap</span>
+사용  <span class="p-yellow">312 MB</span>  /  최대  <span class="p-muted">512 MB</span>  (61%)
+
+<span class="p-bold">🔌 DB 커넥션 풀 (HikariCP)</span>
+활성  <span class="p-yellow">2</span>  /  유휴  <span class="p-green">8</span>  /  대기  <span class="p-muted">0</span>
+  </div>
+</div>
+
+<!-- 4. 구현 파일 -->
+<div class="section">
+  <h2>4 · 구현 파일</h2>
+  <table>
+    <tr><th>파일</th><th>역할</th></tr>
+    <tr>
+      <td><code>config/ApiUsageInterceptor.java</code></td>
+      <td>HandlerInterceptor 구현. path pattern 추출, <code>ConcurrentHashMap&lt;String, AtomicLong&gt;</code> 카운팅</td>
+    </tr>
+    <tr>
+      <td><code>config/ApiUsageCounter.java</code></td>
+      <td>카운터 싱글톤 빈. Interceptor와 Scheduler가 공유. Top N 조회 및 <code>clear()</code> 제공</td>
+    </tr>
+    <tr>
+      <td><code>config/ApiUsageReportScheduler.java</code></td>
+      <td><code>@Scheduled(cron = "0 59 23 * * ?")</code>. JVM·HikariCP 정보 수집 → Discord 전송 → 카운터 초기화</td>
+    </tr>
+    <tr>
+      <td><code>config/WebConfig.java</code></td>
+      <td>기존 파일에 <code>addInterceptors()</code>로 <code>ApiUsageInterceptor</code> 등록</td>
+    </tr>
+    <tr>
+      <td><code>build.gradle</code></td>
+      <td><code>spring-boot-starter-actuator</code> 추가</td>
+    </tr>
+    <tr>
+      <td><code>application.yml</code></td>
+      <td>Actuator health endpoint만 노출 (<code>management.endpoints.web.exposure.include=health</code>)</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 5. 확인 요청 -->
+<div class="section">
+  <h2>5 · 확인 요청</h2>
+  <div class="confirm-card">
+    <div class="confirm-title">구현 전 확인이 필요한 항목</div>
+    <div class="confirm-item">
+      <span class="ci-num">③</span>
+      <span>카운팅 대상 — <strong>A. Allowlist</strong> (<code>/rank/**</code>, <code>/book/**</code>, <code>/review/**</code>, <code>/user/**</code>) vs <strong>B. Blocklist</strong> (인증·Actuator 경로 제외)</span>
+    </div>
+    <div class="confirm-item">
+      <span class="ci-num">+</span>
+      <span>Discord 리포트 메시지 형식 — 위 미리보기 텍스트 형식으로 진행해도 될지? (기존 DiscordWebhookAppender와 동일한 <code>content</code> 필드 방식)</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
