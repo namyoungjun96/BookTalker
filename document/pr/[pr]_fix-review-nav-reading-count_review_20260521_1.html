@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[PR] fix/review-nav-reading-count</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .section { margin-bottom: 44px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+  p { font-size: .88rem; color: #c9d1d9; margin-bottom: 8px; }
+
+  .meta-table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; font-size: .88rem; }
+  .meta-table td { padding: 10px 16px; border-bottom: 1px solid #21262d; vertical-align: top; }
+  .meta-table tr:last-child td { border-bottom: none; }
+  .meta-table td:first-child { color: #8b949e; font-weight: 600; width: 120px; white-space: nowrap; }
+  .branch-pill { font-family: 'Consolas', monospace; font-size: .85rem; background: #1c2128; border: 1px solid #30363d; border-radius: 12px; padding: 2px 10px; color: #79c0ff; }
+
+  .badge { display: inline-block; font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-right: 4px; vertical-align: middle; }
+  .b-fix { background: #da3633; color: #fff; }
+  .b-feat { background: #1f6feb; color: #fff; }
+  .b-ref { background: #6e7681; color: #fff; }
+  .b-docs { background: #3fb950; color: #000; }
+
+  .commit-list { display: flex; flex-direction: column; gap: 8px; }
+  .commit-row { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 16px; font-size: .85rem; color: #c9d1d9; display: flex; align-items: baseline; gap: 10px; }
+  .commit-hash { font-family: 'Consolas', monospace; font-size: .75rem; color: #6e7681; flex-shrink: 0; }
+
+  .change-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+  .change-header { background: #1c2128; padding: 10px 16px; font-size: .85rem; font-weight: 600; color: #e6edf3; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 8px; }
+  .change-body { padding: 14px 16px; font-size: .85rem; color: #c9d1d9; }
+  .change-body p { margin-bottom: 6px; }
+  .change-body p:last-child { margin-bottom: 0; }
+  .change-body ul { padding-left: 20px; }
+  .change-body li { margin-bottom: 4px; font-size: .85rem; color: #c9d1d9; }
+
+  .flow-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; font-family: 'Consolas', monospace; font-size: .82rem; color: #8b949e; white-space: pre; line-height: 1.9; }
+  .f-new { color: #3fb950; }
+  .f-old { color: #f85149; }
+  .f-note { color: #d29922; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  th { background: #1c2128; color: #8b949e; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid #30363d; }
+  td { padding: 10px 14px; border-bottom: 1px solid #21262d; vertical-align: top; color: #c9d1d9; }
+  tr:last-child td { border-bottom: none; }
+
+  .checklist { display: flex; flex-direction: column; gap: 8px; }
+  .check-item { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 16px; font-size: .85rem; color: #c9d1d9; display: flex; align-items: baseline; gap: 10px; }
+  .check-icon { color: #3fb950; flex-shrink: 0; }
+  .check-warn { color: #d29922; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<h1>[PR] fix/review-nav-reading-count → main</h1>
+
+<!-- META -->
+<div class="section">
+  <h2>기본 정보</h2>
+  <table class="meta-table">
+    <tr><td>브랜치</td><td><span class="branch-pill">fix/review-nav-reading-count</span> → <span class="branch-pill">main</span></td></tr>
+    <tr><td>PR 제목</td><td>FIX/FEAT: [프론트] 회독 수·nav 수정 + 마이페이지 리뷰 구조 개편</td></tr>
+    <tr><td>변경 파일</td><td>프론트 4 · 문서 다수 (백엔드 없음)</td></tr>
+    <tr><td>베이스</td><td>refactor/oauth2-naver-id가 merge된 main 기준</td></tr>
+  </table>
+</div>
+
+<!-- 커밋 목록 -->
+<div class="section">
+  <h2>커밋 목록 (이 브랜치 고유)</h2>
+  <div class="commit-list">
+    <div class="commit-row"><span class="badge b-fix">FIX</span><span class="commit-hash">a191281</span><span>[프론트] 회독 수 표시 및 nav 활성화 상태 수정</span></div>
+    <div class="commit-row"><span class="badge b-feat">FEAT</span><span class="commit-hash">277f000</span><span>[프론트] 마이페이지 리뷰 개수 표시 및 최신순 정렬</span></div>
+    <div class="commit-row"><span class="badge b-ref">REFACTOR</span><span class="commit-hash">c183d6f</span><span>[프론트] 독후감 작성 화면에서 작성자 정보 카드 제거</span></div>
+    <div class="commit-row"><span class="badge b-feat">FEAT</span><span class="commit-hash">a814ddc</span><span>[프론트] my-book-detail 라우트 추가</span></div>
+    <div class="commit-row"><span class="badge b-ref">REFACTOR</span><span class="commit-hash">ae906b8</span><span>[프론트] 마이페이지 리뷰 목록 책 단위 그룹핑으로 개편</span></div>
+    <div class="commit-row"><span class="badge b-feat">FEAT</span><span class="commit-hash">f019dac</span><span>[프론트] MyBookDetailView 신규 생성 (다독 책 회독 목록)</span></div>
+    <div class="commit-row"><span class="badge b-feat">FEAT</span><span class="commit-hash">0f02bb3</span><span>[프론트] 마이페이지 리뷰 구조 개편 및 회독 버튼 수정</span></div>
+    <div class="commit-row"><span class="badge b-docs">DOCS</span><span class="commit-hash">f54e5cb</span><span>[README] 기능 설명 업데이트</span></div>
+    <div class="commit-row"><span class="badge b-docs">DOCS</span><span class="commit-hash">3a6dce6</span><span>[CLAUDE.md] 작업 문서화 규칙 추가</span></div>
+  </div>
+</div>
+
+<!-- 변경 내용 -->
+<div class="section">
+  <h2>변경 내용</h2>
+
+  <div class="change-card">
+    <div class="change-header"><span class="badge b-fix">FIX #1</span> nextReadingCount '?' 고정 문제</div>
+    <div class="change-body">
+      <p><strong>원인:</strong> <code>ReviewCreateView</code>에서 <code>nextReadingCount = ref('?')</code> 로 하드코딩.</p>
+      <p><strong>해결:</strong> <code>MyPageView</code>에서 <code>readingCount</code>를 query param으로 전달 → <code>computed(() => Number(route.query.readingCount || 1) + 1)</code>으로 계산.</p>
+    </div>
+  </div>
+
+  <div class="change-card">
+    <div class="change-header"><span class="badge b-fix">FIX #2</span> 독후감 작성 화면 nav 활성화 안 되는 문제</div>
+    <div class="change-body">
+      <p><strong>원인:</strong> <code>review-create</code> 라우트에 <code>meta.activeNav</code> 없어서 어떤 탭도 활성화 안 됨.</p>
+      <p><strong>해결:</strong> <code>useNav.js</code>에 <code>review-create</code> 분기 추가 — <code>mode=next-reading</code>이면 마이페이지, 아니면 검색 탭 활성화.</p>
+    </div>
+  </div>
+
+  <div class="change-card">
+    <div class="change-header"><span class="badge b-feat">FEAT</span> 마이페이지 리뷰 구조 개편</div>
+    <div class="change-body">
+      <p><strong>기존:</strong> 모든 리뷰를 flat 목록으로 표시 (같은 책의 1·2·3회독이 각각 카드로 나열).</p>
+      <p><strong>변경:</strong></p>
+      <ul>
+        <li><code>MyPageView</code> → isbn13 기준 책 단위 그룹핑. 카드 클릭 분기:</li>
+        <li>단독 회독(1개) → <code>ReviewDetailView</code> 직행</li>
+        <li>다독(2개 이상) → <code>MyBookDetailView</code> (신규 페이지)</li>
+        <li>단독 회독 카드에 '한번 더 봤어요' 버튼 유지</li>
+        <li><code>MyBookDetailView</code> (신규) → 해당 책의 모든 회독을 readingCount 내림차순으로 표시. 상단에 '한번 더 봤어요' 버튼.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="change-card">
+    <div class="change-header"><span class="badge b-docs">DOCS</span> README · CLAUDE.md 업데이트</div>
+    <div class="change-body">
+      <ul>
+        <li>README: 회독 시스템·Discord 모니터링 설명 추가, <code>document/</code> 폴더 안내 섹션 추가</li>
+        <li>CLAUDE.md: 작업 문서화 규칙(HTML 남기기), 커밋 워크플로(검수 후 커밋) 추가</li>
+        <li><code>document/</code> 폴더 전체 최초 커밋</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 페이지 흐름 -->
+<div class="section">
+  <h2>마이페이지 페이지 흐름 (변경 후)</h2>
+  <div class="flow-box"><span class="f-note">MyPageView (책 단위 카드)</span>
+  ├── 단독 회독 카드 클릭  ──────────────→  <span class="f-new">ReviewDetailView</span>
+  │   └── '한번 더 봤어요' 버튼 클릭  ──→  <span class="f-new">ReviewCreateView</span> (next-reading)
+  │
+  └── 다독 카드 클릭  ─────────────────→  <span class="f-new">MyBookDetailView</span> (신규)
+      ├── 회독 행 클릭  ──────────────→  <span class="f-new">ReviewDetailView</span>
+      └── '한번 더 봤어요' 버튼  ─────→  <span class="f-new">ReviewCreateView</span> (next-reading)</div>
+</div>
+
+<!-- 변경 파일 -->
+<div class="section">
+  <h2>변경 파일</h2>
+  <table>
+    <tr><th>파일</th><th>변경</th></tr>
+    <tr><td><code>src/views/MyPageView.vue</code></td><td>isbn13 그룹핑, 조건부 네비게이션, 한번 더 봤어요 버튼</td></tr>
+    <tr><td><code>src/views/MyBookDetailView.vue</code></td><td>신규 생성</td></tr>
+    <tr><td><code>src/views/ReviewCreateView.vue</code></td><td>nextReadingCount computed, 작성자 카드 제거</td></tr>
+    <tr><td><code>src/composables/useNav.js</code></td><td>review-create 분기 추가</td></tr>
+    <tr><td><code>src/router/index.js</code></td><td>/mypage/books/:isbn13 라우트 추가</td></tr>
+    <tr><td><code>README.md</code></td><td>기능 설명·document 폴더 안내 추가</td></tr>
+    <tr><td><code>CLAUDE.md</code></td><td>신규 생성 (작업 규칙)</td></tr>
+    <tr><td><code>document/**</code></td><td>최초 커밋 (설계·커밋·PR 문서 전체)</td></tr>
+  </table>
+</div>
+
+<!-- 테스트 체크리스트 -->
+<div class="section">
+  <h2>테스트 체크리스트</h2>
+  <div class="checklist">
+    <div class="check-item"><span class="check-icon">✓</span><span>마이페이지 → 책 단위 카드로 표시</span></div>
+    <div class="check-item"><span class="check-icon">✓</span><span>단독 회독 카드 클릭 → ReviewDetailView 직행</span></div>
+    <div class="check-item"><span class="check-icon">✓</span><span>단독 회독 카드 '한번 더 봤어요' 클릭 → ReviewCreateView, nextReadingCount 정확히 표시</span></div>
+    <div class="check-item"><span class="check-icon">✓</span><span>nav 활성화: 검색→독후감 작성 시 검색 탭, 마이페이지→회독 시 마이페이지 탭</span></div>
+    <div class="check-item"><span class="check-icon">✓</span><span>/mypage/books/:isbn13 진입 시 마이페이지 탭 활성화</span></div>
+    <div class="check-item"><span class="check-warn">⚠</span><span>다독 카드(2회독 이상) → MyBookDetailView: DB에 2회독 데이터 필요</span></div>
+  </div>
+</div>
+
+</body>
+</html>

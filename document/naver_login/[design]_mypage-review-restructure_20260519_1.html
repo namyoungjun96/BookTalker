@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[설계] 마이페이지 리뷰 구조 개편</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  h3 { font-size: .9rem; font-weight: 600; color: #e6edf3; margin-bottom: 10px; }
+  .section { margin-bottom: 44px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+  p { font-size: .88rem; color: #c9d1d9; margin-bottom: 8px; }
+
+  /* Cards */
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 18px 20px; margin-bottom: 14px; }
+  .card-title { font-size: .9rem; font-weight: 600; color: #f0f6fc; margin-bottom: 8px; }
+
+  /* Wireframe */
+  .wire-wrap { display: flex; gap: 20px; flex-wrap: wrap; }
+  .wire-box { flex: 1; min-width: 260px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .wire-label { background: #1c2128; padding: 8px 14px; font-size: .75rem; color: #8b949e; font-weight: 600; border-bottom: 1px solid #30363d; }
+  .wire-body { padding: 12px 14px; font-family: 'Consolas', monospace; font-size: .78rem; color: #8b949e; line-height: 1.8; white-space: pre; }
+  .w-highlight { color: #3fb950; }
+  .w-action { color: #388bfd; }
+  .w-muted { color: #6e7681; }
+
+  /* Plan table */
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  th { background: #1c2128; color: #8b949e; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid #30363d; }
+  td { padding: 10px 14px; border-bottom: 1px solid #21262d; vertical-align: top; color: #c9d1d9; }
+  tr:last-child td { border-bottom: none; }
+
+  /* Flow */
+  .flow-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; font-family: 'Consolas', monospace; font-size: .82rem; color: #8b949e; white-space: pre; line-height: 1.9; }
+  .f-new { color: #3fb950; }
+  .f-note { color: #d29922; }
+
+  /* Opinion */
+  .opinion-card { border-left: 3px solid #3fb950; background: #161b22; border-radius: 0 8px 8px 0; padding: 14px 18px; margin-bottom: 12px; }
+  .opinion-card.warn { border-left-color: #d29922; }
+  .opinion-title { font-size: .88rem; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+  .opinion-body { font-size: .83rem; color: #8b949e; }
+
+  .badge { display: inline-block; font-size: .7rem; font-weight: 700; padding: 1px 7px; border-radius: 4px; margin-right: 4px; }
+  .b-new { background: #1f6feb; color: #fff; }
+  .b-mod { background: #6e7681; color: #fff; }
+  .b-del { background: #da3633; color: #fff; }
+</style>
+</head>
+<body>
+
+<h1>[설계] 마이페이지 리뷰 구조 개편</h1>
+
+<!-- 1. 구조 변경 개요 -->
+<div class="section">
+  <h2>1 · 구조 변경 개요 (현재 vs 변경 후)</h2>
+  <div class="flow-box"><span class="f-note">[ 현재 ]</span>
+/mypage
+  └── 모든 리뷰 flat 목록 (책 A 1회독 / 책 A 2회독 / 책 B 1회독 ...)
+      카드마다: 표지 + 제목 + 한줄요약 + 회독 뱃지
+               ─────────────────────────────────────
+               ⭐ 4  [한번 더 봤어요]  [🗑 삭제하기]
+
+<span class="f-new">[ 변경 후 ]</span>
+/mypage                           ← 책 단위 목록
+  └── 책 카드 (책 A · 3회독까지 · 최근 날짜)
+      책 카드 (책 B · 1회독까지 · 최근 날짜)
+      ...
+        ↓ 클릭
+/mypage/books/:isbn13             ← 해당 책의 회독 전체 목록
+  └── 1회독 | 2025-03-01 | ⭐4 | 한줄요약 ... | [삭제]
+      2회독 | 2025-08-10 | ⭐5 | 한줄요약 ... | [삭제]
+      3회독 | 2026-01-22 | ⭐4 | 한줄요약 ... | [삭제]
+      [+ 한번 더 읽기] 버튼 (상단 고정)</div>
+</div>
+
+<!-- 2. 구현 계획 -->
+<div class="section">
+  <h2>2 · 구현 계획</h2>
+  <table>
+    <tr>
+      <th>항목</th>
+      <th>내용</th>
+    </tr>
+    <tr>
+      <td><span class="badge b-mod">수정</span> <code>MyPageView.vue</code></td>
+      <td>
+        <code>/review/list</code> 응답을 <code>bookIsbn13</code> 기준으로 프론트에서 그룹핑.<br>
+        각 그룹에서 <strong>최대 readingCount + 가장 최근 regDate</strong>를 대표값으로 사용.<br>
+        카드 클릭 → <code>/mypage/books/:isbn13</code> 이동. "한번 더 읽기" 버튼은 이 화면에서 제거.
+      </td>
+    </tr>
+    <tr>
+      <td><span class="badge b-new">신규</span> <code>MyBookDetailView.vue</code></td>
+      <td>
+        <code>/review/list</code> 재호출 후 <code>isbn13</code>로 필터링 (백엔드 변경 없음).<br>
+        기본 정렬: <strong>readingCount 오름차순</strong> (1→2→3회독).<br>
+        정렬 토글: 회독순 ↕ / 최신순 ↕.<br>
+        상단: 책 커버 + 제목 + [+ 한번 더 읽기] 버튼.<br>
+        각 행: 회독 수 뱃지 + 날짜 + ⭐ 별점 + 한줄요약 + [삭제] 버튼.
+      </td>
+    </tr>
+    <tr>
+      <td><span class="badge b-mod">수정</span> <code>router/index.js</code></td>
+      <td>
+        <code>{ path: '/mypage/books/:isbn13', name: 'my-book-detail', meta: { activeNav: '/mypage' } }</code> 추가
+      </td>
+    </tr>
+    <tr>
+      <td>백엔드</td>
+      <td>
+        변경 없음. <code>/review/list</code> 그대로 사용. 프론트에서 그룹핑/필터링 처리.
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- 3. 화면 와이어프레임 -->
+<div class="section">
+  <h2>3 · 화면 와이어프레임</h2>
+  <div class="wire-wrap">
+
+    <div class="wire-box">
+      <div class="wire-label">MyPageView (책 목록)</div>
+      <div class="wire-body">내가 작성한 리뷰 (3권)
+
+┌─────────────────────────────┐
+│ [📖] <span class="w-highlight">미드나잇 라이브러리</span>          │
+│      3회독까지 · 2026-01-22   │
+│      ⭐ 4                    │
+└─────────────────────────────┘
+┌─────────────────────────────┐
+│ [📖] <span class="w-highlight">아몬드</span>                      │
+│      1회독까지 · 2025-08-10   │
+│      ⭐ 5                    │
+└─────────────────────────────┘
+┌─────────────────────────────┐
+│ [📖] <span class="w-highlight">채식주의자</span>                  │
+│      2회독까지 · 2025-12-03   │
+│      ⭐ 3                    │
+└─────────────────────────────┘</div>
+    </div>
+
+    <div class="wire-box">
+      <div class="wire-label">MyBookDetailView (회독 목록)</div>
+      <div class="wire-body">[📖] 미드나잇 라이브러리
+     <span class="w-action">[+ 한번 더 읽기]</span>
+─────────────────────────────
+정렬: <span class="w-highlight">회독순↑</span> | 최신순↑
+
+┌─────────────────────────────┐
+│ <span class="w-highlight">1회독</span>  2025-03-01  ⭐ 4  <span class="w-action">[삭제]</span>  │
+│ "삶은 항상 새로운 기회를..."     │
+└─────────────────────────────┘
+┌─────────────────────────────┐
+│ <span class="w-highlight">2회독</span>  2025-09-14  ⭐ 4  <span class="w-action">[삭제]</span>  │
+│ "두 번째 읽으니 더 와닿는..."    │
+└─────────────────────────────┘
+┌─────────────────────────────┐
+│ <span class="w-highlight">3회독</span>  2026-01-22  ⭐ 5  <span class="w-action">[삭제]</span>  │
+│ "이제서야 진짜 의미를..."        │
+└─────────────────────────────┘</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 4. 3번 UI 의견 -->
+<div class="section">
+  <h2>4 · UI 개선 (#3) — 제 의견</h2>
+
+  <div class="opinion-card">
+    <div class="opinion-title">지금 카드 하단 액션바 문제 동의합니다</div>
+    <div class="opinion-body">
+      현재 카드는 책 정보 영역 아래에 별점 + 긴 버튼 2개가 가로 한 줄로 붙어 있어서,
+      모바일(375px)에서 버튼이 줄바꿈되거나 텍스트가 잘립니다.
+      "한번 더 봤어요"라는 텍스트 자체도 너무 길어 버튼 크기를 낭비합니다.
+    </div>
+  </div>
+
+  <div class="opinion-card">
+    <div class="opinion-title">구조 개편하면 자연스럽게 해소됩니다</div>
+    <div class="opinion-body">
+      MyPageView가 책 단위 카드로 바뀌면 더 이상 카드마다 "한번 더 읽기" 버튼이 필요 없습니다.
+      "한번 더 읽기"는 MyBookDetailView 상단에 1개만 두면 됩니다.
+      삭제도 회독 행마다 소형 아이콘 버튼 하나로 충분합니다.
+    </div>
+  </div>
+
+  <div class="opinion-card warn">
+    <div class="opinion-title">책 카드에서 별점 표기 — 선택 사항</div>
+    <div class="opinion-body">
+      책이 여러 회독이면 "어떤 회독의 별점"을 보여줄지 모호해집니다.
+      선택지:<br>
+      A. 가장 최근 회독 별점만 표시 (심플)<br>
+      B. 별점 표시 안 함, detail 페이지에서만 표시 (혼란 없음)<br><br>
+      저는 <strong>B (표시 안 함)</strong>을 추천합니다.
+      카드에서는 "몇 회독까지 읽었는지"와 "최근 날짜"만 알면 충분합니다.
+    </div>
+  </div>
+
+  <div class="opinion-card">
+    <div class="opinion-title">MyBookDetailView의 회독 행 UI 제안</div>
+    <div class="opinion-body">
+      회독 행을 세로 카드가 아니라 <strong>가로 compact row</strong>로 만들면 모바일에서도 깔끔합니다.<br><br>
+      <code>[1회독 뱃지]  날짜  ⭐ 4  [🗑]</code><br>
+      <code>"한 줄 요약 텍스트 (클릭하면 detail 이동)"</code><br><br>
+      뱃지 + 날짜 + 별점 + 삭제를 한 줄에 두고, 그 아래 한줄요약을 배치하면
+      카드 높이를 반으로 줄일 수 있습니다.
+    </div>
+  </div>
+
+  <p style="margin-top: 12px; font-size:.83rem; color:#8b949e;">
+    → 1, 2번 구현 방향이 확정되면 3번 UI는 MyBookDetailView 작성 시 함께 반영하겠습니다.
+  </p>
+</div>
+
+<!-- 5. 확인 요청 -->
+<div class="section">
+  <h2>5 · 확인 요청</h2>
+  <div class="card">
+    <div class="card-title">구현 진행 전 확인이 필요한 항목</div>
+    <p>① MyPageView 책 카드에서 별점 표시 여부 — A(최근 회독 별점) / B(표시 안 함)</p>
+    <p>② MyBookDetailView에서 회독 행 클릭 시 동작 — 기존 detail 페이지(ReviewDetailView)로 이동? 또는 인라인 펼침?</p>
+    <p>③ 삭제 버튼 위치 — 행마다 🗑 아이콘 버튼 / 또는 스와이프로 삭제(모바일 UX)?</p>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Q&A — BookService 코드 리뷰 (테스트/로직)</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --green-bg: #0f2a1a;
+      --green-border: #238636;
+      --red: #f85149;
+      --red-bg: #2a0d0d;
+      --red-border: #da3633;
+      --yellow: #d29922;
+      --yellow-bg: #1f1a00;
+      --yellow-border: #9e6a03;
+      --purple: #bc8cff;
+      --purple-bg: #1b0e2f;
+      --radius: 8px;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      padding: 24px;
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 18px;
+      margin-bottom: 32px;
+    }
+
+    .page-header h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+
+    .page-header .meta {
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    /* Q&A Block */
+    .qa-block {
+      margin-bottom: 36px;
+    }
+
+    .qa-number {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    /* Question bubble */
+    .question-bubble {
+      background: var(--yellow-bg);
+      border: 1px solid var(--yellow-border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+
+    .bubble-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .question-bubble .bubble-label { color: var(--yellow); }
+
+    .question-bubble p { font-size: 13px; color: var(--text); line-height: 1.7; }
+
+    .question-bubble code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: rgba(210, 153, 34, 0.1);
+      border: 1px solid var(--yellow-border);
+      border-radius: 3px;
+      padding: 1px 5px;
+      color: var(--yellow);
+    }
+
+    /* Answer section */
+    .answer-section {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .answer-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .answer-card-header {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .answer-card-body {
+      padding: 16px;
+    }
+
+    .answer-card-body p { font-size: 13px; margin-bottom: 8px; }
+    .answer-card-body p:last-child { margin-bottom: 0; }
+
+    .answer-card-body ul {
+      padding-left: 18px;
+      margin: 6px 0 8px;
+    }
+
+    .answer-card-body li { font-size: 13px; margin-bottom: 4px; }
+
+    .answer-card-body code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1px 5px;
+      color: #a5d6ff;
+    }
+
+    /* verdict */
+    .verdict {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 13px 16px;
+      border-radius: var(--radius);
+      margin-top: 4px;
+    }
+
+    .verdict-agree {
+      background: var(--green-bg);
+      border: 1px solid var(--green-border);
+    }
+
+    .verdict-caution {
+      background: var(--yellow-bg);
+      border: 1px solid var(--yellow-border);
+    }
+
+    .verdict-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    .verdict-text { font-size: 13px; }
+
+    .verdict-agree  .verdict-text { color: var(--text); }
+    .verdict-caution .verdict-text { color: var(--text); }
+
+    .verdict-agree  .verdict-text strong { color: var(--green); }
+    .verdict-caution .verdict-text strong { color: var(--yellow); }
+
+    /* Code diff */
+    .diff-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 10px 0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .diff-block-header {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 14px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .diff-line {
+      padding: 2px 14px;
+      line-height: 1.7;
+    }
+
+    .diff-del {
+      background: rgba(248, 81, 73, 0.1);
+      color: var(--red);
+    }
+
+    .diff-add {
+      background: rgba(63, 185, 80, 0.1);
+      color: var(--green);
+    }
+
+    .diff-ctx { color: var(--muted); }
+
+    /* Comparison table */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .compare-table th {
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 9px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .compare-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    .compare-table tr:last-child td { border-bottom: none; }
+
+    .compare-table td:first-child { color: var(--muted); width: 120px; }
+    .compare-table code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1px 5px;
+      color: #a5d6ff;
+    }
+
+    .text-red    { color: var(--red); }
+    .text-green  { color: var(--green); }
+    .text-yellow { color: var(--yellow); }
+    .text-muted  { color: var(--muted); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-red    { background: var(--red-bg);    border: 1px solid var(--red-border);    color: var(--red);    }
+    .badge-green  { background: var(--green-bg);  border: 1px solid var(--green-border);  color: var(--green);  }
+    .badge-yellow { background: var(--yellow-bg); border: 1px solid var(--yellow-border); color: var(--yellow); }
+    .badge-blue   { background: #0d1f3c;           border: 1px solid #388bfd;              color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>💬 Q&A — BookService 코드 리뷰</h1>
+  <div class="meta">
+    <span>📅 2026-05-03</span>
+    <span>📁 BookService.java + BookServiceTest.java</span>
+    <span>👤 개발자 질문 → Claude 답변</span>
+  </div>
+</div>
+
+
+<!-- ═══════ Q1 ═══════ -->
+<div class="qa-block">
+  <div class="qa-number">Question 1 of 2</div>
+
+  <div class="question-bubble">
+    <div class="bubble-label">👤 개발자 질문</div>
+    <p>
+      <code>getBookByIsbn13WithApi</code>에서 첫 번째 <code>if (response == null)</code> 케이스는
+      알라딘이랑 통신이 아예 안 된 경우 아닌가? 지금 오류 메시지가 "does not exist"인데 이건 틀린 거 아닌가?
+      메시지를 바꿔야 할 것 같은데 어떻게 생각해?
+    </p>
+  </div>
+
+  <div class="answer-section">
+
+    <div class="answer-card">
+      <div class="answer-card-header">🎯 핵심 분석</div>
+      <div class="answer-card-body">
+        <p><strong>맞습니다.</strong> 두 개의 null/빈값 케이스는 <strong>원인이 완전히 다릅니다.</strong></p>
+        <table class="compare-table" style="margin-top: 8px;">
+          <thead>
+            <tr>
+              <th>케이스</th>
+              <th>실제 의미</th>
+              <th>현재 메시지</th>
+              <th>적절성</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>response == null</code></td>
+              <td>API 통신 자체 실패<br><span class="text-muted" style="font-size:11px;">네트워크 오류, 타임아웃, 역직렬화 실패 등</span></td>
+              <td><code>"[BookTalker] ... does not exist"</code></td>
+              <td><span class="badge badge-red">틀림</span></td>
+            </tr>
+            <tr>
+              <td><code>item.isEmpty()</code></td>
+              <td>API는 성공했지만 해당 ISBN 책 없음</td>
+              <td><code>"[Aladin] ... does not exist"</code></td>
+              <td><span class="badge badge-green">맞음</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin-top: 10px;">
+          <code>response == null</code>은 책이 없는 것이 아니라 <strong>API와 대화 자체가 실패한 상황</strong>입니다.
+          이 상태에서 "does not exist"를 반환하면 호출자가 "책이 없는 것"으로 오해하고
+          잘못된 처리를 할 수 있습니다.
+        </p>
+      </div>
+    </div>
+
+    <div class="answer-card">
+      <div class="answer-card-header">🔧 제안 수정 방향</div>
+      <div class="answer-card-body">
+        <p>메시지 변경만으로도 충분합니다. 예외 타입은 <code>IllegalArgumentException</code>으로 유지합니다
+        (호출부인 <code>ReviewService</code>가 이 예외를 이미 처리하고 있어 타입 변경 시 영향 범위가 넓습니다).</p>
+        <div class="diff-block">
+          <div class="diff-block-header">BookService.java — getBookByIsbn13WithApi()</div>
+          <div class="diff-line diff-del">- throw new IllegalArgumentException("[BookTalker] Book with ISBN13 " + isbn13 + " does not exist");</div>
+          <div class="diff-line diff-add">+ throw new IllegalArgumentException("[Aladin] ISBN13 " + isbn13 + " 조회 중 응답을 받지 못했습니다.");</div>
+        </div>
+        <p>그리고 테스트 메시지 검증도 함께 수정이 필요합니다:</p>
+        <div class="diff-block">
+          <div class="diff-block-header">BookServiceTest.java — 실패_null_응답 케이스</div>
+          <div class="diff-line diff-del">- .hasMessageContaining("[BookTalker]");</div>
+          <div class="diff-line diff-add">+ .hasMessageContaining("[Aladin]")</div>
+          <div class="diff-line diff-add">+ .hasMessageContaining("응답을 받지 못했습니다");</div>
+        </div>
+        <p style="margin-top:8px;" class="text-muted">
+          ※ 두 번째 케이스(<code>item.isEmpty()</code>)의 <code>"[Aladin]"</code> 메시지와 prefix를 통일해
+          모든 알라딘 관련 오류가 <code>[Aladin]</code>으로 시작하도록 일관성을 유지합니다.
+        </p>
+      </div>
+    </div>
+
+    <div class="verdict verdict-agree">
+      <span class="verdict-icon">✅</span>
+      <div class="verdict-text">
+        <strong>동의.</strong> 개발자 직관이 정확합니다.
+        null response는 통신 실패이고, "does not exist"는 명백히 잘못된 메시지입니다.
+        수정이 필요합니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════ Q2 ═══════ -->
+<div class="qa-block">
+  <div class="qa-number">Question 2 of 2</div>
+
+  <div class="question-bubble">
+    <div class="bubble-label">👤 개발자 질문</div>
+    <p>
+      <code>실패_null_응답</code> 케이스에서 <code>bookRepository</code>가 호출될 수 없는 건 당연한 거 아닌가?
+      그런데 왜 <code>shouldHaveNoInteractions</code>로 검증하는지 모르겠다.
+    </p>
+  </div>
+
+  <div class="answer-section">
+
+    <div class="answer-card">
+      <div class="answer-card-header">🎯 핵심 분석</div>
+      <div class="answer-card-body">
+        <p>맞습니다. 흐름을 그대로 보면:</p>
+        <div class="diff-block" style="margin: 10px 0;">
+          <div class="diff-block-header">getBookByIsbn13WithApi() 실행 흐름 — null 응답 시</div>
+          <div class="diff-line diff-ctx">1. restTemplate.getForObject() → null 반환</div>
+          <div class="diff-line diff-ctx">2. if (response == null) → true</div>
+          <div class="diff-line diff-del">3. throw IllegalArgumentException  ← 여기서 종료</div>
+          <div class="diff-line diff-ctx" style="color: var(--muted); opacity: 0.4;">4. (이하 코드 실행 불가)</div>
+          <div class="diff-line diff-ctx" style="color: var(--muted); opacity: 0.4;">5. bookRepository ← 절대 도달 불가</div>
+        </div>
+        <p>
+          예외로 메서드가 즉시 종료되므로, <code>bookRepository</code>에 접근하는 것은
+          <strong>구조적으로 불가능</strong>합니다.
+          따라서 <code>shouldHaveNoInteractions</code>는 <strong>이미 알고 있는 사실을 검증</strong>하는 것입니다.
+        </p>
+      </div>
+    </div>
+
+    <div class="answer-card">
+      <div class="answer-card-header">📊 두 관점 비교</div>
+      <div class="answer-card-body">
+        <table class="compare-table">
+          <thead>
+            <tr><th>관점</th><th>주장</th><th>판단</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>남겨야 한다</td>
+              <td>미래에 누군가 코드를 변경해 DB를 건드리게 되면 안전망이 됨. "방어적 테스트"</td>
+              <td><span class="badge badge-yellow">약한 근거</span></td>
+            </tr>
+            <tr>
+              <td>제거해야 한다</td>
+              <td>
+                현재 코드 구조상 불가능한 경로를 검증하는 것은 <strong>노이즈</strong>.
+                테스트의 핵심 의도(예외 메시지 검증)를 흐림.
+                구현 세부사항(호출 여부)을 테스트하면 리팩터링 시 불필요한 테스트 깨짐 유발
+              </td>
+              <td><span class="badge badge-red">제거 권장</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin-top: 10px;">
+          좋은 단위 테스트는 <strong>행동(behavior)</strong>을 검증합니다.
+          "이 입력에 이 예외가 나야 한다"가 이 테스트의 의도이고,
+          그 이상의 구현 경로 검증은 테스트를 취약하게 만들 수 있습니다.
+        </p>
+        <div class="diff-block" style="margin-top: 10px;">
+          <div class="diff-block-header">BookServiceTest.java — 실패_null_응답 (권장 형태)</div>
+          <div class="diff-line diff-ctx">assertThatThrownBy(() -> bookService.getBookByIsbn13WithApi(ISBN13))</div>
+          <div class="diff-line diff-ctx">        .isInstanceOf(IllegalArgumentException.class)</div>
+          <div class="diff-line diff-ctx">        .hasMessageContaining("[Aladin]")</div>
+          <div class="diff-line diff-ctx">        .hasMessageContaining("응답을 받지 못했습니다");</div>
+          <div class="diff-line diff-del">-</div>
+          <div class="diff-line diff-del">- then(bookRepository).shouldHaveNoInteractions();</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict verdict-agree">
+      <span class="verdict-icon">✅</span>
+      <div class="verdict-text">
+        <strong>동의.</strong> 개발자 직관이 맞습니다.
+        <code>shouldHaveNoInteractions</code>는 이 케이스에서 불필요한 검증입니다.
+        핵심 행동(예외 발생 + 메시지)만 검증하는 것이 더 깔끔한 테스트입니다.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════ 결론 ═══════ -->
+<div class="answer-card">
+  <div class="answer-card-header">📋 변경 요약</div>
+  <div class="answer-card-body">
+    <table class="compare-table">
+      <thead>
+        <tr><th>파일</th><th>변경 내용</th><th>이유</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>BookService.java</code></td>
+          <td><code>response == null</code> 시 메시지를 통신 실패 의미로 수정</td>
+          <td>null은 책 부재가 아니라 API 통신 실패</td>
+        </tr>
+        <tr>
+          <td><code>BookServiceTest.java</code></td>
+          <td><code>실패_null_응답</code>: 메시지 검증 문자열 변경</td>
+          <td>소스 메시지 변경에 따른 동기화</td>
+        </tr>
+        <tr>
+          <td><code>BookServiceTest.java</code></td>
+          <td><code>실패_null_응답</code>: <code>shouldHaveNoInteractions</code> 제거</td>
+          <td>불가능한 경로의 불필요한 검증 제거</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</body>
+</html>

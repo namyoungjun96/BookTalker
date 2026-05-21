@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[커밋] fix/review-nav-reading-count</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .section { margin-bottom: 40px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+
+  .meta-table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; font-size: .88rem; }
+  .meta-table td { padding: 10px 16px; border-bottom: 1px solid #21262d; vertical-align: top; }
+  .meta-table tr:last-child td { border-bottom: none; }
+  .meta-table td:first-child { color: #8b949e; font-weight: 600; width: 140px; }
+  .branch-pill { font-family: 'Consolas', monospace; font-size: .85rem; background: #1c2128; border: 1px solid #30363d; border-radius: 12px; padding: 2px 10px; color: #79c0ff; }
+
+  .issue-list { display: flex; flex-direction: column; gap: 14px; }
+  .issue-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .issue-header { background: #1c2128; padding: 10px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #30363d; }
+  .issue-num { font-family: 'Consolas', monospace; font-size: .75rem; color: #8b949e; }
+  .issue-title { font-size: .9rem; font-weight: 600; color: #e6edf3; }
+  .issue-body { padding: 14px 16px; font-size: .85rem; color: #c9d1d9; }
+  .issue-body p { margin-bottom: 8px; }
+  .issue-body p:last-child { margin-bottom: 0; }
+
+  .diff-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+  .diff-header { background: #1c2128; padding: 8px 16px; font-size: .82rem; color: #8b949e; border-bottom: 1px solid #30363d; }
+  .diff-header span { font-family: 'Consolas', monospace; color: #79c0ff; }
+  .diff-body { font-family: 'Consolas', monospace; font-size: .8rem; line-height: 1.7; padding: 10px 0; }
+  .diff-line { padding: 0 16px; }
+  .d-del { background: #3d1e1e; color: #f85149; }
+  .d-add { background: #1a3025; color: #3fb950; }
+  .d-ctx { color: #8b949e; }
+
+  .flow-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; font-family: 'Consolas', monospace; font-size: .82rem; color: #8b949e; white-space: pre; line-height: 1.8; }
+  .f-old { color: #f85149; }
+  .f-new { color: #3fb950; }
+</style>
+</head>
+<body>
+
+<h1>[커밋] fix/review-nav-reading-count</h1>
+
+<!-- META -->
+<div class="section">
+  <h2>기본 정보</h2>
+  <table class="meta-table">
+    <tr><td>브랜치</td><td><span class="branch-pill">fix/review-nav-reading-count</span> (base: refactor/oauth2-naver-id)</td></tr>
+    <tr><td>변경 파일</td><td>3 files (프론트 전용)</td></tr>
+    <tr><td>커밋 메시지</td><td><code>FIX: [프론트] 회독 수 표시 및 nav 활성화 상태 수정</code></td></tr>
+  </table>
+</div>
+
+<!-- 문제 & 해결 -->
+<div class="section">
+  <h2>수정 내용</h2>
+  <div class="issue-list">
+
+    <div class="issue-card">
+      <div class="issue-header">
+        <span class="issue-num">#1</span>
+        <span class="issue-title">nextReadingCount가 항상 '?' 로 표시되는 문제</span>
+      </div>
+      <div class="issue-body">
+        <p><strong>원인</strong>: <code>nextReadingCount = ref('?')</code>로 고정. 서버 호출 없이 표시용으로만 남겨진 상태.</p>
+        <p><strong>해결</strong>: MyPageView에서 이미 보유 중인 <code>review.readingCount</code>를 query param으로 전달, ReviewCreateView에서 <code>computed(() => Number(route.query.readingCount || 1) + 1)</code>로 계산. 서버 추가 호출 없음.</p>
+        <p><strong>표시 예시</strong>: 현재 2회독 리뷰 → query <code>readingCount=2</code> → 화면 <code>3회독 독후감 작성</code></p>
+      </div>
+    </div>
+
+    <div class="issue-card">
+      <div class="issue-header">
+        <span class="issue-num">#2</span>
+        <span class="issue-title">독후감 작성 화면에서 nav 활성화가 안 되는 문제</span>
+      </div>
+      <div class="issue-body">
+        <p><strong>원인</strong>: <code>review-create</code> 라우트에 <code>meta.activeNav</code>가 없어서 <code>isActiveNav</code>가 <code>/reviews/new</code>와 비교 → 어떤 nav 항목도 매칭 안 됨.</p>
+        <p><strong>해결</strong>: <code>useNav.js</code>의 <code>isActiveNav</code>에 <code>review-create</code> 분기 추가.</p>
+        <p>
+          검색 → 1회독 독후감 작성: <code>검색</code> 탭 활성화<br>
+          마이페이지 → 회독 독후감 작성: <code>마이페이지</code> 탭 활성화
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 흐름 -->
+<div class="section">
+  <h2>데이터 흐름 (nextReadingCount)</h2>
+  <div class="flow-box"><span class="f-old">[ 기존 ]</span>
+MyPageView  →  router.push({ query: { mode, isbn13, title, cover } })
+ReviewCreateView  →  nextReadingCount = ref('?')  →  '?회독 독후감 작성'
+
+<span class="f-new">[ 변경 후 ]</span>
+MyPageView  →  router.push({ query: { mode, isbn13, title, cover, readingCount: review.readingCount } })
+ReviewCreateView  →  nextReadingCount = computed(() => Number(route.query.readingCount || 1) + 1)
+               →  '3회독 독후감 작성'  (예: readingCount=2 → 2+1=3)</div>
+</div>
+
+<!-- Diff -->
+<div class="section">
+  <h2>코드 변경</h2>
+
+  <div class="diff-card">
+    <div class="diff-header"><span>useNav.js</span></div>
+    <div class="diff-body">
+      <div class="diff-line d-ctx">  const isActiveNav = (path) => {</div>
+      <div class="diff-line d-add">+   if (route.name === 'review-create') {</div>
+      <div class="diff-line d-add">+     return route.query.mode === 'next-reading'</div>
+      <div class="diff-line d-add">+       ? path === '/mypage'</div>
+      <div class="diff-line d-add">+       : path === '/book-search';</div>
+      <div class="diff-line d-add">+   }</div>
+      <div class="diff-line d-ctx">    return (route.meta.activeNav ?? route.path) === path;</div>
+      <div class="diff-line d-ctx">  };</div>
+    </div>
+  </div>
+
+  <div class="diff-card">
+    <div class="diff-header"><span>MyPageView.vue</span> — onNextReading</div>
+    <div class="diff-body">
+      <div class="diff-line d-ctx">    query: {</div>
+      <div class="diff-line d-ctx">      mode: 'next-reading',</div>
+      <div class="diff-line d-ctx">      isbn13: review.bookIsbn13,</div>
+      <div class="diff-line d-ctx">      title: review.bookTitle,</div>
+      <div class="diff-line d-ctx">      cover: review.bookCover || '',</div>
+      <div class="diff-line d-add">+     readingCount: review.readingCount,</div>
+      <div class="diff-line d-ctx">    },</div>
+    </div>
+  </div>
+
+  <div class="diff-card">
+    <div class="diff-header"><span>ReviewCreateView.vue</span></div>
+    <div class="diff-body">
+      <div class="diff-line d-del">- const nextReadingCount = ref('?'); // 서버에서 받아올 수도 있지만, 표시용으로만 사용</div>
+      <div class="diff-line d-add">+ const nextReadingCount = computed(() => Number(route.query.readingCount || 1) + 1);</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
