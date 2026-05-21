@@ -5,10 +5,11 @@
 <title>[PR] fix/review-nav-reading-count</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 960px; margin: 0 auto; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 980px; margin: 0 auto; }
   h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
   h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
-  .section { margin-bottom: 44px; }
+  h3 { font-size: .9rem; font-weight: 600; color: #e6edf3; margin-bottom: 8px; }
+  .section { margin-bottom: 48px; }
   code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
   p { font-size: .88rem; color: #c9d1d9; margin-bottom: 8px; }
 
@@ -19,26 +20,58 @@
   .branch-pill { font-family: 'Consolas', monospace; font-size: .85rem; background: #1c2128; border: 1px solid #30363d; border-radius: 12px; padding: 2px 10px; color: #79c0ff; }
 
   .badge { display: inline-block; font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-right: 4px; vertical-align: middle; }
-  .b-fix { background: #da3633; color: #fff; }
+  .b-fix  { background: #da3633; color: #fff; }
   .b-feat { background: #1f6feb; color: #fff; }
-  .b-ref { background: #6e7681; color: #fff; }
+  .b-ref  { background: #6e7681; color: #fff; }
   .b-docs { background: #3fb950; color: #000; }
 
+  /* Decision process timeline */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .timeline-item { display: flex; gap: 0; }
+  .timeline-left { display: flex; flex-direction: column; align-items: center; width: 48px; flex-shrink: 0; }
+  .timeline-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 16px; }
+  .dot-green  { background: #3fb950; }
+  .dot-yellow { background: #d29922; }
+  .dot-blue   { background: #388bfd; }
+  .dot-gray   { background: #6e7681; }
+  .timeline-line { width: 2px; background: #30363d; flex: 1; margin-top: 4px; }
+  .timeline-item:last-child .timeline-line { display: none; }
+  .timeline-content { flex: 1; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; }
+  .timeline-label { font-size: .75rem; font-weight: 700; color: #8b949e; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .timeline-title { font-size: .9rem; font-weight: 600; color: #f0f6fc; margin-bottom: 6px; }
+  .timeline-body { font-size: .84rem; color: #8b949e; }
+  .timeline-body strong { color: #e6edf3; }
+
+  /* Decision cards */
+  .decision-grid { display: flex; flex-direction: column; gap: 12px; }
+  .decision-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .decision-head { background: #1c2128; padding: 10px 16px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 10px; }
+  .decision-q { font-size: .88rem; font-weight: 600; color: #e6edf3; }
+  .decision-body { padding: 14px 16px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .option { flex: 1; min-width: 180px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 10px 14px; }
+  .option.chosen { border-color: #3fb950; }
+  .option.rejected { opacity: .55; }
+  .option-label { font-size: .75rem; font-weight: 700; color: #8b949e; margin-bottom: 4px; }
+  .option-val { font-size: .85rem; color: #e6edf3; margin-bottom: 4px; }
+  .option-why { font-size: .8rem; color: #8b949e; }
+  .chosen-badge { font-size: .7rem; font-weight: 700; background: #3fb950; color: #000; border-radius: 4px; padding: 1px 6px; margin-left: 6px; }
+
+  /* Change cards */
+  .change-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+  .change-header { background: #1c2128; padding: 10px 16px; font-size: .85rem; font-weight: 600; color: #e6edf3; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 8px; }
+  .change-body { padding: 14px 16px; font-size: .85rem; color: #c9d1d9; }
+  .change-body ul { padding-left: 20px; }
+  .change-body li { margin-bottom: 4px; }
+
+  /* Commit list */
   .commit-list { display: flex; flex-direction: column; gap: 8px; }
   .commit-row { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 16px; font-size: .85rem; color: #c9d1d9; display: flex; align-items: baseline; gap: 10px; }
   .commit-hash { font-family: 'Consolas', monospace; font-size: .75rem; color: #6e7681; flex-shrink: 0; }
 
-  .change-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
-  .change-header { background: #1c2128; padding: 10px 16px; font-size: .85rem; font-weight: 600; color: #e6edf3; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 8px; }
-  .change-body { padding: 14px 16px; font-size: .85rem; color: #c9d1d9; }
-  .change-body p { margin-bottom: 6px; }
-  .change-body p:last-child { margin-bottom: 0; }
-  .change-body ul { padding-left: 20px; }
-  .change-body li { margin-bottom: 4px; font-size: .85rem; color: #c9d1d9; }
-
+  /* Flow */
   .flow-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; font-family: 'Consolas', monospace; font-size: .82rem; color: #8b949e; white-space: pre; line-height: 1.9; }
-  .f-new { color: #3fb950; }
-  .f-old { color: #f85149; }
+  .f-new  { color: #3fb950; }
+  .f-old  { color: #f85149; }
   .f-note { color: #d29922; }
 
   table { width: 100%; border-collapse: collapse; font-size: .85rem; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
@@ -47,9 +80,12 @@
   tr:last-child td { border-bottom: none; }
 
   .checklist { display: flex; flex-direction: column; gap: 8px; }
-  .check-item { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 16px; font-size: .85rem; color: #c9d1d9; display: flex; align-items: baseline; gap: 10px; }
-  .check-icon { color: #3fb950; flex-shrink: 0; }
-  .check-warn { color: #d29922; flex-shrink: 0; }
+  .check-item { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 10px 16px; font-size: .85rem; color: #c9d1d9; display: flex; gap: 10px; }
+  .ok   { color: #3fb950; flex-shrink: 0; }
+  .warn { color: #d29922; flex-shrink: 0; }
+
+  .quote { border-left: 3px solid #388bfd; background: #161b22; border-radius: 0 6px 6px 0; padding: 10px 16px; margin: 8px 0; font-size: .84rem; color: #8b949e; font-style: italic; }
+  .quote strong { color: #e6edf3; font-style: normal; }
 </style>
 </head>
 <body>
@@ -62,14 +98,283 @@
   <table class="meta-table">
     <tr><td>브랜치</td><td><span class="branch-pill">fix/review-nav-reading-count</span> → <span class="branch-pill">main</span></td></tr>
     <tr><td>PR 제목</td><td>FIX/FEAT: [프론트] 회독 수·nav 수정 + 마이페이지 리뷰 구조 개편</td></tr>
-    <tr><td>변경 파일</td><td>프론트 4 · 문서 다수 (백엔드 없음)</td></tr>
-    <tr><td>베이스</td><td>refactor/oauth2-naver-id가 merge된 main 기준</td></tr>
+    <tr><td>작업 기간</td><td>2026-05-19 ~ 2026-05-21</td></tr>
+    <tr><td>변경 범위</td><td>프론트엔드 전용 (백엔드 변경 없음)</td></tr>
   </table>
+</div>
+
+<!-- 의사결정 과정 -->
+<div class="section">
+  <h2>의사결정 과정</h2>
+  <p style="margin-bottom:20px;">이 PR의 핵심은 마이페이지 구조 개편입니다. 단순 버그 수정에서 출발했지만, 수정 과정에서 더 근본적인 UX 문제를 발견하여 구조를 재설계했습니다. 아래는 그 흐름입니다.</p>
+
+  <div class="timeline">
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot dot-yellow"></div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-label">문제 발견</div>
+        <div class="timeline-title">버그 2개 — nextReadingCount '?', nav 활성화 안 됨</div>
+        <div class="timeline-body">
+          마이페이지에서 '한번 더 봤어요' 클릭 시 ReviewCreateView의 제목이 항상 <strong>'?회독 독후감 작성'</strong>으로 표시되는 버그.<br>
+          독후감 작성 화면에서 상단 nav가 어떤 탭도 활성화되지 않는 버그.
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot dot-blue"></div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-label">버그 수정</div>
+        <div class="timeline-title">query param 전달 + useNav.js 분기 추가</div>
+        <div class="timeline-body">
+          <strong>nextReadingCount:</strong> 서버 추가 호출 없이 MyPageView에서 <code>readingCount</code>를 query param으로 전달 → ReviewCreateView에서 <code>+1</code> computed로 해결.<br>
+          <strong>nav:</strong> <code>review-create</code> 라우트에서 <code>mode=next-reading</code>이면 마이페이지 탭, 아니면 검색 탭 활성화.
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot dot-yellow"></div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-label">UX 문제 발견</div>
+        <div class="timeline-title">마이페이지 UI — 모바일 대응 문제</div>
+        <div class="timeline-body">
+          기존 카드 하단에 별점 + '한번 더 봤어요' + '삭제하기' 버튼이 가로 한 줄로 배치되어 <strong>모바일(375px)에서 버튼이 줄바꿈되거나 텍스트가 잘림</strong>.<br>
+          같은 책의 1·2·3회독이 각각 별도 카드로 나열되어 <strong>목록이 불필요하게 길어지는 문제</strong>.
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot dot-blue"></div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-label">설계 v1 제안</div>
+        <div class="timeline-title">책 단위 그룹핑 + MyBookDetailView 신규 페이지</div>
+        <div class="timeline-body">
+          AI가 설계안을 HTML 문서로 작성하여 검수 요청. 핵심 제안:<br>
+          · MyPageView를 책 단위 카드로 변경<br>
+          · 카드 클릭 → MyBookDetailView에서 모든 회독 목록 표시<br>
+          · 백엔드 변경 없이 프론트에서 <code>/review/list</code> 응답을 isbn13로 그룹핑
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot dot-yellow"></div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-label">검수 피드백</div>
+        <div class="timeline-title">"한 번만 읽은 사람에게 depth가 괜히 추가된다"</div>
+        <div class="timeline-body">
+          v1에서 모든 책 카드 클릭 시 MyBookDetailView로 이동하는 구조가 문제:<br>
+          회독 기능을 쓰지 않는 사용자(1회독만)는 클릭할 때마다 리뷰가 1개뿐인 중간 페이지를 거쳐야 함 → <strong>불필요한 depth</strong>.
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot dot-blue"></div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-label">설계 v2 수정</div>
+        <div class="timeline-title">클릭 동작을 회독 수에 따라 분기</div>
+        <div class="timeline-body">
+          피드백을 반영하여 조건부 네비게이션으로 수정:<br>
+          · <code>group.reviews.length === 1</code> → ReviewDetailView 직행 (기존과 동일한 경험)<br>
+          · <code>group.reviews.length >= 2</code> → MyBookDetailView (회독 이력 확인 필요한 사용자만)<br>
+          추가 API 호출 없이 조건문 하나로 해결.
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot dot-green"></div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-label">구현 → 검수 → 수정</div>
+        <div class="timeline-title">구현 후 실제 테스트에서 2가지 추가 문제 발견</div>
+        <div class="timeline-body">
+          · <strong>문제 A:</strong> 단독 회독 카드에서 '한번 더 봤어요' 버튼을 제거했더니 2회독을 시작할 진입 경로가 없어짐<br>
+          → 단독 회독 카드에 버튼 복원<br>
+          · <strong>문제 B:</strong> MyBookDetailView의 '한번 더 봤어요' 버튼이 flex 컨테이너 내부에 묻혀 레이아웃에 따라 불안정<br>
+          → 버튼을 책 제목 영역에서 분리해 독립 행으로 이동
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-left">
+        <div class="timeline-dot dot-green"></div>
+        <div class="timeline-line"></div>
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-label">문구 결정</div>
+        <div class="timeline-title">'한번 더 읽기' → '한번 더 봤어요'</div>
+        <div class="timeline-body">
+          구현 중 AI가 '한번 더 읽기'로 문구를 줄여서 작성 → 검수 중 이질감 지적.<br>
+          <strong>"어차피 밑에 인라인이 생겨야만 의미가 있으니 굳이 줄일 이유가 없다"</strong>는 판단으로 기존 문구 '한번 더 봤어요' 유지.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 주요 의사결정 -->
+<div class="section">
+  <h2>주요 의사결정</h2>
+
+  <div class="decision-grid">
+
+    <div class="decision-card">
+      <div class="decision-head">
+        <div class="decision-q">책 카드에 별점을 표시할까?</div>
+      </div>
+      <div class="decision-body">
+        <div class="option rejected">
+          <div class="option-label">A. 최근 회독 별점 표시</div>
+          <div class="option-val">카드에 ⭐ N 표시</div>
+          <div class="option-why">어떤 회독의 별점인지 모호함</div>
+        </div>
+        <div class="option chosen">
+          <div class="option-label">B. 표시 안 함 <span class="chosen-badge">채택</span></div>
+          <div class="option-val">카드에 별점 없음</div>
+          <div class="option-why">다회독 책에서 "어떤 회독의 별점?"이 불명확. 별점은 MyBookDetailView 각 회독 행에서만 표시.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="decision-head">
+        <div class="decision-q">nextReadingCount를 서버에서 매번 조회해야 할까?</div>
+      </div>
+      <div class="decision-body">
+        <div class="option rejected">
+          <div class="option-label">A. 서버 API 추가 호출</div>
+          <div class="option-val">GET /review/count?isbn13=...</div>
+          <div class="option-why">추가 API 엔드포인트 필요, 불필요한 네트워크 비용</div>
+        </div>
+        <div class="option chosen">
+          <div class="option-label">B. query param 전달 <span class="chosen-badge">채택</span></div>
+          <div class="option-val">MyPageView에서 readingCount 전달 → +1 computed</div>
+          <div class="option-why">MyPageView가 이미 리뷰 데이터를 보유. 추가 호출 없이 해결 가능.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="decision-head">
+        <div class="decision-q">MyBookDetailView의 정렬 방향은?</div>
+      </div>
+      <div class="decision-body">
+        <div class="option rejected">
+          <div class="option-label">A. 오름차순 (1→2→3)</div>
+          <div class="option-val">처음 읽은 순서대로</div>
+          <div class="option-why">가장 최근 회독이 맨 아래에 위치</div>
+        </div>
+        <div class="option chosen">
+          <div class="option-label">B. 내림차순 (3→2→1) <span class="chosen-badge">채택</span></div>
+          <div class="option-val">최신 회독이 상단</div>
+          <div class="option-why">사용자는 보통 가장 최근 회독이 궁금함. 스크롤 없이 최신 내용 확인 가능.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="decision-head">
+        <div class="decision-q">회독 행 삭제 방식은?</div>
+      </div>
+      <div class="decision-body">
+        <div class="option rejected">
+          <div class="option-label">A. 스와이프 삭제 (모바일)</div>
+          <div class="option-val">좌→우 스와이프로 삭제 버튼 노출</div>
+          <div class="option-why">구현 복잡도 높음, 데스크탑에서 동작 안 함</div>
+        </div>
+        <div class="option chosen">
+          <div class="option-label">B. 행마다 🗑 아이콘 <span class="chosen-badge">채택</span></div>
+          <div class="option-val">각 행 우측에 삭제 버튼 노출</div>
+          <div class="option-why">구현 단순, 모바일·데스크탑 모두 동일 UX. 포트폴리오 단계에서 충분.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 변경 내용 요약 -->
+<div class="section">
+  <h2>변경 내용</h2>
+
+  <div class="change-card">
+    <div class="change-header"><span class="badge b-fix">FIX</span> nextReadingCount · nav 활성화</div>
+    <div class="change-body">
+      <ul>
+        <li><code>ReviewCreateView</code>: <code>ref('?')</code> → <code>computed(() => Number(route.query.readingCount || 1) + 1)</code></li>
+        <li><code>useNav.js</code>: <code>review-create</code> 라우트에서 <code>mode</code> query로 활성 탭 분기</li>
+        <li><code>MyPageView</code>: router.push 시 <code>readingCount</code> query param 추가</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="change-card">
+    <div class="change-header"><span class="badge b-feat">FEAT</span> 마이페이지 리뷰 구조 개편</div>
+    <div class="change-body">
+      <ul>
+        <li><code>MyPageView</code>: isbn13 기준 그룹핑 (computed). 단독 회독 → ReviewDetailView, 다독 → MyBookDetailView 분기</li>
+        <li><code>MyPageView</code>: 단독 회독 카드에 '한번 더 봤어요' 버튼 유지</li>
+        <li><code>MyBookDetailView</code> (신규): readingCount 내림차순 정렬, '한번 더 봤어요' 버튼, 각 행 클릭 → ReviewDetailView</li>
+        <li><code>router/index.js</code>: <code>/mypage/books/:isbn13</code> lazy 라우트 추가 (<code>meta.activeNav: '/mypage'</code>)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="change-card">
+    <div class="change-header"><span class="badge b-docs">DOCS</span> README · CLAUDE.md · document/ 최초 커밋</div>
+    <div class="change-body">
+      <ul>
+        <li>README: 회독 시스템·Discord 모니터링 설명 보강, <code>document/</code> 폴더 안내 섹션 추가</li>
+        <li>CLAUDE.md (신규): 작업 단위 HTML 문서화 규칙, 커밋 워크플로(검수 후 커밋) 문서화</li>
+        <li><code>document/</code> 폴더 전체 최초 커밋 (설계·리뷰·커밋·PR 문서 23개)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 페이지 흐름 -->
+<div class="section">
+  <h2>마이페이지 페이지 흐름 (변경 후)</h2>
+  <div class="flow-box"><span class="f-note">MyPageView (책 단위 카드)</span>
+  ├── 단독 회독 카드 클릭  ──────────────────→  ReviewDetailView
+  │   └── '한번 더 봤어요' 버튼 클릭  ───────→  ReviewCreateView (mode=next-reading)
+  │                                              제목: "2회독 독후감 작성"
+  │
+  └── 다독 카드 클릭  ──────────────────────→  <span class="f-new">MyBookDetailView</span> (신규)
+      ├── 상단: '한번 더 봤어요' 버튼  ───────→  ReviewCreateView (mode=next-reading)
+      └── 회독 행 클릭  ──────────────────────→  ReviewDetailView</div>
 </div>
 
 <!-- 커밋 목록 -->
 <div class="section">
-  <h2>커밋 목록 (이 브랜치 고유)</h2>
+  <h2>커밋 목록</h2>
   <div class="commit-list">
     <div class="commit-row"><span class="badge b-fix">FIX</span><span class="commit-hash">a191281</span><span>[프론트] 회독 수 표시 및 nav 활성화 상태 수정</span></div>
     <div class="commit-row"><span class="badge b-feat">FEAT</span><span class="commit-hash">277f000</span><span>[프론트] 마이페이지 리뷰 개수 표시 및 최신순 정렬</span></div>
@@ -80,94 +385,21 @@
     <div class="commit-row"><span class="badge b-feat">FEAT</span><span class="commit-hash">0f02bb3</span><span>[프론트] 마이페이지 리뷰 구조 개편 및 회독 버튼 수정</span></div>
     <div class="commit-row"><span class="badge b-docs">DOCS</span><span class="commit-hash">f54e5cb</span><span>[README] 기능 설명 업데이트</span></div>
     <div class="commit-row"><span class="badge b-docs">DOCS</span><span class="commit-hash">3a6dce6</span><span>[CLAUDE.md] 작업 문서화 규칙 추가</span></div>
+    <div class="commit-row"><span class="badge b-docs">DOCS</span><span class="commit-hash">577f8b1</span><span>[document] 작업 문서 최초 커밋 및 README document 폴더 안내 추가</span></div>
   </div>
-</div>
-
-<!-- 변경 내용 -->
-<div class="section">
-  <h2>변경 내용</h2>
-
-  <div class="change-card">
-    <div class="change-header"><span class="badge b-fix">FIX #1</span> nextReadingCount '?' 고정 문제</div>
-    <div class="change-body">
-      <p><strong>원인:</strong> <code>ReviewCreateView</code>에서 <code>nextReadingCount = ref('?')</code> 로 하드코딩.</p>
-      <p><strong>해결:</strong> <code>MyPageView</code>에서 <code>readingCount</code>를 query param으로 전달 → <code>computed(() => Number(route.query.readingCount || 1) + 1)</code>으로 계산.</p>
-    </div>
-  </div>
-
-  <div class="change-card">
-    <div class="change-header"><span class="badge b-fix">FIX #2</span> 독후감 작성 화면 nav 활성화 안 되는 문제</div>
-    <div class="change-body">
-      <p><strong>원인:</strong> <code>review-create</code> 라우트에 <code>meta.activeNav</code> 없어서 어떤 탭도 활성화 안 됨.</p>
-      <p><strong>해결:</strong> <code>useNav.js</code>에 <code>review-create</code> 분기 추가 — <code>mode=next-reading</code>이면 마이페이지, 아니면 검색 탭 활성화.</p>
-    </div>
-  </div>
-
-  <div class="change-card">
-    <div class="change-header"><span class="badge b-feat">FEAT</span> 마이페이지 리뷰 구조 개편</div>
-    <div class="change-body">
-      <p><strong>기존:</strong> 모든 리뷰를 flat 목록으로 표시 (같은 책의 1·2·3회독이 각각 카드로 나열).</p>
-      <p><strong>변경:</strong></p>
-      <ul>
-        <li><code>MyPageView</code> → isbn13 기준 책 단위 그룹핑. 카드 클릭 분기:</li>
-        <li>단독 회독(1개) → <code>ReviewDetailView</code> 직행</li>
-        <li>다독(2개 이상) → <code>MyBookDetailView</code> (신규 페이지)</li>
-        <li>단독 회독 카드에 '한번 더 봤어요' 버튼 유지</li>
-        <li><code>MyBookDetailView</code> (신규) → 해당 책의 모든 회독을 readingCount 내림차순으로 표시. 상단에 '한번 더 봤어요' 버튼.</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="change-card">
-    <div class="change-header"><span class="badge b-docs">DOCS</span> README · CLAUDE.md 업데이트</div>
-    <div class="change-body">
-      <ul>
-        <li>README: 회독 시스템·Discord 모니터링 설명 추가, <code>document/</code> 폴더 안내 섹션 추가</li>
-        <li>CLAUDE.md: 작업 문서화 규칙(HTML 남기기), 커밋 워크플로(검수 후 커밋) 추가</li>
-        <li><code>document/</code> 폴더 전체 최초 커밋</li>
-      </ul>
-    </div>
-  </div>
-</div>
-
-<!-- 페이지 흐름 -->
-<div class="section">
-  <h2>마이페이지 페이지 흐름 (변경 후)</h2>
-  <div class="flow-box"><span class="f-note">MyPageView (책 단위 카드)</span>
-  ├── 단독 회독 카드 클릭  ──────────────→  <span class="f-new">ReviewDetailView</span>
-  │   └── '한번 더 봤어요' 버튼 클릭  ──→  <span class="f-new">ReviewCreateView</span> (next-reading)
-  │
-  └── 다독 카드 클릭  ─────────────────→  <span class="f-new">MyBookDetailView</span> (신규)
-      ├── 회독 행 클릭  ──────────────→  <span class="f-new">ReviewDetailView</span>
-      └── '한번 더 봤어요' 버튼  ─────→  <span class="f-new">ReviewCreateView</span> (next-reading)</div>
-</div>
-
-<!-- 변경 파일 -->
-<div class="section">
-  <h2>변경 파일</h2>
-  <table>
-    <tr><th>파일</th><th>변경</th></tr>
-    <tr><td><code>src/views/MyPageView.vue</code></td><td>isbn13 그룹핑, 조건부 네비게이션, 한번 더 봤어요 버튼</td></tr>
-    <tr><td><code>src/views/MyBookDetailView.vue</code></td><td>신규 생성</td></tr>
-    <tr><td><code>src/views/ReviewCreateView.vue</code></td><td>nextReadingCount computed, 작성자 카드 제거</td></tr>
-    <tr><td><code>src/composables/useNav.js</code></td><td>review-create 분기 추가</td></tr>
-    <tr><td><code>src/router/index.js</code></td><td>/mypage/books/:isbn13 라우트 추가</td></tr>
-    <tr><td><code>README.md</code></td><td>기능 설명·document 폴더 안내 추가</td></tr>
-    <tr><td><code>CLAUDE.md</code></td><td>신규 생성 (작업 규칙)</td></tr>
-    <tr><td><code>document/**</code></td><td>최초 커밋 (설계·커밋·PR 문서 전체)</td></tr>
-  </table>
 </div>
 
 <!-- 테스트 체크리스트 -->
 <div class="section">
   <h2>테스트 체크리스트</h2>
   <div class="checklist">
-    <div class="check-item"><span class="check-icon">✓</span><span>마이페이지 → 책 단위 카드로 표시</span></div>
-    <div class="check-item"><span class="check-icon">✓</span><span>단독 회독 카드 클릭 → ReviewDetailView 직행</span></div>
-    <div class="check-item"><span class="check-icon">✓</span><span>단독 회독 카드 '한번 더 봤어요' 클릭 → ReviewCreateView, nextReadingCount 정확히 표시</span></div>
-    <div class="check-item"><span class="check-icon">✓</span><span>nav 활성화: 검색→독후감 작성 시 검색 탭, 마이페이지→회독 시 마이페이지 탭</span></div>
-    <div class="check-item"><span class="check-icon">✓</span><span>/mypage/books/:isbn13 진입 시 마이페이지 탭 활성화</span></div>
-    <div class="check-item"><span class="check-warn">⚠</span><span>다독 카드(2회독 이상) → MyBookDetailView: DB에 2회독 데이터 필요</span></div>
+    <div class="check-item"><span class="ok">✓</span><span>마이페이지 → 책 단위 카드로 표시, 최신순 정렬</span></div>
+    <div class="check-item"><span class="ok">✓</span><span>단독 회독 카드 클릭 → ReviewDetailView 직행</span></div>
+    <div class="check-item"><span class="ok">✓</span><span>단독 회독 카드 '한번 더 봤어요' → ReviewCreateView, "2회독 독후감 작성" 표시</span></div>
+    <div class="check-item"><span class="ok">✓</span><span>검색→독후감 작성 시 '검색' 탭 활성화</span></div>
+    <div class="check-item"><span class="ok">✓</span><span>마이페이지→회독 작성 시 '마이페이지' 탭 활성화</span></div>
+    <div class="check-item"><span class="ok">✓</span><span>/mypage/books/:isbn13 진입 시 '마이페이지' 탭 활성화</span></div>
+    <div class="check-item"><span class="warn">⚠</span><span>다독 카드(2회독 이상) → MyBookDetailView: DB에 2회독 이상 데이터 필요</span></div>
   </div>
 </div>
 
