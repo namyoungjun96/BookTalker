@@ -45,6 +45,12 @@ const routes = [
     meta: { activeNav: '/mypage' },
   },
   {
+    path: '/mypage/books/:isbn13',
+    name: 'my-book-detail',
+    component: () => import('../views/MyBookDetailView.vue'),
+    meta: { activeNav: '/mypage' },
+  },
+  {
     path: '/books/:isbn13/reviews',
     name: 'book-reviews',
     component: BookReviewsView,
