@@ -16,9 +16,7 @@ public class OAuth2UserEntity {
     Integer id;
     String provider; // 'google', 'kakao', 'naver'
     @Column(name = "provider_id")
-    String providerId; // OAuth2 제공자에서의 사용자 ID
-    @Column(name = "provider_email")
-    String providerEmail;
+    String providerId;
     @Column(name = "created_at")
     LocalDateTime createdAt;
 }

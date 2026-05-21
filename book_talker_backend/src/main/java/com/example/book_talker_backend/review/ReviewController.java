@@ -35,8 +35,8 @@ public class ReviewController {
             @RequestBody ReviewRequest request,
             @AuthenticationPrincipal OAuth2User oauth2User) {
         Map<String, Object> response = oauth2User.getAttribute("response");
-        String email = (String) response.get("email");
-        reviewService.insertReview(request, email);
+        String naverId = (String) response.get("id");
+        reviewService.insertReview(request, naverId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -45,8 +45,8 @@ public class ReviewController {
             @RequestBody ReviewRequest request,
             @AuthenticationPrincipal OAuth2User oauth2User) {
         Map<String, Object> response = oauth2User.getAttribute("response");
-        String email = (String) response.get("email");
-        reviewService.insertNextReading(request, email);
+        String naverId = (String) response.get("id");
+        reviewService.insertNextReading(request, naverId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
@@ -55,27 +55,26 @@ public class ReviewController {
             @RequestBody ReviewRequest request,
             @AuthenticationPrincipal OAuth2User oauth2User) {
         Map<String, Object> response = oauth2User.getAttribute("response");
-        String email = (String) response.get("email");
-        reviewService.updateReview(request, email);
+        String naverId = (String) response.get("id");
+        reviewService.updateReview(request, naverId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
-
 
     @DeleteMapping
     public ResponseEntity<Void> deleteReview(
             @RequestParam Long reviewId,
             @AuthenticationPrincipal OAuth2User oauth2User) {
         Map<String, Object> response = oauth2User.getAttribute("response");
-        String email = (String) response.get("email");
-        reviewService.deleteReview(reviewId, email);
+        String naverId = (String) response.get("id");
+        reviewService.deleteReview(reviewId, naverId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @GetMapping("/list")
     public ResponseEntity<List<ReviewListResponse>> getUserReviews(@AuthenticationPrincipal OAuth2User oauth2User) {
         Map<String, Object> response = oauth2User.getAttribute("response");
-        String email = (String) response.get("email");
-        return new ResponseEntity<>(reviewService.getReviews(email), HttpStatus.OK);
+        String naverId = (String) response.get("id");
+        return new ResponseEntity<>(reviewService.getReviews(naverId), HttpStatus.OK);
     }
 
     @GetMapping("/detail")
@@ -83,8 +82,7 @@ public class ReviewController {
             @RequestParam Long reviewId,
             @AuthenticationPrincipal OAuth2User oauth2User) {
         Map<String, Object> response = oauth2User.getAttribute("response");
-        String email = (String) response.get("email");
-        return new ResponseEntity<>(reviewService.getReviewDetail(reviewId, email), HttpStatus.OK);
+        String naverId = (String) response.get("id");
+        return new ResponseEntity<>(reviewService.getReviewDetail(reviewId, naverId), HttpStatus.OK);
     }
-
 }

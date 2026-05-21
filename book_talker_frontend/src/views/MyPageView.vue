@@ -2,7 +2,10 @@
   <div class="app-container">
     <main class="main-content">
       <div class="content-wrapper">
-        <h2 class="page-title">내가 작성한 리뷰</h2>
+        <h2 class="page-title">
+          내가 작성한 리뷰
+          <span v-if="!isLoading" class="review-count">({{ reviews.length }})</span>
+        </h2>
 
         <!-- 로딩 중 -->
         <div v-if="isLoading" class="loading-state">
@@ -105,7 +108,9 @@ const fetchReviews = async () => {
     const response = await apiClient.get('/review/list', {
       skipErrorCodes: [404],
     });
-    reviews.value = response.data || [];
+    reviews.value = (response.data || []).sort(
+      (a, b) => new Date(b.regDate) - new Date(a.regDate)
+    );
   } catch (error) {
     reviews.value = [];
   } finally {
@@ -196,6 +201,12 @@ onMounted(async () => {
   color: #1f2937;
   margin: 0 0 32px 0;
   line-height: 1.3;
+}
+
+.review-count {
+  font-size: 20px;
+  font-weight: 400;
+  color: #9ca3af;
 }
 
 .loading-state {
