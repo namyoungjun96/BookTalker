@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookTalker 코드 리뷰 — 회독 기능</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      padding: 40px 24px 80px;
+    }
+
+    .page-header {
+      max-width: 900px;
+      margin: 0 auto 40px;
+    }
+
+    .page-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+
+    .page-header .meta {
+      font-size: 14px;
+      color: #6b7280;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .page-header .meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* 요약 카드 */
+    .summary-grid {
+      max-width: 900px;
+      margin: 0 auto 40px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .summary-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      border-top: 4px solid;
+    }
+
+    .summary-card.critical { border-color: #ef4444; }
+    .summary-card.important { border-color: #f59e0b; }
+    .summary-card.suggestion { border-color: #3b82f6; }
+
+    .summary-card .count {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .summary-card.critical .count { color: #ef4444; }
+    .summary-card.important .count { color: #f59e0b; }
+    .summary-card.suggestion .count { color: #3b82f6; }
+
+    .summary-card .label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    /* 섹션 */
+    .section {
+      max-width: 900px;
+      margin: 0 auto 32px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid;
+    }
+
+    .section-title.critical { color: #ef4444; border-color: #fecaca; }
+    .section-title.important { color: #d97706; border-color: #fde68a; }
+    .section-title.suggestion { color: #2563eb; border-color: #bfdbfe; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .badge.critical { background: #ef4444; }
+    .badge.important { background: #f59e0b; }
+    .badge.suggestion { background: #3b82f6; }
+
+    /* 이슈 카드 */
+    .issue-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      border-left: 4px solid;
+      position: relative;
+    }
+
+    .issue-card.critical { border-color: #ef4444; }
+    .issue-card.important { border-color: #f59e0b; }
+    .issue-card.suggestion { border-color: #3b82f6; }
+
+    .issue-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .issue-num {
+      font-size: 13px;
+      font-weight: 700;
+      color: #9ca3af;
+      min-width: 28px;
+      padding-top: 2px;
+    }
+
+    .issue-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a2e;
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .issue-body {
+      padding-left: 40px;
+    }
+
+    .location-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      color: #374151;
+      margin-bottom: 10px;
+    }
+
+    .issue-desc {
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+
+    .fix-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #166534;
+      line-height: 1.6;
+    }
+
+    .fix-box strong {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #14532d;
+    }
+
+    code {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 12px;
+      color: #1e40af;
+    }
+
+    .issue-card.critical .fix-box {
+      background: #fff7f7;
+      border-color: #fecaca;
+      color: #7f1d1d;
+    }
+
+    .issue-card.critical .fix-box strong { color: #7f1d1d; }
+
+    /* 테이블 */
+    .overview-table {
+      max-width: 900px;
+      margin: 0 auto 40px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+
+    .overview-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .overview-table th {
+      background: #1a1a2e;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 12px 16px;
+      text-align: left;
+      letter-spacing: .04em;
+    }
+
+    .overview-table td {
+      padding: 11px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid #f3f4f6;
+      vertical-align: middle;
+    }
+
+    .overview-table tr:last-child td { border-bottom: none; }
+    .overview-table tr:hover td { background: #fafafa; }
+
+    .severity-pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+
+    .severity-pill.critical { background: #fee2e2; color: #991b1b; }
+    .severity-pill.important { background: #fef3c7; color: #92400e; }
+    .severity-pill.suggestion { background: #dbeafe; color: #1e40af; }
+
+    @media (max-width: 640px) {
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 헤더 -->
+  <div class="page-header">
+    <h1>BookTalker 코드 리뷰 보고서</h1>
+    <div class="meta">
+      <span>🔖 Feature: 회독(多読) 기능</span>
+      <span>🗓 2026-04-27</span>
+      <span>🔍 Reviewer: superpowers:code-reviewer</span>
+    </div>
+  </div>
+
+  <!-- 요약 카드 -->
+  <div class="summary-grid">
+    <div class="summary-card critical">
+      <div class="count">3</div>
+      <div class="label">Critical</div>
+    </div>
+    <div class="summary-card important">
+      <div class="count">5</div>
+      <div class="label">Important</div>
+    </div>
+    <div class="summary-card suggestion">
+      <div class="count">5</div>
+      <div class="label">Suggestion</div>
+    </div>
+  </div>
+
+  <!-- 전체 요약 테이블 -->
+  <div class="overview-table">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>심각도</th>
+          <th>위치</th>
+          <th>문제 요약</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><span class="severity-pill critical">CRITICAL</span></td>
+          <td><code>ReviewService.insertNextReading</code></td>
+          <td>Race condition — readingCount 충돌 가능</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><span class="severity-pill critical">CRITICAL</span></td>
+          <td><code>ReviewRequest.to()</code> / <code>ReviewCreateView.vue:278</code></td>
+          <td>writer 필드 보안 스멜 + anonymous 폴백</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><span class="severity-pill critical">CRITICAL</span></td>
+          <td><code>GlobalExceptionHandler</code></td>
+          <td>AccessDeniedException 가로채기 — Spring Security 간섭</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><span class="severity-pill important">IMPORTANT</span></td>
+          <td><code>MyPageView.vue</code></td>
+          <td>모든 회독 카드에 "한 번 더 봤어요" 표시</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><span class="severity-pill important">IMPORTANT</span></td>
+          <td><code>ReviewCreateView.vue:278</code></td>
+          <td>currentUser null 시 폼 제출 차단 없음</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><span class="severity-pill important">IMPORTANT</span></td>
+          <td><code>ReviewService.insertNextReading</code></td>
+          <td>headline, content, rating 유효성 검증 누락</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td><span class="severity-pill important">IMPORTANT</span></td>
+          <td><code>Review.java</code></td>
+          <td>@Setter 클래스 레벨 → id, readingCount도 public setter</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td><span class="severity-pill important">IMPORTANT</span></td>
+          <td><code>Review.java</code></td>
+          <td>Integer readingCount — null 가능, int 프리미티브 권장</td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td><span class="severity-pill suggestion">SUGGESTION</span></td>
+          <td><code>ReviewCreateView.vue</code></td>
+          <td>nextReadingCount가 항상 "?" 표시됨</td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td><span class="severity-pill suggestion">SUGGESTION</span></td>
+          <td><code>ReviewController</code></td>
+          <td>POST 성공 응답이 200 → REST 관례상 201 권장</td>
+        </tr>
+        <tr>
+          <td>11</td>
+          <td><span class="severity-pill suggestion">SUGGESTION</span></td>
+          <td><code>ReviewRepository.findPublicReviews</code></td>
+          <td>공개 리뷰 조회 시 엔티티 전체 fetch → 프로젝션 최적화 가능</td>
+        </tr>
+        <tr>
+          <td>12</td>
+          <td><span class="severity-pill suggestion">SUGGESTION</span></td>
+          <td><code>ReviewServiceTest</code></td>
+          <td>성공 케이스에서 getBook() 단언 누락</td>
+        </tr>
+        <tr>
+          <td>13</td>
+          <td><span class="severity-pill suggestion">SUGGESTION</span></td>
+          <td><code>MyPageView.vue</code></td>
+          <td>nextReadingId — 네비게이션 실패 시 리셋 안 됨</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CRITICAL -->
+  <div class="section">
+    <div class="section-title critical">
+      <span class="badge critical">!</span>
+      Critical — 반드시 수정
+    </div>
+
+    <div class="issue-card critical">
+      <div class="issue-header">
+        <span class="issue-num">#1</span>
+        <span class="issue-title">Race Condition — insertNextReading에서 readingCount 충돌 가능</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 ReviewService.java · insertNextReading()</div>
+        <p class="issue-desc">
+          <code>findMaxReadingCount()</code> 조회 후 <code>save()</code>까지 사이에 락이 없습니다.
+          동일 사용자가 동시에 두 번 요청하면 두 요청 모두 같은 <code>maxReadingCount</code>를 읽고,
+          동일한 <code>readingCount</code>로 저장을 시도합니다.
+          DB 유니크 제약이 잡아주긴 하지만, 이때 노출되는 에러 메시지는
+          Hibernate 내부 메시지(<code>DataIntegrityViolationException</code>)가 그대로 반환됩니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          <code>insertNextReading</code> 내부에서 <code>save()</code>를 <code>try-catch</code>로 감싸
+          <code>DataIntegrityViolationException</code>을 잡아서 사용자 친화적 메시지의
+          <code>DataIntegrityViolationException</code>으로 재던지거나,
+          <code>SELECT ... FOR UPDATE</code>(비관적 락)을 적용합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-card critical">
+      <div class="issue-header">
+        <span class="issue-num">#2</span>
+        <span class="issue-title">writer 필드 보안 스멜 + 프론트에서 'anonymous' 폴백</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 ReviewRequest.java · ReviewCreateView.vue:278</div>
+        <p class="issue-desc">
+          <code>ReviewRequest.to()</code>가 클라이언트 요청의 <code>writer</code>로 엔티티를 설정하고
+          서비스가 즉시 덮어씁니다. 덮어쓰는 코드가 빠지면 권한 상승 버그가 됩니다.<br /><br />
+          프론트엔드에서는 <code>currentUser</code>가 null이면 <code>'anonymous'</code>를 전송합니다.
+          세션 만료 시 사용자에게 명확한 오류 대신 Spring Security의 302/401이 반환됩니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          <code>ReviewRequest.to()</code>에서 <code>review.setWriter(this.writer)</code>를 제거합니다.
+          프론트에서는 <code>currentUser</code>가 null이면 폼 제출을 막고 재로그인 안내를 표시합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-card critical">
+      <div class="issue-header">
+        <span class="issue-num">#3</span>
+        <span class="issue-title">GlobalExceptionHandler가 Spring Security의 AccessDeniedException을 가로챔</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 GlobalExceptionHandler.java</div>
+        <p class="issue-desc">
+          <code>AccessDeniedException</code>은 Spring Security의 <code>ExceptionTranslationFilter</code>가
+          처리하는 예외입니다. <code>@RestControllerAdvice</code>가 이를 가로채면
+          미인증(401)과 인가 실패(403)를 구분하지 못하고, Spring Security의 세션/리다이렉트 흐름도 끊깁니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          <code>SecurityConfig</code>에 <code>.exceptionHandling(e -&gt; e.accessDeniedHandler(...).authenticationEntryPoint(...))</code>를 설정해
+          JSON 응답을 반환하도록 하고, <code>GlobalExceptionHandler</code>의 <code>AccessDeniedException</code>
+          핸들러는 제거합니다. 또는 현재 방식을 유지하되 주석으로 의도를 명시합니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORTANT -->
+  <div class="section">
+    <div class="section-title important">
+      <span class="badge important">▲</span>
+      Important — 수정 권장
+    </div>
+
+    <div class="issue-card important">
+      <div class="issue-header">
+        <span class="issue-num">#4</span>
+        <span class="issue-title">같은 책의 모든 회독 카드에 "한 번 더 봤어요" 버튼이 표시됨</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 MyPageView.vue</div>
+        <p class="issue-desc">
+          동일 ISBN의 1회독, 2회독 카드가 모두 존재하면 두 카드 모두에 "한 번 더 봤어요"가 보입니다.
+          기능적으로는 무관하지만(백엔드가 max+1을 계산하므로), 사용자에게 혼란스럽습니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          ISBN13별로 그룹핑 후 가장 높은 <code>readingCount</code>인 카드에만 버튼을 표시합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-card important">
+      <div class="issue-header">
+        <span class="issue-num">#5</span>
+        <span class="issue-title">currentUser가 null이면 폼 제출이 차단되지 않음</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 ReviewCreateView.vue:278</div>
+        <p class="issue-desc">
+          네트워크 오류나 세션 만료로 <code>fetchCurrentUser</code>가 실패해도
+          폼을 제출할 수 있습니다. 요청은 Spring Security에 의해 거부되지만 사용자는 이유를 알 수 없습니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          <code>currentUser</code>가 null이면 등록 버튼을 비활성화하고 "로그인 상태를 확인해주세요" 안내를 표시합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-card important">
+      <div class="issue-header">
+        <span class="issue-num">#6</span>
+        <span class="issue-title">insertNextReading에 입력값 유효성 검증 없음</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 ReviewService.java · insertNextReading()</div>
+        <p class="issue-desc">
+          <code>updateReview</code>는 <code>headline</code>, <code>content</code>, <code>rating</code>을 검증하지만
+          <code>insertNextReading</code>에는 동일한 검증이 없습니다.
+          <code>rating</code>이 null이면 DB에 null이 저장되거나 NPE가 발생해 500 오류가 반환됩니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          공통 private 검증 메서드를 추출해 <code>insertReview</code>, <code>insertNextReading</code>, <code>updateReview</code> 모두에서 호출합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-card important">
+      <div class="issue-header">
+        <span class="issue-num">#7</span>
+        <span class="issue-title">@Setter 클래스 레벨 — id와 readingCount에도 public setter 생성됨</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 Review.java</div>
+        <p class="issue-desc">
+          <code>@Setter</code>가 클래스 전체에 적용되어 <code>setId()</code>와 <code>setReadingCount()</code>가
+          모두 공개됩니다. <code>review.setId(otherId)</code>를 호출하면 JPA가 insert 대신 merge를 수행하여
+          기존 데이터를 덮어쓸 수 있습니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          <code>id</code>와 <code>readingCount</code>에는 <code>@Setter</code>를 적용하지 않고
+          필드 레벨로 나머지에만 붙이거나, <code>@Builder</code>로 전환합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-card important">
+      <div class="issue-header">
+        <span class="issue-num">#8</span>
+        <span class="issue-title">Integer readingCount — null 가능 타입이 nullable=false와 충돌</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 Review.java</div>
+        <p class="issue-desc">
+          <code>Integer</code>(박싱 타입)는 Java에서 null 가능합니다. <code>setReadingCount()</code>가
+          누락된 코드 경로가 생기면 Hibernate가 null을 DB에 전달하거나 NPE가 발생합니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          <code>private int readingCount;</code> 프리미티브로 변경합니다. null 자체가 불가능해져 방어 코드가 불필요해집니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUGGESTION -->
+  <div class="section">
+    <div class="section-title suggestion">
+      <span class="badge suggestion">i</span>
+      Suggestion — 개선 사항
+    </div>
+
+    <div class="issue-card suggestion">
+      <div class="issue-header">
+        <span class="issue-num">#9</span>
+        <span class="issue-title">회독 독후감 작성 페이지 제목이 항상 "?회독"으로 표시됨</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 ReviewCreateView.vue · nextReadingCount</div>
+        <p class="issue-desc">
+          <code>nextReadingCount</code>가 <code>ref('?')</code>로 초기화되고 업데이트되지 않아
+          항상 "?회독 독후감 작성"으로 표시됩니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          <code>onNextReading()</code>에서 <code>query.readingCount = review.readingCount + 1</code>을 함께 전달하고,
+          <code>ReviewCreateView</code>에서 <code>route.query.readingCount</code>로 읽습니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-card suggestion">
+      <div class="issue-header">
+        <span class="issue-num">#10</span>
+        <span class="issue-title">POST 성공 응답이 200 OK — REST 관례상 201 Created 권장</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 ReviewController.java</div>
+        <p class="issue-desc">
+          리소스 생성 성공 시 HTTP 표준은 <code>201 Created</code>입니다.
+          현재 <code>POST /api/review</code>와 <code>POST /api/review/next-reading</code> 모두 <code>200 OK</code>를 반환합니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          <code>return new ResponseEntity&lt;&gt;(HttpStatus.CREATED);</code>로 변경합니다.
+          프론트엔드는 2xx이면 성공으로 처리하므로 별도 수정 없이 동작합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-card suggestion">
+      <div class="issue-header">
+        <span class="issue-num">#11</span>
+        <span class="issue-title">공개 리뷰 조회 시 엔티티 전체 fetch — 프로젝션 최적화 가능</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 ReviewRepository.java · findPublicReviews</div>
+        <p class="issue-desc">
+          <code>PublicReviewResponse</code>는 5개 필드만 필요하지만 <code>Review</code> 엔티티 전체를 조회합니다.
+          Book JOIN까지 포함되므로 페이지당 쿼리 비용이 불필요하게 높습니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          JPQL Constructor Expression 또는 Spring Data Projection Interface를 사용해
+          필요한 필드만 조회합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-card suggestion">
+      <div class="issue-header">
+        <span class="issue-num">#12</span>
+        <span class="issue-title">ReviewServiceTest — 성공 케이스에서 getBook() 단언 누락</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 ReviewServiceTest.java · 성공_DB에_책_존재</div>
+        <p class="issue-desc">
+          DB에 책이 있을 때의 성공 케이스에서 <code>saved.getBook()</code> 단언이 없습니다.
+          <code>setBook()</code>이 누락돼도 테스트가 통과합니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          <code>assertThat(saved.getBook()).isEqualTo(existingBook);</code>을 추가합니다.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue-card suggestion">
+      <div class="issue-header">
+        <span class="issue-num">#13</span>
+        <span class="issue-title">nextReadingId — 네비게이션 실패 시 버튼 "이동 중..." 상태 고착</span>
+      </div>
+      <div class="issue-body">
+        <div class="location-tag">📁 MyPageView.vue · onNextReading()</div>
+        <p class="issue-desc">
+          <code>router.push()</code>가 await 없이 호출됩니다. 네비게이션 가드 등으로 이동이 취소되면
+          <code>nextReadingId</code>가 리셋되지 않아 버튼이 영구적으로 "이동 중..." 상태로 남습니다.
+        </p>
+        <div class="fix-box">
+          <strong>권장 수정</strong>
+          <code>await router.push(...)</code> 후 finally 블록에서 <code>nextReadingId.value = null</code>로 리셋합니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

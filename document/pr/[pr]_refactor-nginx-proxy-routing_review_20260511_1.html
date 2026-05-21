@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[PR 검수] refactor/nginx-proxy-routing → main</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .section { margin-bottom: 40px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+
+  /* Meta row */
+  .meta-table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; font-size: .88rem; }
+  .meta-table td { padding: 10px 16px; border-bottom: 1px solid #21262d; vertical-align: top; }
+  .meta-table tr:last-child td { border-bottom: none; }
+  .meta-table td:first-child { color: #8b949e; font-weight: 600; width: 120px; }
+  .branch-pill { font-family: 'Consolas', monospace; font-size: .85rem; background: #1c2128; border: 1px solid #30363d; border-radius: 12px; padding: 2px 10px; color: #79c0ff; }
+  .arrow { color: #8b949e; margin: 0 6px; }
+
+  /* PR body preview */
+  .pr-body { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px 24px; font-size: .88rem; }
+  .pr-title { font-size: 1.1rem; font-weight: 700; color: #f0f6fc; margin-bottom: 20px; font-family: 'Consolas', monospace; }
+  .pr-section { margin-bottom: 18px; }
+  .pr-section h3 { font-size: .88rem; font-weight: 700; color: #e6edf3; margin-bottom: 8px; border-bottom: 1px solid #21262d; padding-bottom: 4px; }
+  .pr-section ul { list-style: none; padding: 0; }
+  .pr-section ul li { padding: 3px 0; color: #c9d1d9; font-size: .85rem; }
+  .pr-section ul li::before { content: "- "; color: #8b949e; }
+  .pr-section p { color: #c9d1d9; font-size: .85rem; }
+  .checklist li::before { content: "- [ ] "; color: #8b949e; font-family: 'Consolas', monospace; }
+
+  /* Commit list */
+  .commit-list { display: flex; flex-direction: column; gap: 10px; }
+  .commit-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .commit-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #1c2128; border-bottom: 1px solid #30363d; }
+  .commit-tag { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .tag-fix { background: #da3633; color: #fff; }
+  .tag-refactor { background: #6e7681; color: #fff; }
+  .commit-title { font-family: 'Consolas', monospace; font-size: .85rem; color: #e6edf3; }
+  .commit-sha { font-family: 'Consolas', monospace; font-size: .75rem; color: #8b949e; margin-left: auto; }
+  .commit-files { padding: 8px 16px; font-family: 'Consolas', monospace; font-size: .78rem; color: #8b949e; }
+
+  /* Decision */
+  .decision-list { display: flex; flex-direction: column; gap: 10px; }
+  .decision-card { background: #161b22; border-left: 3px solid #1f6feb; border-radius: 0 8px 8px 0; padding: 12px 16px; }
+  .d-title { font-size: .88rem; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+  .d-body  { font-size: .83rem; color: #8b949e; }
+</style>
+</head>
+<body>
+
+<h1>[PR 검수] refactor/nginx-proxy-routing → main</h1>
+
+<!-- ─── META ─── -->
+<div class="section">
+  <h2>PR 기본 정보</h2>
+  <table class="meta-table">
+    <tr>
+      <td>브랜치</td>
+      <td>
+        <span class="branch-pill">refactor/nginx-proxy-routing</span>
+        <span class="arrow">→</span>
+        <span class="branch-pill">main</span>
+      </td>
+    </tr>
+    <tr><td>Reviewer</td><td>goemgo</td></tr>
+    <tr><td>커밋 수</td><td>2</td></tr>
+    <tr><td>변경 파일</td><td>16 files (백엔드 1 + 프론트 15)</td></tr>
+  </table>
+</div>
+
+<!-- ─── COMMITS ─── -->
+<div class="section">
+  <h2>포함 커밋</h2>
+  <div class="commit-list">
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-fix">FIX</span>
+        <span class="commit-title">FIX: [백엔드] OAuth2 redirect-uri nginx 프록시 경로로 수정</span>
+        <span class="commit-sha">17061f2</span>
+      </div>
+      <div class="commit-files">application-prod.yml</div>
+    </div>
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-refactor">REFACTOR</span>
+        <span class="commit-title">REFACTOR: [프론트] 환경 분리 정리 및 /api prefix 제거</span>
+        <span class="commit-sha">c9fb3ea</span>
+      </div>
+      <div class="commit-files">.env.* (4) · package.json · vite.config.js · 9개 Vue/JS 파일</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PR BODY PREVIEW ─── -->
+<div class="section">
+  <h2>PR 본문 초안</h2>
+  <div class="pr-body">
+    <div class="pr-title">REFACTOR: nginx 리버스 프록시 전환에 따른 라우팅 정리</div>
+
+    <div class="pr-section">
+      <h3>Summary</h3>
+      <ul>
+        <li>백엔드 포트(8010) 직접 호출 방식에서 nginx 리버스 프록시 방식으로 전환하면서 필요한 설정을 정리합니다.</li>
+        <li>OAuth2 콜백 redirect-uri를 nginx 경유 경로(<code>/api/login/oauth2/code/naver</code>)로 수정합니다.</li>
+        <li>프론트 환경 변수를 local / dev / staging / prod 4단계로 명확히 분리합니다.</li>
+        <li>각 Vue 컴포넌트에 하드코딩된 <code>/api</code> prefix를 일괄 제거합니다.</li>
+      </ul>
+    </div>
+
+    <div class="pr-section">
+      <h3>Changes</h3>
+      <ul>
+        <li><strong>[Backend]</strong> <code>application-prod.yml</code> — OAuth2 redirect-uri: <code>:8010/login/oauth2/code/naver</code> → <code>/api/login/oauth2/code/naver</code></li>
+        <li><strong>[Frontend]</strong> <code>.env.development</code> — local API: <code>http://localhost:8010</code></li>
+        <li><strong>[Frontend]</strong> <code>.env.prod</code> — prod API: <code>http://161.118.143.129/api</code></li>
+        <li><strong>[Frontend]</strong> <code>.env.dev</code> / <code>.env.staging</code> — 미정(빈값)으로 정리</li>
+        <li><strong>[Frontend]</strong> <code>package.json</code> — <code>build:staging</code>을 <code>--mode staging</code>으로 수정, <code>build:dev</code> 추가</li>
+        <li><strong>[Frontend]</strong> 9개 컴포넌트에서 <code>/api/book</code>, <code>/api/review</code>, <code>/api/auth</code> 등 하드코딩된 prefix 일괄 제거</li>
+      </ul>
+    </div>
+
+    <div class="pr-section">
+      <h3>의사결정</h3>
+      <ul>
+        <li><strong>왜 /api prefix를 env에만 두는가</strong> — 컴포넌트가 baseURL을 모르게 하기 위함. local은 <code>http://localhost:8010</code>, prod는 <code>http://161.118.143.129/api</code>가 baseURL에 포함되므로 컴포넌트 경로에 /api를 쓰면 prod에서 이중 경로가 됨.</li>
+        <li><strong>SecurityConfig redirectionEndpoint 미수정</strong> — nginx 설정으로 <code>/api/login/oauth2/code/naver</code>를 백엔드 콜백 경로로 포워딩하도록 처리함.</li>
+      </ul>
+    </div>
+
+    <div class="pr-section">
+      <h3>Test Plan</h3>
+      <ul class="checklist">
+        <li>local 환경에서 네이버 로그인 정상 동작 확인</li>
+        <li>prod 빌드(<code>npm run build:prod</code>) 후 nginx를 통한 API 호출 정상 확인</li>
+        <li>OAuth2 콜백 redirect-uri가 <code>/api/login/oauth2/code/naver</code>로 설정된 것을 Naver 개발자 센터에서도 일치 확인</li>
+        <li><code>build:staging</code> 실행 시 <code>.env.staging</code> 파일이 로드되는 것 확인</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

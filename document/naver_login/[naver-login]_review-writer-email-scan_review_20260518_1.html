@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[검수] Review writer 이메일 → Naver ID 전환</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .section { margin-bottom: 44px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+  strong { color: #f0f6fc; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  th { background: #1c2128; color: #8b949e; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid #30363d; }
+  td { padding: 10px 14px; border-bottom: 1px solid #21262d; vertical-align: top; color: #c9d1d9; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; font-size: .7rem; font-weight: 700; padding: 1px 7px; border-radius: 4px; margin-right: 4px; }
+  .b-bug  { background: #da3633; color: #fff; }
+  .b-mod  { background: #388bfd; color: #fff; }
+  .b-warn { background: #d29922; color: #000; }
+
+  .diff-wrap { display: flex; flex-direction: column; gap: 14px; }
+  .diff-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .diff-header { background: #1c2128; padding: 10px 16px; font-size: .82rem; color: #8b949e; border-bottom: 1px solid #30363d; }
+  .diff-header span { font-family: 'Consolas', monospace; color: #79c0ff; }
+  .diff-body { font-family: 'Consolas', monospace; font-size: .8rem; line-height: 1.7; padding: 10px 0; }
+  .diff-line { padding: 0 16px; }
+  .d-del { background: #3d1e1e; color: #f85149; }
+  .d-add { background: #1a3025; color: #3fb950; }
+  .d-ctx { color: #8b949e; }
+  .d-sep { color: #30363d; padding: 2px 16px; }
+
+  .alert-card { background: #271d0d; border: 1px solid #d29922; border-radius: 8px; padding: 16px 20px; font-size: .88rem; }
+  .alert-title { font-weight: 700; color: #d29922; margin-bottom: 8px; }
+  .alert-body { color: #c9d1d9; font-size: .85rem; line-height: 1.8; }
+
+  .decision-card { background: #161b22; border-left: 3px solid #1f6feb; border-radius: 0 8px 8px 0; padding: 12px 16px; margin-bottom: 10px; }
+  .d-title { font-size: .88rem; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+  .d-body  { font-size: .83rem; color: #8b949e; }
+</style>
+</head>
+<body>
+
+<h1>[검수] Review writer 이메일 → Naver ID 전환</h1>
+
+<!-- ─── 스캔 결과 ─── -->
+<div class="section">
+  <h2>스캔 결과 — 이메일 의존 코드</h2>
+  <table>
+    <tr>
+      <th>파일</th>
+      <th>라인</th>
+      <th>문제</th>
+    </tr>
+    <tr>
+      <td><code>ReviewController.java</code></td>
+      <td>38, 48, 58, 69, 77, 86</td>
+      <td>
+        <span class="badge b-bug">BUG</span>
+        <code>response.get("email")</code> — email scope 제거 후 <strong>항상 null 반환</strong>.
+        writer=null로 저장되거나 <code>NullPointerException</code> 발생 (6개 엔드포인트 전부)
+      </td>
+    </tr>
+    <tr>
+      <td><code>ReviewService.java</code></td>
+      <td>81, 116, 125, 140</td>
+      <td>
+        <span class="badge b-mod">수정</span>
+        파라미터명이 <code>email</code>로 된 메서드 4개. 로직은 동일하지만 <code>naverId</code>로 네이밍 정리 필요.
+        <code>getReviews</code> 로그 메시지도 "email" 문자열 포함
+      </td>
+    </tr>
+    <tr>
+      <td><code>Review.writer</code> DB 컬럼</td>
+      <td>—</td>
+      <td>
+        <span class="badge b-warn">데이터 주의</span>
+        현재 <code>writer</code>에 이메일 값이 저장돼 있음. 변경 후 Naver ID로 저장되므로
+        <strong>기존 데이터와 불일치</strong> 발생 (아래 별도 섹션 참고)
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- ─── 데이터 주의 ─── -->
+<div class="section">
+  <h2>데이터 마이그레이션 이슈</h2>
+  <div class="alert-card">
+    <div class="alert-title">⚠ 기존 review.writer 데이터 불일치</div>
+    <div class="alert-body">
+      현재 <code>REVIEW.writer</code> 컬럼에는 이메일 주소가 저장돼 있음.<br>
+      변경 후에는 Naver ID(숫자 문자열)로 저장되므로, 기존 행은 어떤 사용자와도 매칭되지 않음.<br><br>
+      <strong>선택지:</strong><br>
+      1. <strong>리뷰 데이터 초기화</strong> — <code>TRUNCATE TABLE review CASCADE;</code>
+         (테스트/포트폴리오 단계라면 가장 단순)<br>
+      2. <strong>그냥 둠</strong> — 기존 데이터는 조회 안 되지만 서비스 자체는 정상 동작.
+         새로 쓰는 독후감부터 Naver ID로 정상 저장됨<br><br>
+      ※ OAuth2UserEntity에서 <code>providerEmail</code>을 이미 제거했기 때문에
+      email → Naver ID 매핑 쿼리로 마이그레이션하는 방법은 불가.
+    </div>
+  </div>
+</div>
+
+<!-- ─── 변경 파일 요약 ─── -->
+<div class="section">
+  <h2>변경 파일 요약</h2>
+  <table>
+    <tr><th>파일</th><th>변경 내용</th></tr>
+    <tr>
+      <td><code>ReviewController.java</code></td>
+      <td>6개 메서드 전부: <code>response.get("email")</code> → <code>response.get("id")</code>, 변수명 <code>email</code> → <code>naverId</code></td>
+    </tr>
+    <tr>
+      <td><code>ReviewService.java</code></td>
+      <td>파라미터명 <code>email</code> → <code>naverId</code> (4개 메서드), 로그 문자열 정리. 로직 변경 없음</td>
+    </tr>
+  </table>
+  <p style="margin-top:10px; font-size:.83rem; color:#8b949e;">
+    <code>Review.java</code>, <code>ReviewRepository.java</code>, <code>ReviewRequest.java</code> — <code>writer</code> 필드명 자체는 이메일/ID 무관하게 동작하므로 변경 불필요
+  </p>
+</div>
+
+<!-- ─── diff 미리보기 ─── -->
+<div class="section">
+  <h2>코드 변경 미리보기</h2>
+  <div class="diff-wrap">
+
+    <div class="diff-card">
+      <div class="diff-header"><span>ReviewController.java</span> — 6개 메서드 동일 패턴</div>
+      <div class="diff-body">
+        <div class="diff-line d-ctx">  Map&lt;String, Object&gt; response = oauth2User.getAttribute("response");</div>
+        <div class="diff-line d-del">- String email = (String) response.get("email");</div>
+        <div class="diff-line d-add">+ String naverId = (String) response.get("id");</div>
+        <div class="diff-line d-ctx">&nbsp;</div>
+        <div class="diff-line d-ctx">  // insertReview</div>
+        <div class="diff-line d-del">- reviewService.insertReview(request, email);</div>
+        <div class="diff-line d-add">+ reviewService.insertReview(request, naverId);</div>
+        <div class="diff-line d-ctx">&nbsp;</div>
+        <div class="diff-line d-ctx">  // getReviews</div>
+        <div class="diff-line d-del">- return new ResponseEntity&lt;&gt;(reviewService.getReviews(email), HttpStatus.OK);</div>
+        <div class="diff-line d-add">+ return new ResponseEntity&lt;&gt;(reviewService.getReviews(naverId), HttpStatus.OK);</div>
+        <div class="diff-line d-ctx">  // ... 나머지 4개도 동일</div>
+      </div>
+    </div>
+
+    <div class="diff-card">
+      <div class="diff-header"><span>ReviewService.java</span> — 파라미터명 정리 (로직 변경 없음)</div>
+      <div class="diff-body">
+        <div class="diff-line d-del">- public void updateReview(ReviewRequest request, String email) {</div>
+        <div class="diff-line d-add">+ public void updateReview(ReviewRequest request, String naverId) {</div>
+        <div class="diff-line d-ctx">      ...</div>
+        <div class="diff-line d-del">-     if (!review.getWriter().equals(email)) {</div>
+        <div class="diff-line d-add">+     if (!review.getWriter().equals(naverId)) {</div>
+        <div class="diff-line d-ctx">&nbsp;</div>
+        <div class="diff-line d-del">- public List&lt;ReviewListResponse&gt; getReviews(String email) {</div>
+        <div class="diff-line d-add">+ public List&lt;ReviewListResponse&gt; getReviews(String naverId) {</div>
+        <div class="diff-line d-del">-     List&lt;Review&gt; reviews = reviewRepository.findByWriter(email);</div>
+        <div class="diff-line d-add">+     List&lt;Review&gt; reviews = reviewRepository.findByWriter(naverId);</div>
+        <div class="diff-line d-del">-     log.debug("Getting reviews for user with email: {}, count: {}", email, reviews.size());</div>
+        <div class="diff-line d-add">+     log.debug("Getting reviews for naverId: {}, count: {}", naverId, reviews.size());</div>
+        <div class="diff-line d-ctx">  // deleteReview, getReviewDetail도 동일하게 email → naverId</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── 의사결정 ─── -->
+<div class="section">
+  <h2>의사결정</h2>
+  <div class="decision-card">
+    <div class="d-title">Review.writer 컬럼명은 그대로 유지하는 이유</div>
+    <div class="d-body">writer는 "작성자 식별자"라는 의미로 여전히 유효. 내부 저장값이 email에서 naverId로 바뀌는 것이지 컬럼의 역할은 동일. DB 컬럼명 변경은 별도 마이그레이션이 필요해 비용 대비 이득 없음.</div>
+  </div>
+  <div class="decision-card">
+    <div class="d-title">기존 리뷰 데이터 처리 방향 결정 필요</div>
+    <div class="d-body">테스트 단계이면 <code>TRUNCATE TABLE review CASCADE;</code>로 초기화. 실데이터가 있다면 그냥 두는 것도 허용 — 새 독후감부터 정상 동작하므로 서비스 자체는 문제 없음.</div>
+  </div>
+</div>
+
+</body>
+</html>

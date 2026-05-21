@@ -7,8 +7,12 @@ export function useNav() {
   const router = useRouter();
   const toast = useToast();
 
-  // route.meta.activeNav가 있으면 그걸 기준으로, 없으면 현재 경로와 직접 비교
   const isActiveNav = (path) => {
+    if (route.name === 'review-create') {
+      return route.query.mode === 'next-reading'
+        ? path === '/mypage'
+        : path === '/book-search';
+    }
     return (route.meta.activeNav ?? route.path) === path;
   };
 

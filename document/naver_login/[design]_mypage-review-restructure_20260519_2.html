@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[설계 v2] 마이페이지 리뷰 구조 개편</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  h3 { font-size: .9rem; font-weight: 600; color: #e6edf3; margin-bottom: 10px; }
+  .section { margin-bottom: 48px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+  p { font-size: .88rem; color: #c9d1d9; margin-bottom: 8px; }
+
+  /* Cards */
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 18px 20px; margin-bottom: 14px; }
+
+  /* Wireframe */
+  .wire-wrap { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  .wire-box { flex: 1; min-width: 260px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .wire-label { background: #1c2128; padding: 8px 14px; font-size: .75rem; color: #8b949e; font-weight: 600; border-bottom: 1px solid #30363d; }
+  .wire-body { padding: 12px 14px; font-family: 'Consolas', monospace; font-size: .78rem; color: #8b949e; line-height: 1.85; white-space: pre; }
+  .w-green { color: #3fb950; }
+  .w-blue { color: #388bfd; }
+  .w-yellow { color: #d29922; }
+  .w-red { color: #f85149; }
+  .w-muted { color: #6e7681; }
+
+  /* Flow */
+  .flow-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; font-family: 'Consolas', monospace; font-size: .83rem; color: #8b949e; white-space: pre; line-height: 2; }
+  .f-new { color: #3fb950; }
+  .f-old { color: #f85149; }
+  .f-note { color: #d29922; }
+  .f-blue { color: #388bfd; }
+
+  /* Opinion */
+  .opinion-card { border-left: 3px solid #3fb950; background: #161b22; border-radius: 0 8px 8px 0; padding: 14px 18px; margin-bottom: 12px; }
+  .opinion-card.warn { border-left-color: #d29922; }
+  .opinion-card.blue { border-left-color: #388bfd; }
+  .opinion-title { font-size: .88rem; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+  .opinion-body { font-size: .83rem; color: #8b949e; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  th { background: #1c2128; color: #8b949e; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid #30363d; }
+  td { padding: 10px 14px; border-bottom: 1px solid #21262d; vertical-align: top; color: #c9d1d9; }
+  tr:last-child td { border-bottom: none; }
+
+  .badge { display: inline-block; font-size: .7rem; font-weight: 700; padding: 1px 7px; border-radius: 4px; margin-right: 4px; }
+  .b-new { background: #1f6feb; color: #fff; }
+  .b-mod { background: #6e7681; color: #fff; }
+  .b-key { background: #3fb950; color: #000; }
+
+  /* Arrow connector */
+  .arrow-row { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+  .arrow-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; font-size: .83rem; color: #c9d1d9; flex: 1; }
+  .arrow-sep { font-size: 1.2rem; color: #388bfd; flex-shrink: 0; }
+
+  /* Decision tree */
+  .decision { background: #161b22; border: 1px solid #388bfd; border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; }
+  .decision-q { font-size: .88rem; font-weight: 600; color: #388bfd; margin-bottom: 10px; }
+  .decision-opts { display: flex; gap: 10px; flex-wrap: wrap; }
+  .decision-opt { flex: 1; min-width: 200px; background: #1c2128; border: 1px solid #30363d; border-radius: 6px; padding: 10px 14px; }
+  .decision-opt.green { border-left: 3px solid #3fb950; }
+  .decision-opt.yellow { border-left: 3px solid #d29922; }
+  .decision-opt-label { font-size: .8rem; font-weight: 600; color: #8b949e; margin-bottom: 4px; }
+  .decision-opt-val { font-size: .85rem; color: #e6edf3; }
+</style>
+</head>
+<body>
+
+<h1>[설계 v2] 마이페이지 리뷰 구조 개편</h1>
+<p style="color:#8b949e; font-size:.83rem; margin-bottom:32px;">
+  v1 대비 변경: 단독 회독 사용자에게 불필요한 depth가 생기는 문제를 해결하기 위해 <strong style="color:#e6edf3;">카드 클릭 동작을 회독 수에 따라 분기</strong>하는 방식으로 수정.
+</p>
+
+<!-- 1. 핵심 문제 -->
+<div class="section">
+  <h2>1 · 핵심 문제 (v1에서 제기된 이슈)</h2>
+
+  <div class="opinion-card warn">
+    <div class="opinion-title">단독 회독 사용자에게 불필요한 depth</div>
+    <div class="opinion-body">
+      책을 한 번만 읽은 사람이 카드를 클릭하면 → MyBookDetailView로 이동<br>
+      → 그 안에 리뷰가 딱 1개만 있음<br>
+      → 의미 없는 중간 단계가 하나 추가된 것처럼 느껴짐
+    </div>
+  </div>
+
+  <div class="opinion-card">
+    <div class="opinion-title">해결: 클릭 동작을 회독 수에 따라 분기</div>
+    <div class="opinion-body">
+      이미 MyPageView에서 isbn13 기준으로 그룹핑을 하므로,
+      그룹의 리뷰 개수가 <strong>1개면 바로 ReviewDetailView</strong>,
+      <strong>2개 이상이면 MyBookDetailView</strong>로 보냄.<br>
+      추가 API 호출 없이 조건문 하나로 해결.
+    </div>
+  </div>
+</div>
+
+<!-- 2. 분기 구조 -->
+<div class="section">
+  <h2>2 · 클릭 분기 구조</h2>
+
+  <div class="decision">
+    <div class="decision-q">책 카드 클릭 시 — 이 책에 리뷰가 몇 개 있나?</div>
+    <div class="decision-opts">
+      <div class="decision-opt green">
+        <div class="decision-opt-label">1개 (단독 회독)</div>
+        <div class="decision-opt-val">→ ReviewDetailView<br><code style="font-size:.8rem">/review/:id</code><br>기존과 동일한 경험</div>
+      </div>
+      <div class="decision-opt yellow">
+        <div class="decision-opt-label">2개 이상 (다독)</div>
+        <div class="decision-opt-val">→ MyBookDetailView<br><code style="font-size:.8rem">/mypage/books/:isbn13</code><br>회독 전체 목록 보기</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. 전체 흐름 -->
+<div class="section">
+  <h2>3 · 전체 페이지 흐름</h2>
+  <div class="flow-box"><span class="f-note">[ MyPageView — 책 단위 카드 ]</span>
+
+  책 A  (1회독)  ──────────────────────────────→  <span class="f-blue">ReviewDetailView</span>  (바로 이동)
+  책 B  (3회독)  ──→  <span class="f-new">MyBookDetailView</span>  ──→  회독 1 선택  ──→  <span class="f-blue">ReviewDetailView</span>
+  책 C  (2회독)  ──→  <span class="f-new">MyBookDetailView</span>  ──→  회독 2 선택  ──→  <span class="f-blue">ReviewDetailView</span>
+
+<span class="f-note">[ 카드에 표시할 정보 ]</span>
+  모든 책:  표지 + 제목 + 최근 날짜
+  다독 책:  "3회독까지" 뱃지 추가
+  단독 책:  뱃지 없음 (또는 "1회독" — 선택 사항)</div>
+</div>
+
+<!-- 4. 와이어프레임 -->
+<div class="section">
+  <h2>4 · 화면 와이어프레임</h2>
+  <div class="wire-wrap">
+
+    <!-- MyPageView -->
+    <div class="wire-box">
+      <div class="wire-label">MyPageView (책 단위)</div>
+      <div class="wire-body">내가 작성한 리뷰 (3권)
+
+┌──────────────────────────────┐
+│ [📖] <span class="w-green">미드나잇 라이브러리</span>         │
+│      <span class="w-yellow">3회독까지</span>  · 2026-01-22    │  ← 다독 뱃지
+└──────────────────────────────┘
+           ↓ 클릭
+     <span class="w-blue">MyBookDetailView</span>
+
+┌──────────────────────────────┐
+│ [📖] <span class="w-green">아몬드</span>                     │
+│      · 2025-08-10            │  ← 뱃지 없음
+└──────────────────────────────┘
+           ↓ 클릭
+     <span class="w-blue">ReviewDetailView</span> (바로)
+
+┌──────────────────────────────┐
+│ [📖] <span class="w-green">채식주의자</span>                 │
+│      <span class="w-yellow">2회독까지</span>  · 2025-12-03    │
+└──────────────────────────────┘
+           ↓ 클릭
+     <span class="w-blue">MyBookDetailView</span></div>
+    </div>
+
+    <!-- MyBookDetailView -->
+    <div class="wire-box">
+      <div class="wire-label">MyBookDetailView (다독 책만 도달)</div>
+      <div class="wire-body">[📖] 미드나잇 라이브러리
+     <span class="w-blue">[+ 한번 더 읽기]</span>
+──────────────────────────────
+
+┌──────────────────────────────┐
+│ <span class="w-yellow">3회독</span>  2026-01-22  ⭐ 5  <span class="w-red">[🗑]</span>  │  ← 내림차순
+│ "이제서야 진짜 의미를..."       │    (최신순)
+└──────────────────────────────┘
+┌──────────────────────────────┐
+│ <span class="w-yellow">2회독</span>  2025-09-14  ⭐ 4  <span class="w-red">[🗑]</span>  │
+│ "두 번째 읽으니 더 와닿는..."   │
+└──────────────────────────────┘
+┌──────────────────────────────┐
+│ <span class="w-yellow">1회독</span>  2025-03-01  ⭐ 4  <span class="w-red">[🗑]</span>  │
+│ "삶은 항상 새로운 기회를..."    │
+└──────────────────────────────┘
+
+각 행 클릭 → <span class="w-blue">ReviewDetailView</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 5. 구현 계획 -->
+<div class="section">
+  <h2>5 · 구현 계획</h2>
+  <table>
+    <tr><th>항목</th><th>변경 내용</th></tr>
+    <tr>
+      <td><span class="badge b-mod">수정</span> <code>MyPageView.vue</code></td>
+      <td>
+        <code>/review/list</code> 응답을 <code>bookIsbn13</code> 기준으로 그룹핑.<br>
+        카드 클릭: <code>group.reviews.length === 1</code> → <code>review-detail</code> (<code>id</code> 전달),<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>group.reviews.length >= 2</code> → <code>my-book-detail</code> (<code>isbn13</code> 전달).<br>
+        카드 대표값: 최대 <code>readingCount</code> + 가장 최근 <code>regDate</code>.<br>
+        <strong>"한번 더 봤어요" 버튼 제거</strong> (MyBookDetailView 상단으로 이동).
+      </td>
+    </tr>
+    <tr>
+      <td><span class="badge b-new">신규</span> <code>MyBookDetailView.vue</code></td>
+      <td>
+        <code>/review/list</code> 재호출 후 <code>isbn13</code>로 필터링.<br>
+        정렬: <strong>readingCount 내림차순</strong> (3→2→1, 최신 회독이 먼저).<br>
+        상단: 책 커버 + 제목 + [+ 한번 더 읽기] 버튼.<br>
+        각 행: 회독 뱃지 + 날짜 + ⭐ 별점 + 한줄요약 + [🗑] 버튼.<br>
+        행 클릭 → <code>ReviewDetailView</code>.
+      </td>
+    </tr>
+    <tr>
+      <td><span class="badge b-mod">수정</span> <code>router/index.js</code></td>
+      <td>
+        <code>{ path: '/mypage/books/:isbn13', name: 'my-book-detail', meta: { activeNav: '/mypage' } }</code> 추가.
+      </td>
+    </tr>
+    <tr>
+      <td>백엔드</td>
+      <td>변경 없음. <code>/review/list</code> 그대로 사용.</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 6. v1 vs v2 비교 -->
+<div class="section">
+  <h2>6 · v1 vs v2 비교</h2>
+  <table>
+    <tr><th></th><th>v1 (기존 설계)</th><th>v2 (이번 설계)</th></tr>
+    <tr>
+      <td>단독 회독 클릭</td>
+      <td>MyBookDetailView → 리뷰 1개</td>
+      <td><strong style="color:#3fb950">ReviewDetailView 바로 이동</strong></td>
+    </tr>
+    <tr>
+      <td>다독 클릭</td>
+      <td>MyBookDetailView → 전체 목록</td>
+      <td>MyBookDetailView → 전체 목록 (동일)</td>
+    </tr>
+    <tr>
+      <td>MyBookDetailView 정렬</td>
+      <td>readingCount 오름차순 (1→2→3)</td>
+      <td><strong style="color:#3fb950">readingCount 내림차순 (3→2→1)</strong></td>
+    </tr>
+    <tr>
+      <td>책 카드 별점</td>
+      <td>표시 안 함 추천</td>
+      <td>표시 안 함 (동일)</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 7. 미결 사항 -->
+<div class="section">
+  <h2>7 · 남은 확인 사항</h2>
+  <div class="card">
+    <p>① <strong>회독 행 클릭</strong> — ReviewDetailView로 이동 / 또는 인라인으로 전문 펼침?</p>
+    <p>② <strong>삭제 버튼</strong> — 행마다 🗑 아이콘 / 스와이프(모바일)?</p>
+    <p>③ <strong>단독 회독 카드</strong> — "1회독" 뱃지를 표시할지, 아니면 뱃지 없이 깔끔하게 둘지?</p>
+  </div>
+</div>
+
+</body>
+</html>

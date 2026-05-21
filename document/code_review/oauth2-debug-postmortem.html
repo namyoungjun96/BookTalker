@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PWA OAuth2 디버깅 포스트모템</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #151820;
+    --surface2: #1c2030;
+    --border: #252a3a;
+    --accent: #4f9eff;
+    --accent2: #ff6b6b;
+    --accent3: #50fa7b;
+    --accent4: #ffb86c;
+    --text: #cdd6f4;
+    --text-dim: #6c7086;
+    --text-bright: #f0f4ff;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Noto Sans KR', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* 배경 효과 */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 20% 20%, rgba(79,158,255,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(80,250,123,0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 60px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* 헤더 */
+  .header {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin-bottom: 56px;
+    animation: fadeIn 0.6s ease;
+  }
+
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-bright);
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+
+  .header-sub {
+    font-size: 14px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+
+  /* TL;DR 박스 */
+  .tldr {
+    background: linear-gradient(135deg, rgba(79,158,255,0.08), rgba(80,250,123,0.05));
+    border: 1px solid rgba(79,158,255,0.25);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin-bottom: 48px;
+    animation: fadeIn 0.7s ease;
+  }
+
+  .tldr-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .tldr p {
+    font-size: 15px;
+    color: var(--text-bright);
+    line-height: 1.8;
+  }
+
+  .tldr code {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent4);
+    background: rgba(255,184,108,0.1);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  /* 섹션 */
+  .section {
+    margin-bottom: 48px;
+    animation: fadeIn 0.8s ease;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(79,158,255,0.1);
+    border: 1px solid rgba(79,158,255,0.2);
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.1em;
+  }
+
+  .section-title h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-bright);
+  }
+
+  /* 흐름 체인 */
+  .chain {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+
+  .chain-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .chain-item:last-child { border-bottom: none; }
+
+  .chain-arrow {
+    color: var(--text-dim);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .chain-content { flex: 1; }
+
+  .chain-text { color: var(--text); }
+
+  .chain-note {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .tag-bad { background: rgba(255,107,107,0.15); color: var(--accent2); border: 1px solid rgba(255,107,107,0.2); }
+  .tag-good { background: rgba(80,250,123,0.12); color: var(--accent3); border: 1px solid rgba(80,250,123,0.2); }
+  .tag-cause { background: rgba(255,184,108,0.12); color: var(--accent4); border: 1px solid rgba(255,184,108,0.2); }
+
+  /* 디버깅 스텝 */
+  .debug-steps { display: flex; flex-direction: column; gap: 12px; }
+
+  .debug-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    gap: 16px;
+    align-items: start;
+    transition: border-color 0.2s;
+  }
+
+  .debug-step:hover { border-color: rgba(79,158,255,0.3); }
+
+  .step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .step-num.dead { background: rgba(255,107,107,0.15); color: var(--accent2); border: 1px solid rgba(255,107,107,0.25); }
+  .step-num.alive { background: rgba(80,250,123,0.12); color: var(--accent3); border: 1px solid rgba(80,250,123,0.25); }
+  .step-num.found { background: rgba(255,184,108,0.15); color: var(--accent4); border: 1px solid rgba(255,184,108,0.25); }
+
+  .step-body h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 6px;
+  }
+
+  .step-body p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .step-result {
+    font-family: var(--mono);
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 4px 10px;
+    border-radius: 4px;
+    align-self: flex-start;
+  }
+
+  .result-miss { background: rgba(255,107,107,0.1); color: var(--accent2); }
+  .result-pass { background: rgba(80,250,123,0.1); color: var(--accent3); }
+  .result-hit { background: rgba(255,184,108,0.1); color: var(--accent4); }
+
+  /* 코드 블록 */
+  .code-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .code-lang {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+
+  .code-file {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  pre {
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    color: var(--text);
+  }
+
+  .hl-key { color: #bd93f9; }
+  .hl-str { color: #f1fa8c; }
+  .hl-val { color: var(--accent4); }
+  .hl-comment { color: #6272a4; font-style: italic; }
+  .hl-good { color: var(--accent3); }
+  .hl-bad { color: var(--accent2); }
+
+  /* 레슨 박스 */
+  .lessons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  @media (max-width: 600px) { .lessons { grid-template-columns: 1fr; } }
+
+  .lesson-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+  }
+
+  .lesson-icon {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .lesson-card h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 8px;
+  }
+
+  .lesson-card p {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* 구분선 */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 인터뷰 팁 */
+  .interview-tip {
+    background: linear-gradient(135deg, rgba(80,250,123,0.06), rgba(79,158,255,0.04));
+    border: 1px solid rgba(80,250,123,0.2);
+    border-radius: 8px;
+    padding: 20px 24px;
+  }
+
+  .interview-tip .tip-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .interview-tip p {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-meta">// postmortem · 2026-05-13</div>
+    <h1>PWA OAuth2 로그인 불가 디버깅</h1>
+    <div class="header-sub">BookTalker · Spring Boot + Naver OAuth2 + Vite PWA</div>
+  </div>
+
+  <!-- TL;DR -->
+  <div class="tldr">
+    <div class="tldr-label">TL;DR</div>
+    <p>
+      네이버 로그인 버튼 클릭 시 OAuth2 엔드포인트로 이동하지 않고 서비스 로그인 페이지로 튕기는 현상.
+      nginx, Spring Boot 순으로 디버깅했으나 실제 원인은
+      <code>Service Worker</code>가 <code>window.location.href</code> 요청을 가로채
+      캐시된 <code>index.html</code>을 반환하고 있었던 것.
+      <code>navigateFallbackDenylist</code>에 <code>/api/</code> 경로를 추가하여 해결.
+    </p>
+  </div>
+
+  <!-- 문제 현상 -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-num">STEP 01</span>
+      <h2>문제 현상</h2>
+    </div>
+    <div class="chain">
+      <div class="chain-item">
+        <span class="chain-arrow">→</span>
+        <div class="chain-content">
+          <div class="chain-text">로그인 버튼 클릭</div>
+          <div class="chain-note">window.location.href = 'https://booktalker.co.kr/api/oauth2/authorization/naver'</div>
+        </div>
+      </div>
+      <div class="chain-item">
+        <span class="chain-arrow">→</span>
+        <div class="chain-content">
+          <div class="chain-text">서비스 자체 로그인 페이지로 리다이렉트 <span class="tag tag-bad">UNEXPECTED</span></div>
+          <div class="chain-note">네이버 로그인 페이지로 이동해야 정상</div>
+        </div>
+      </div>
+      <div class="chain-item">
+        <span class="chain-arrow">→</span>
+        <div class="chain-content">
+          <div class="chain-text">Spring Boot 로그에 /oauth2/authorization/naver 요청 없음 <span class="tag tag-bad">NOT REACHED</span></div>
+        </div>
+      </div>
+      <div class="chain-item">
+        <span class="chain-arrow">→</span>
+        <div class="chain-content">
+          <div class="chain-text">nginx 액세스 로그에도 해당 요청 없음 <span class="tag tag-bad">NOT REACHED</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 디버깅 과정 -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-num">STEP 02</span>
+      <h2>계층적 디버깅 과정</h2>
+    </div>
+    <div class="debug-steps">
+
+      <div class="debug-step">
+        <div class="step-num dead">1</div>
+        <div class="step-body">
+          <h3>Spring Boot 설정 의심</h3>
+          <p>SecurityConfig에서 oauth2Login() 설정, authorizeHttpRequests 설정 확인. formLogin과 충돌 여부 점검.</p>
+        </div>
+        <div class="step-result result-miss">이상 없음</div>
+      </div>
+
+      <div class="debug-step">
+        <div class="step-num dead">2</div>
+        <div class="step-body">
+          <h3>nginx 설정 의심</h3>
+          <p>location /api/ 블록이 /oauth2/authorization/naver를 제대로 프록시하는지 확인. nginx -T로 전체 설정 점검.</p>
+        </div>
+        <div class="step-result result-miss">이상 없음</div>
+      </div>
+
+      <div class="debug-step">
+        <div class="step-num alive">3</div>
+        <div class="step-body">
+          <h3>curl로 Spring Boot 직접 테스트</h3>
+          <p>nginx를 거치지 않고 직접 Spring Boot 포트로 요청. 302로 네이버 로그인 URL 생성 확인.</p>
+          <div class="code-block" style="margin-top:10px">
+            <pre><span class="hl-comment"># nginx 없이 직접 테스트</span>
+curl -v http://localhost:8010/oauth2/authorization/naver
+
+<span class="hl-comment"># 결과: 302 → nid.naver.com/oauth2.0/authorize?...</span>
+<span class="hl-good">→ Spring Boot 정상 확인</span></pre>
+          </div>
+        </div>
+        <div class="step-result result-pass">Spring Boot 정상</div>
+      </div>
+
+      <div class="debug-step">
+        <div class="step-num alive">4</div>
+        <div class="step-body">
+          <h3>nginx 액세스 로그 실시간 확인</h3>
+          <p>브라우저에서 요청 시 nginx 로그에 /api/oauth2/authorization/naver 요청 자체가 없음을 확인. 서버 도달 전에 처리됨을 확정.</p>
+        </div>
+        <div class="step-result result-pass">nginx 정상</div>
+      </div>
+
+      <div class="debug-step">
+        <div class="step-num found">5</div>
+        <div class="step-body">
+          <h3>브라우저 Network 탭 확인</h3>
+          <p>/api/oauth2/authorization/naver 요청이 200으로 끝남 확인. Size 컬럼에서 (ServiceWorker) 표시 발견. Service Worker가 요청을 가로채 캐시된 index.html을 반환하고 있었음.</p>
+        </div>
+        <div class="step-result result-hit">원인 발견!</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 원인 분석 -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-num">STEP 03</span>
+      <h2>근본 원인</h2>
+    </div>
+    <div class="chain">
+      <div class="chain-item">
+        <span class="chain-arrow">→</span>
+        <div class="chain-content">
+          <div class="chain-text">Vite PWA의 Workbox가 기본적으로 모든 navigation 요청을 처리 <span class="tag tag-cause">ROOT CAUSE</span></div>
+          <div class="chain-note">navigateFallback 설정 시 Service Worker가 모든 페이지 이동을 가로채 index.html 반환</div>
+        </div>
+      </div>
+      <div class="chain-item">
+        <span class="chain-arrow">→</span>
+        <div class="chain-content">
+          <div class="chain-text">window.location.href도 navigation 요청으로 분류됨</div>
+          <div class="chain-note">/api/oauth2/authorization/naver도 예외 없이 Service Worker에게 가로채임</div>
+        </div>
+      </div>
+      <div class="chain-item">
+        <span class="chain-arrow">→</span>
+        <div class="chain-content">
+          <div class="chain-text">nginx, Spring Boot까지 요청이 도달하지 못함</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 해결 방법 -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-num">STEP 04</span>
+      <h2>해결</h2>
+    </div>
+    <p style="font-size:14px; color:var(--text-dim); margin-bottom:16px;">
+      Workbox 설정에 <code style="font-family:var(--mono); font-size:13px; color:var(--accent4); background:rgba(255,184,108,0.1); padding:1px 6px; border-radius:3px;">navigateFallbackDenylist</code>를 추가해 <code style="font-family:var(--mono); font-size:13px; color:var(--accent4); background:rgba(255,184,108,0.1); padding:1px 6px; border-radius:3px;">/api/</code> 경로는 Service Worker가 처리하지 않도록 제외.
+    </p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JAVASCRIPT</span>
+        <span class="code-file">vite.config.js</span>
+      </div>
+      <pre><span class="hl-key">workbox</span>: {
+  <span class="hl-bad">// Before: navigateFallback 관련 설정 없음</span>
+  <span class="hl-comment">// → Workbox가 모든 navigation 요청을 index.html로 처리</span>
+
+  <span class="hl-good">// After</span>
+  <span class="hl-key">navigateFallback</span>: <span class="hl-str">'index.html'</span>,
+  <span class="hl-key">navigateFallbackDenylist</span>: [<span class="hl-val">/^\/api\//</span>],  <span class="hl-comment">// ← 추가</span>
+
+  <span class="hl-key">runtimeCaching</span>: [
+    <span class="hl-comment">// 기존 설정 유지</span>
+  ]
+}</pre>
+    </div>
+    <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">
+      ⚠️ 배포 후 브라우저에서 개발자 도구 → Application → Service Workers → <strong style="color:var(--text)">Unregister</strong> 후 테스트 필요. 이전 버전 Service Worker가 브라우저에 남아있을 수 있음.
+    </p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 교훈 -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-num">LESSON</span>
+      <h2>배운 것들</h2>
+    </div>
+    <div class="lessons">
+      <div class="lesson-card">
+        <div class="lesson-icon">🔍</div>
+        <h4>계층적 디버깅</h4>
+        <p>브라우저 → nginx → Spring Boot 순서로 어느 레이어까지 요청이 도달하는지 확인하는 것이 핵심. curl로 nginx 우회, nginx 로그로 Spring Boot 도달 여부 확인.</p>
+      </div>
+      <div class="lesson-card">
+        <div class="lesson-icon">⚡</div>
+        <h4>Service Worker의 범위</h4>
+        <p>PWA의 Service Worker는 window.location.href 같은 navigation 요청도 가로챌 수 있음. API 경로는 반드시 denylist에서 제외해야 함.</p>
+      </div>
+      <div class="lesson-card">
+        <div class="lesson-icon">🔄</div>
+        <h4>SSL Termination 패턴</h4>
+        <p>nginx에서 HTTPS를 처리하고 내부는 HTTP로 통신하는 것이 정석. Spring Boot에 forward-headers-strategy: native 설정으로 프록시 인식.</p>
+      </div>
+      <div class="lesson-card">
+        <div class="lesson-icon">🚫</div>
+        <h4>로그에 없으면 미도달</h4>
+        <p>Spring Boot 로그에 요청이 없으면 도달하지 않은 것. nginx 로그에도 없으면 nginx조차 못 간 것. 로그 부재 자체가 단서.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 면접 팁 -->
+  <div class="interview-tip">
+    <div class="tip-label">💼 면접 포인트</div>
+    <p>
+      "PWA 개발 중 OAuth2 로그인이 동작하지 않는 문제를 디버깅한 경험이 있습니다.
+      nginx 로그, Spring Boot 로그, 브라우저 Network 탭을 순서대로 확인하며
+      요청이 어느 레이어까지 도달하는지 추적했고, Service Worker가
+      <code style="font-family:var(--mono); font-size:13px; color:var(--accent4)">window.location.href</code> 요청을 가로채고 있음을 발견했습니다.
+      Workbox의 <code style="font-family:var(--mono); font-size:13px; color:var(--accent4)">navigateFallbackDenylist</code>로 API 경로를 제외하여 해결했습니다."
+    </p>
+  </div>
+
+</div>
+</body>
+</html>
