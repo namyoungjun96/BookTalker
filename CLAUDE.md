@@ -207,14 +207,18 @@ com.example.book_talker_backend
 작업 단위마다 HTML 문서를 `document/` 하위 폴더에 남긴다.
 
 ### 폴더 구조
+
+도메인별로 관리한다.
+
 ```
 document/
-├── naver_login/   # OAuth2, 인증 관련 설계·검수 문서
-├── backend_*/     # 백엔드 최적화, 캐시 등 설계 문서
-├── code_review/   # 코드 리뷰 결과 문서
-├── commit/        # 커밋·PR 검수 문서
-├── pr/            # PR 설명 문서
-└── test/          # 테스트 설계 문서
+├── auth/          # OAuth2, 인증 관련 설계·검수·PR 문서
+├── book/          # 책 검색, 알라딘 API, 캐시 관련 문서
+├── review/        # 리뷰 도메인 설계·검수·PR 문서
+├── mypage/        # 마이페이지 설계·검수·PR 문서
+├── monitoring/    # 로깅, Discord Webhook, API 모니터링 문서
+├── infra/         # Nginx, 배포, 인프라 관련 PR 문서
+└── ranking/       # 랭킹 집계 관련 문서
 ```
 
 ### 파일명 규칙
