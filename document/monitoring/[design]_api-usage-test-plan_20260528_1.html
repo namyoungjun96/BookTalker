@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[설계] ApiUsage 테스트 계획</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 8px; }
+  .subtitle { font-size: .85rem; color: #8b949e; margin-bottom: 36px; }
+  h2 { font-size: .8rem; font-weight: 700; color: #8b949e; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px; }
+  .section { margin-bottom: 52px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 2px 7px; border-radius: 4px; font-size: .85em; color: #79c0ff; }
+  p { font-size: .88rem; color: #c9d1d9; margin-bottom: 8px; }
+
+  /* file card */
+  .file-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; margin-bottom: 28px; }
+  .file-head { background: #1c2128; padding: 14px 20px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .file-tag { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .tag-unit { background: #1a3a5c; color: #58a6ff; }
+  .tag-integration { background: #1a4731; color: #3fb950; }
+  .file-name { font-size: .95rem; font-weight: 600; color: #f0f6fc; font-family: 'Consolas', monospace; }
+  .file-from { font-size: .8rem; color: #6e7681; margin-left: auto; }
+
+  .file-body { padding: 18px 20px; }
+
+  /* test case table */
+  table { width: 100%; border-collapse: collapse; font-size: .84rem; margin-bottom: 18px; }
+  thead tr { background: #1c2128; }
+  th { padding: 9px 14px; text-align: left; color: #8b949e; font-weight: 600; border-bottom: 1px solid #30363d; }
+  td { padding: 9px 14px; border-bottom: 1px solid #21262d; color: #c9d1d9; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .tc-name { color: #f0f6fc; font-family: 'Consolas', monospace; font-size: .82rem; }
+  .tc-given { color: #8b949e; font-size: .82rem; }
+  .tc-expect { color: #3fb950; font-size: .82rem; }
+
+  pre { background: #1c2128; border: 1px solid #30363d; border-radius: 6px; padding: 14px 16px; font-family: 'Consolas', monospace; font-size: .8rem; color: #c9d1d9; overflow-x: auto; line-height: 1.85; }
+  .kw  { color: #ff7b72; }
+  .ann { color: #d2a8ff; }
+  .str { color: #a5d6ff; }
+  .cmt { color: #6e7681; font-style: italic; }
+  .cls { color: #ffa657; }
+  .num { color: #79c0ff; }
+
+  /* change notice */
+  .change { background: #1a1a0d; border: 1px solid #d29922; border-radius: 8px; padding: 16px 20px; margin-bottom: 28px; }
+  .change-title { font-size: .82rem; font-weight: 700; color: #d29922; margin-bottom: 8px; }
+  .change-body { font-size: .85rem; color: #c9d1d9; line-height: 1.8; }
+
+  /* summary */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .summary-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; text-align: center; }
+  .summary-num { font-size: 1.6rem; font-weight: 700; color: #58a6ff; }
+  .summary-label { font-size: .8rem; color: #8b949e; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1>[설계] ApiUsage 테스트 계획</h1>
+<p class="subtitle">ApiUsageCounter · ApiUsageInterceptor · ApiUsageReportScheduler 테스트 파일 및 방향성</p>
+
+<!-- 사전 코드 변경 -->
+<div class="section">
+  <h2>0 · 사전 코드 변경 사항</h2>
+
+  <div class="change">
+    <div class="change-title">① ApiUsageReportScheduler — buildReportMessage() 접근 제어자 변경</div>
+    <div class="change-body">
+      현재 <code>private</code>으로 선언된 <code>buildReportMessage()</code>를 <strong>package-private</strong>(접근 제어자 제거)으로 변경.<br>
+      테스트에서 Discord 전송 없이 메시지 포맷만 독립적으로 검증할 수 있게 됨.<br>
+      <code>public</code>으로 열지 않아도 같은 패키지 내 테스트에서 접근 가능.
+    </div>
+  </div>
+
+  <div class="change">
+    <div class="change-title">② DevTestController — 삭제</div>
+    <div class="change-body">
+      통합 테스트로 대체하므로 <code>DevTestController.java</code> 삭제.<br>
+      <code>SecurityConfig</code>의 <code>/dev/report-now</code> permitAll 설정도 함께 제거.
+    </div>
+  </div>
+</div>
+
+<!-- 테스트 파일 1 -->
+<div class="section">
+  <h2>1 · 테스트 파일</h2>
+
+  <div class="file-card">
+    <div class="file-head">
+      <span class="file-tag tag-unit">단위 테스트</span>
+      <span class="file-name">ApiUsageCounterTest.java</span>
+      <span class="file-from">테스트 대상: ApiUsageCounter.java</span>
+    </div>
+    <div class="file-body">
+      <table>
+        <thead><tr><th>테스트 메서드</th><th>given</th><th>expected</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="tc-name">increment_새로운_키_생성</td>
+            <td class="tc-given">빈 카운터에 "GET /rank" increment</td>
+            <td class="tc-expect">getTopN(1) → [("GET /rank", 1)]</td>
+          </tr>
+          <tr>
+            <td class="tc-name">increment_기존_키_누적</td>
+            <td class="tc-given">"GET /rank" 3회 increment</td>
+            <td class="tc-expect">getTopN(1) → [("GET /rank", 3)]</td>
+          </tr>
+          <tr>
+            <td class="tc-name">getTopN_내림차순_정렬</td>
+            <td class="tc-given">/rank 5회, /book 3회, /review 8회</td>
+            <td class="tc-expect">순서: /review(8) → /rank(5) → /book(3)</td>
+          </tr>
+          <tr>
+            <td class="tc-name">getTopN_N이_실제_항목_수_초과</td>
+            <td class="tc-given">항목 2개 존재, getTopN(5) 호출</td>
+            <td class="tc-expect">2개 반환 (예외 없음)</td>
+          </tr>
+          <tr>
+            <td class="tc-name">getTopN_빈_카운터</td>
+            <td class="tc-given">아무 increment 없음</td>
+            <td class="tc-expect">빈 리스트 반환</td>
+          </tr>
+          <tr>
+            <td class="tc-name">clear_후_카운터_초기화</td>
+            <td class="tc-given">increment 후 clear() 호출</td>
+            <td class="tc-expect">getTopN(3) → 빈 리스트</td>
+          </tr>
+        </tbody>
+      </table>
+      <pre><span class="cmt">// 스프링 컨텍스트 불필요 — 순수 단위 테스트</span>
+<span class="kw">class</span> <span class="cls">ApiUsageCounterTest</span> {
+
+    <span class="kw">private</span> <span class="cls">ApiUsageCounter</span> counter;
+
+    <span class="ann">@BeforeEach</span>
+    <span class="kw">void</span> setUp() { counter = <span class="kw">new</span> <span class="cls">ApiUsageCounter</span>(); }
+
+    <span class="ann">@Test</span>
+    <span class="kw">void</span> getTopN_내림차순_정렬() {
+        counter.increment(<span class="str">"GET /review"</span>); counter.increment(<span class="str">"GET /review"</span>); counter.increment(<span class="str">"GET /review"</span>);
+        counter.increment(<span class="str">"GET /rank"</span>);   counter.increment(<span class="str">"GET /rank"</span>);
+        counter.increment(<span class="str">"GET /book"</span>);
+
+        List&lt;Map.Entry&lt;String, Long&gt;&gt; top = counter.getTopN(<span class="num">3</span>);
+
+        assertThat(top.get(<span class="num">0</span>).getKey()).isEqualTo(<span class="str">"GET /review"</span>);
+        assertThat(top.get(<span class="num">0</span>).getValue()).isEqualTo(<span class="num">3L</span>);
+        assertThat(top.get(<span class="num">1</span>).getKey()).isEqualTo(<span class="str">"GET /rank"</span>);
+    }
+}</pre>
+    </div>
+  </div>
+
+  <!-- 테스트 파일 2 -->
+  <div class="file-card">
+    <div class="file-head">
+      <span class="file-tag tag-unit">단위 테스트</span>
+      <span class="file-name">ApiUsageInterceptorTest.java</span>
+      <span class="file-from">테스트 대상: ApiUsageInterceptor.java</span>
+    </div>
+    <div class="file-body">
+      <table>
+        <thead><tr><th>테스트 메서드</th><th>given</th><th>expected</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="tc-name">preHandle_HandlerMethod일때_카운터_증가</td>
+            <td class="tc-given">handler = HandlerMethod, 요청 속성에 pattern = "/rank"</td>
+            <td class="tc-expect">counter.increment("GET /rank") 1회 호출</td>
+          </tr>
+          <tr>
+            <td class="tc-name">preHandle_HandlerMethod_아닐때_스킵</td>
+            <td class="tc-given">handler = String 객체 (정적 리소스 등)</td>
+            <td class="tc-expect">counter.increment() 미호출, true 반환</td>
+          </tr>
+          <tr>
+            <td class="tc-name">preHandle_패턴_없을때_URI_폴백</td>
+            <td class="tc-given">BEST_MATCHING_PATTERN_ATTRIBUTE = null, URI = "/rank"</td>
+            <td class="tc-expect">counter.increment("GET /rank") 호출</td>
+          </tr>
+        </tbody>
+      </table>
+      <pre><span class="ann">@ExtendWith</span>(<span class="cls">MockitoExtension</span>.class)
+<span class="kw">class</span> <span class="cls">ApiUsageInterceptorTest</span> {
+
+    <span class="ann">@Mock</span> <span class="cls">ApiUsageCounter</span> counter;
+    <span class="ann">@Mock</span> <span class="cls">HttpServletRequest</span> request;
+    <span class="ann">@Mock</span> <span class="cls">HttpServletResponse</span> response;
+    <span class="ann">@Mock</span> <span class="cls">HandlerMethod</span> handlerMethod;
+    <span class="ann">@InjectMocks</span> <span class="cls">ApiUsageInterceptor</span> interceptor;
+
+    <span class="ann">@Test</span>
+    <span class="kw">void</span> preHandle_HandlerMethod일때_카운터_증가() {
+        given(request.getMethod()).willReturn(<span class="str">"GET"</span>);
+        given(request.getAttribute(<span class="cls">HandlerMapping</span>.BEST_MATCHING_PATTERN_ATTRIBUTE))
+            .willReturn(<span class="str">"/rank"</span>);
+
+        <span class="kw">boolean</span> result = interceptor.preHandle(request, response, handlerMethod);
+
+        assertThat(result).isTrue();
+        then(counter).should().increment(<span class="str">"GET /rank"</span>);
+    }
+
+    <span class="ann">@Test</span>
+    <span class="kw">void</span> preHandle_HandlerMethod_아닐때_스킵() {
+        <span class="kw">boolean</span> result = interceptor.preHandle(request, response, <span class="str">"not-a-handler"</span>);
+
+        assertThat(result).isTrue();
+        then(counter).shouldHaveNoInteractions();
+    }
+}</pre>
+    </div>
+  </div>
+
+  <!-- 테스트 파일 3 -->
+  <div class="file-card">
+    <div class="file-head">
+      <span class="file-tag tag-integration">통합 테스트</span>
+      <span class="file-name">ApiUsageReportSchedulerTest.java</span>
+      <span class="file-from">테스트 대상: ApiUsageReportScheduler.java</span>
+    </div>
+    <div class="file-body">
+      <table>
+        <thead><tr><th>테스트 메서드</th><th>given</th><th>expected</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="tc-name">buildReportMessage_상위3개_포함</td>
+            <td class="tc-given">counter에 3개 키 주입 (각 호출 수 다름)</td>
+            <td class="tc-expect">메시지에 "1위", "2위", "3위" 포함, 호출 수 내림차순</td>
+          </tr>
+          <tr>
+            <td class="tc-name">buildReportMessage_호출없을때_문구_확인</td>
+            <td class="tc-given">counter 비어있음</td>
+            <td class="tc-expect">메시지에 "(호출 없음)" 포함</td>
+          </tr>
+          <tr>
+            <td class="tc-name">buildReportMessage_JVM_힙_정보_포함</td>
+            <td class="tc-given">-</td>
+            <td class="tc-expect">메시지에 "JVM Heap", "MB" 포함</td>
+          </tr>
+          <tr>
+            <td class="tc-name">sendDailyReport_실행후_카운터_초기화</td>
+            <td class="tc-given">counter에 데이터 있음, webhook URL 미설정</td>
+            <td class="tc-expect">실행 후 counter.getTopN(1) → 빈 리스트</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:.83rem;color:#8b949e;margin-bottom:12px;">
+        ⚠ Discord 실제 전송 방지: 테스트 프로퍼티에서 <code>app.discord.webhook-url</code>을 빈 값으로 설정.<br>
+        webhook URL이 없으면 <code>sendToDiscord()</code>가 경고 로그만 남기고 반환하므로 외부 호출 없음.
+      </p>
+      <pre><span class="ann">@SpringBootTest</span>
+<span class="ann">@ActiveProfiles</span>(<span class="str">"local"</span>)
+<span class="ann">@TestPropertySource</span>(properties = <span class="str">"app.discord.webhook-url="</span>)  <span class="cmt">// Discord 전송 차단</span>
+<span class="kw">class</span> <span class="cls">ApiUsageReportSchedulerTest</span> {
+
+    <span class="ann">@Autowired</span> <span class="cls">ApiUsageReportScheduler</span> scheduler;
+    <span class="ann">@Autowired</span> <span class="cls">ApiUsageCounter</span> counter;
+
+    <span class="ann">@BeforeEach</span>
+    <span class="kw">void</span> setUp() { counter.clear(); }
+
+    <span class="ann">@Test</span>
+    <span class="kw">void</span> buildReportMessage_상위3개_포함() {
+        counter.increment(<span class="str">"GET /rank"</span>); counter.increment(<span class="str">"GET /rank"</span>);
+        counter.increment(<span class="str">"GET /book/search"</span>);
+        counter.increment(<span class="str">"GET /review/list"</span>); counter.increment(<span class="str">"GET /review/list"</span>); counter.increment(<span class="str">"GET /review/list"</span>);
+
+        String msg = scheduler.buildReportMessage();  <span class="cmt">// package-private으로 변경 후 접근 가능</span>
+
+        assertThat(msg).contains(<span class="str">"1위"</span>, <span class="str">"GET /review/list"</span>);
+        assertThat(msg).contains(<span class="str">"3회"</span>);
+    }
+
+    <span class="ann">@Test</span>
+    <span class="kw">void</span> sendDailyReport_실행후_카운터_초기화() {
+        counter.increment(<span class="str">"GET /rank"</span>);
+
+        scheduler.sendDailyReport();
+
+        assertThat(counter.getTopN(<span class="num">1</span>)).isEmpty();
+    }
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- 요약 -->
+<div class="section">
+  <h2>2 · 요약</h2>
+  <div class="summary-grid">
+    <div class="summary-box">
+      <div class="summary-num">3</div>
+      <div class="summary-label">테스트 파일</div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-num">10</div>
+      <div class="summary-label">테스트 케이스</div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-num">2</div>
+      <div class="summary-label">코드 수정 사항<br><span style="font-size:.75rem">(buildReportMessage 접근자, DevTestController 삭제)</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

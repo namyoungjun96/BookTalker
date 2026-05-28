@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[설계] DevTestController 대안 비교</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 8px; }
+  .subtitle { font-size: .85rem; color: #8b949e; margin-bottom: 36px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .section { margin-bottom: 48px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 2px 7px; border-radius: 4px; font-size: .85em; color: #79c0ff; }
+
+  /* Option card */
+  .option-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+  .option-card.rec  { border-color: #3fb950; }
+  .option-card.warn { border-color: #d29922; }
+  .option-card.alt  { border-color: #30363d; }
+
+  .option-head { padding: 14px 20px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 12px; }
+  .option-head.rec  { background: #0d1f14; }
+  .option-head.warn { background: #1f1a0d; }
+  .option-head.alt  { background: #1c2128; }
+
+  .badge { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; flex-shrink: 0; }
+  .badge.rec  { background: #1a4731; color: #3fb950; }
+  .badge.warn { background: #3d2e00; color: #d29922; }
+  .badge.alt  { background: #21262d; color: #8b949e; }
+
+  .option-title { font-size: 1rem; font-weight: 600; color: #f0f6fc; }
+  .option-body { padding: 18px 20px; }
+
+  .pros-cons { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .pros, .cons { flex: 1; min-width: 200px; }
+  .pros-label { font-size: .75rem; font-weight: 700; color: #3fb950; margin-bottom: 6px; }
+  .cons-label { font-size: .75rem; font-weight: 700; color: #f85149; margin-bottom: 6px; }
+  .pros ul, .cons ul { list-style: none; padding: 0; }
+  .pros ul li, .cons ul li { font-size: .85rem; color: #c9d1d9; padding: 3px 0; }
+  .pros ul li::before { content: "+ "; color: #3fb950; font-weight: 700; }
+  .cons ul li::before { content: "− "; color: #f85149; font-weight: 700; }
+
+  pre { background: #1c2128; border: 1px solid #30363d; border-radius: 6px; padding: 14px 16px; font-family: 'Consolas', monospace; font-size: .82rem; color: #c9d1d9; overflow-x: auto; line-height: 1.8; margin-top: 12px; }
+  .kw { color: #ff7b72; }
+  .ann { color: #d2a8ff; }
+  .str { color: #a5d6ff; }
+  .cmt { color: #6e7681; }
+  .cls { color: #ffa657; }
+
+  .verdict { background: #161b22; border: 1px solid #388bfd; border-radius: 8px; padding: 18px 20px; }
+  .verdict-title { font-size: .9rem; font-weight: 600; color: #388bfd; margin-bottom: 10px; }
+  .verdict-body { font-size: .88rem; color: #c9d1d9; line-height: 1.8; }
+  .verdict-body strong { color: #f0f6fc; }
+</style>
+</head>
+<body>
+
+<h1>[설계] DevTestController 대안 비교</h1>
+<p class="subtitle">스케줄러를 즉시 실행해 Discord 리포트를 확인하는 방법 3가지</p>
+
+<!-- 배경 -->
+<div class="section">
+  <h2>배경</h2>
+  <p style="font-size:.88rem;color:#c9d1d9;">
+    <code>ApiUsageReportScheduler.sendDailyReport()</code>는 매일 23:59에 실행된다.<br>
+    개발 중 즉시 실행해 Discord 메시지를 확인하려면 별도 트리거가 필요하다.<br>
+    현재 구현된 <code>DevTestController</code>(<code>@Profile("local")</code>)를 어떻게 처리할 것인가가 쟁점이다.
+  </p>
+</div>
+
+<!-- A -->
+<div class="section">
+  <h2>대안 비교</h2>
+
+  <div class="option-card warn">
+    <div class="option-head warn">
+      <span class="badge warn">A · 현재 방식</span>
+      <span class="option-title">@Profile("local") 컨트롤러 유지</span>
+    </div>
+    <div class="option-body">
+      <div class="pros-cons">
+        <div class="pros">
+          <div class="pros-label">장점</div>
+          <ul>
+            <li>브라우저 / Postman에서 즉시 호출 가능</li>
+            <li>prod 환경에서는 빈 자체가 등록 안 됨</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <div class="cons-label">단점</div>
+          <ul>
+            <li>테스트 코드가 <code>src/main</code>에 섞임</li>
+            <li>나중에 지워야 한다는 걸 기억해야 함</li>
+            <li>코드베이스를 읽는 사람에게 혼란</li>
+          </ul>
+        </div>
+      </div>
+      <pre><span class="ann">@RestController</span>
+<span class="ann">@Profile</span>(<span class="str">"local"</span>)            <span class="cmt">// prod에서는 비활성화</span>
+<span class="kw">public class</span> <span class="cls">DevTestController</span> {
+    <span class="ann">@GetMapping</span>(<span class="str">"/dev/report-now"</span>)
+    <span class="kw">public</span> String triggerReport() { ... }
+}</pre>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div class="option-card rec">
+    <div class="option-head rec">
+      <span class="badge rec">B · 추천</span>
+      <span class="option-title">Spring Boot 통합 테스트</span>
+    </div>
+    <div class="option-body">
+      <div class="pros-cons">
+        <div class="pros">
+          <div class="pros-label">장점</div>
+          <ul>
+            <li>테스트 코드가 <code>src/test</code>에 명확히 분리</li>
+            <li><code>DevTestController</code> 파일 자체 불필요</li>
+            <li>엔드포인트를 <code>SecurityConfig</code>에서 허용할 필요 없음</li>
+            <li>이후 자동화 테스트로 발전 가능</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <div class="cons-label">단점</div>
+          <ul>
+            <li>테스트 실행 시 실제 Discord로 전송됨</li>
+            <li>IDE에서 테스트 실행 필요 (브라우저 호출 불가)</li>
+          </ul>
+        </div>
+      </div>
+      <pre><span class="ann">@SpringBootTest</span>
+<span class="ann">@ActiveProfiles</span>(<span class="str">"local"</span>)
+<span class="kw">class</span> <span class="cls">ApiUsageReportSchedulerTest</span> {
+
+    <span class="ann">@Autowired</span>
+    <span class="kw">private</span> <span class="cls">ApiUsageReportScheduler</span> scheduler;
+
+    <span class="ann">@Autowired</span>
+    <span class="kw">private</span> <span class="cls">ApiUsageCounter</span> counter;
+
+    <span class="ann">@Test</span>
+    <span class="kw">void</span> sendDailyReport() {
+        <span class="cmt">// given: 카운터에 데이터 주입</span>
+        counter.increment(<span class="str">"GET /rank"</span>);
+        counter.increment(<span class="str">"GET /rank"</span>);
+        counter.increment(<span class="str">"GET /book/search"</span>);
+
+        <span class="cmt">// when: 스케줄러 즉시 실행 → Discord 전송</span>
+        scheduler.sendDailyReport();
+    }
+}</pre>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div class="option-card alt">
+    <div class="option-head alt">
+      <span class="badge alt">C · 절충안</span>
+      <span class="option-title">@ConditionalOnProperty 플래그</span>
+    </div>
+    <div class="option-body">
+      <div class="pros-cons">
+        <div class="pros">
+          <div class="pros-label">장점</div>
+          <ul>
+            <li>프로파일이 아닌 프로퍼티로 제어해 더 명시적</li>
+            <li>필요 시 prod에서도 임시 활성화 가능</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <div class="cons-label">단점</div>
+          <ul>
+            <li>테스트 코드가 여전히 <code>src/main</code>에 존재</li>
+            <li>A보다 복잡하면서 B보다 나은 점이 없음</li>
+          </ul>
+        </div>
+      </div>
+      <pre><span class="cmt">// application-local.yml</span>
+app:
+  dev:
+    enabled: <span class="kw">true</span>
+
+<span class="cmt">// DevTestController.java</span>
+<span class="ann">@ConditionalOnProperty</span>(name = <span class="str">"app.dev.enabled"</span>, havingValue = <span class="str">"true"</span>)
+<span class="kw">public class</span> <span class="cls">DevTestController</span> { ... }</pre>
+    </div>
+  </div>
+</div>
+
+<!-- 결론 -->
+<div class="section">
+  <div class="verdict">
+    <div class="verdict-title">결론 (검수 요청)</div>
+    <div class="verdict-body">
+      <strong>B (통합 테스트)</strong>를 추천합니다.<br><br>
+      테스트 코드가 <code>src/test</code>에 분리되고, <code>DevTestController</code> 파일과
+      <code>SecurityConfig</code> 예외 설정 모두 불필요해져 코드베이스가 깔끔해집니다.<br><br>
+      Discord로 실제 전송이 된다는 단점이 있지만, 애초에 리포트 확인이 목적이므로 오히려 자연스럽습니다.<br>
+      카운터에 더미 데이터를 주입한 뒤 실행하면 메시지 포맷도 정확히 검증됩니다.
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
