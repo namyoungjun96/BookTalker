@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[PR 검수] feat/logback → main</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .section { margin-bottom: 40px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+
+  /* Meta */
+  .meta-table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; font-size: .88rem; }
+  .meta-table td { padding: 10px 16px; border-bottom: 1px solid #21262d; vertical-align: top; }
+  .meta-table tr:last-child td { border-bottom: none; }
+  .meta-table td:first-child { color: #8b949e; font-weight: 600; width: 120px; }
+  .branch-pill { font-family: 'Consolas', monospace; font-size: .85rem; background: #1c2128; border: 1px solid #30363d; border-radius: 12px; padding: 2px 10px; color: #79c0ff; }
+  .arrow { color: #8b949e; margin: 0 6px; }
+
+  /* PR body */
+  .pr-body { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px 24px; font-size: .88rem; }
+  .pr-title { font-size: 1.1rem; font-weight: 700; color: #f0f6fc; margin-bottom: 20px; font-family: 'Consolas', monospace; }
+  .pr-section { margin-bottom: 18px; }
+  .pr-section h3 { font-size: .88rem; font-weight: 700; color: #e6edf3; margin-bottom: 8px; border-bottom: 1px solid #21262d; padding-bottom: 4px; }
+  .pr-section ul { list-style: none; padding: 0; }
+  .pr-section ul li { padding: 3px 0; color: #c9d1d9; font-size: .85rem; }
+  .pr-section ul li::before { content: "- "; color: #8b949e; }
+  .checklist li::before { content: "- [ ] "; color: #8b949e; font-family: 'Consolas', monospace; }
+
+  /* Commits */
+  .commit-list { display: flex; flex-direction: column; gap: 10px; }
+  .commit-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .commit-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #1c2128; border-bottom: 1px solid #30363d; }
+  .commit-tag { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .tag-feat { background: #1f6feb; color: #fff; }
+  .commit-title { font-family: 'Consolas', monospace; font-size: .85rem; color: #e6edf3; }
+  .commit-sha { font-family: 'Consolas', monospace; font-size: .75rem; color: #8b949e; margin-left: auto; }
+  .commit-files { padding: 8px 16px; font-family: 'Consolas', monospace; font-size: .78rem; color: #8b949e; }
+
+  /* Decisions */
+  .decision-list { display: flex; flex-direction: column; gap: 10px; }
+  .decision-card { background: #161b22; border-left: 3px solid #1f6feb; border-radius: 0 8px 8px 0; padding: 12px 16px; }
+  .d-title { font-size: .88rem; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+  .d-body  { font-size: .83rem; color: #8b949e; }
+
+  /* Arch diagram */
+  .arch-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px 20px; font-family: 'Consolas', monospace; font-size: .82rem; color: #8b949e; white-space: pre; line-height: 1.6; }
+  .arch-highlight { color: #3fb950; }
+  .arch-warn { color: #d29922; }
+</style>
+</head>
+<body>
+
+<h1>[PR 검수] feat/logback → main</h1>
+
+<!-- ─── META ─── -->
+<div class="section">
+  <h2>PR 기본 정보</h2>
+  <table class="meta-table">
+    <tr>
+      <td>브랜치</td>
+      <td>
+        <span class="branch-pill">feat/logback</span>
+        <span class="arrow">→</span>
+        <span class="branch-pill">main</span>
+      </td>
+    </tr>
+    <tr><td>Reviewer</td><td>goemgo</td></tr>
+    <tr><td>커밋 수</td><td>2</td></tr>
+    <tr><td>변경 파일</td><td>4 files (백엔드 전용)</td></tr>
+  </table>
+</div>
+
+<!-- ─── COMMITS ─── -->
+<div class="section">
+  <h2>포함 커밋</h2>
+  <div class="commit-list">
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-feat">FEAT</span>
+        <span class="commit-title">FEAT: [백엔드] DiscordWebhookAppender 구현</span>
+        <span class="commit-sha">0fc7c88</span>
+      </div>
+      <div class="commit-files">
+        DiscordWebhookAppender.java (신규) · additional-spring-configuration-metadata.json (신규)
+      </div>
+    </div>
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-feat">FEAT</span>
+        <span class="commit-title">FEAT: [백엔드] logback 프로파일 분리 및 Discord 알림 적용</span>
+        <span class="commit-sha">00f9756</span>
+      </div>
+      <div class="commit-files">
+        logback-spring.xml (수정) · application-prod.yml (수정)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ARCH ─── -->
+<div class="section">
+  <h2>로깅 아키텍처</h2>
+  <div class="arch-box">
+<span class="arch-highlight">[ local 프로파일 ]</span>
+  root(INFO) ──► CONSOLE  (stdout, DEBUG 레벨로 앱 로그)
+             ──► FILE     (booktalker.log, 일별 롤링, maxHistory=100)
+  org.springframework → WARN
+  com.example.*       → DEBUG
+  org.hibernate.SQL   → DEBUG
+
+<span class="arch-warn">[ prod 프로파일 ]</span>
+  root(INFO) ──► FILE       (booktalker.log, 일별 롤링)
+             ──► ERROR_FILE (booktalker-error.log, ERROR만 필터)
+             ──► DISCORD    (Discord Webhook, ERROR만 필터)
+  org.springframework → WARN
+  com.example.*       → INFO
+  org.hibernate.SQL   → WARN
+
+Discord Webhook 포맷: [ERROR] yyyy-MM-dd HH:mm:ss - {logger} - {message}
+  </div>
+</div>
+
+<!-- ─── PR BODY ─── -->
+<div class="section">
+  <h2>PR 본문 초안</h2>
+  <div class="pr-body">
+    <div class="pr-title">FEAT: logback 프로파일 분리 및 Discord ERROR 알림 추가</div>
+
+    <div class="pr-section">
+      <h3>Summary</h3>
+      <ul>
+        <li>logback을 local / prod 프로파일로 분리하여 환경별 로그 출력 전략을 명확히 합니다.</li>
+        <li>prod 환경에서 ERROR 로그 발생 시 Discord Webhook으로 실시간 알림을 전송합니다.</li>
+        <li>Java 표준 <code>HttpClient</code> 기반의 커스텀 <code>DiscordWebhookAppender</code>를 구현합니다.</li>
+        <li><code>app.discord.webhook-url</code>을 환경 변수(<code>DISCORD_WEBHOOK_URL</code>)로 주입받아 민감 정보를 코드에서 분리합니다.</li>
+      </ul>
+    </div>
+
+    <div class="pr-section">
+      <h3>Changes</h3>
+      <ul>
+        <li><strong>[신규]</strong> <code>DiscordWebhookAppender.java</code> — <code>AppenderBase&lt;ILoggingEvent&gt;</code> 상속, 연결 타임아웃 3s / 요청 타임아웃 5s, fail-safe 처리</li>
+        <li><strong>[신규]</strong> <code>additional-spring-configuration-metadata.json</code> — <code>app.discord.webhook-url</code> 커스텀 프로퍼티 등록 (IDE 경고 억제)</li>
+        <li><strong>[수정]</strong> <code>logback-spring.xml</code> — <code>scan="true" scanPeriod="60s"</code>, springProfile 분리, ERROR_FILE / DISCORD appender 추가</li>
+        <li><strong>[수정]</strong> <code>application-prod.yml</code> — <code>app.discord.webhook-url: ${DISCORD_WEBHOOK_URL:}</code> 추가</li>
+      </ul>
+    </div>
+
+    <div class="pr-section">
+      <h3>의사결정</h3>
+      <ul>
+        <li><strong>왜 외부 라이브러리 없이 Java HttpClient를 사용했는가</strong> — logback appender는 Spring 컨텍스트 외부에서 초기화되므로 Spring Bean 주입이 불가. 별도 의존성 없이 JDK 11+ 표준 HttpClient로 구현.</li>
+        <li><strong>왜 webhookUrl을 빈값 허용(<code>:</code>)으로 설정했는가</strong> — local 환경에서 환경 변수 미설정 시 appender가 조용히 skip하도록 fail-safe 처리. prod에서만 실제 URL 주입.</li>
+        <li><strong>왜 logback namespace를 <code>logging.*</code>가 아닌 <code>app.*</code>로 했는가</strong> — <code>logging.*</code>는 Spring Boot 예약 네임스페이스. 커스텀 프로퍼티는 <code>app.*</code>로 분리해 IDE 경고 및 충돌 방지.</li>
+      </ul>
+    </div>
+
+    <div class="pr-section">
+      <h3>Test Plan</h3>
+      <ul class="checklist">
+        <li>local 환경에서 앱 실행 시 콘솔에 DEBUG 로그 출력 확인</li>
+        <li>prod 환경에서 <code>./logs/booktalker.log</code>, <code>./logs/booktalker-error.log</code> 생성 확인</li>
+        <li><code>DISCORD_WEBHOOK_URL</code> 환경 변수 설정 후 ERROR 로그 발생 시 Discord 채널 알림 수신 확인</li>
+        <li><code>DISCORD_WEBHOOK_URL</code> 미설정(빈값) 시 예외 없이 정상 동작 확인</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

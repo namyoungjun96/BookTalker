@@ -26,14 +26,6 @@ spring:
               redirect-uri: https://booktalker.co.kr/api/login/oauth2/code/naver
               scope:
                 - id
-                - name
-                - email
-                - gender
-                - age
-                - birthday
-                - profile_image
-                - birthyear
-                - mobile
 #    session:
 #      redis:
 #        namespace: book_talker:session

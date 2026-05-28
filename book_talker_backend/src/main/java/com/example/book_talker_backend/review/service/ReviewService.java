@@ -78,7 +78,7 @@ public class ReviewService {
     }
 
     @Transactional
-    public void updateReview(ReviewRequest request, String email) {
+    public void updateReview(ReviewRequest request, String naverId) {
         if (request.reviewId() == null) {
             throw new IllegalArgumentException("reviewId는 필수입니다.");
         }
@@ -95,7 +95,7 @@ public class ReviewService {
         Review review = reviewRepository.findById(request.reviewId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 독후감입니다: " + request.reviewId()));
 
-        if (!review.getWriter().equals(email)) {
+        if (!review.getWriter().equals(naverId)) {
             throw new AccessDeniedException("해당 독후감에 접근 권한이 없습니다.");
         }
 
@@ -113,19 +113,19 @@ public class ReviewService {
         review.setModDate(LocalDateTime.now());
     }
 
-    public List<ReviewListResponse> getReviews(String email) {
-        List<Review> reviews = reviewRepository.findByWriter(email);
-        log.debug("Getting reviews for user with email: {}, count: {}", email, reviews.size());
+    public List<ReviewListResponse> getReviews(String naverId) {
+        List<Review> reviews = reviewRepository.findByWriter(naverId);
+        log.debug("Getting reviews for naverId: {}, count: {}", naverId, reviews.size());
         return reviews.stream()
                 .map(ReviewListResponse::from)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void deleteReview(Long reviewId, String email) {
+    public void deleteReview(Long reviewId, String naverId) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 독후감입니다: " + reviewId));
-        if (!review.getWriter().equals(email)) {
+        if (!review.getWriter().equals(naverId)) {
             throw new AccessDeniedException("해당 독후감에 접근 권한이 없습니다.");
         }
         reviewRepository.delete(review);
@@ -137,10 +137,10 @@ public class ReviewService {
                 .map(PublicReviewResponse::from);
     }
 
-    public ReviewDetailResponse getReviewDetail(Long reviewId, String email) {
+    public ReviewDetailResponse getReviewDetail(Long reviewId, String naverId) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new IllegalArgumentException("Review not found: " + reviewId));
-        if (!review.getWriter().equals(email)) {
+        if (!review.getWriter().equals(naverId)) {
             throw new AccessDeniedException("해당 독후감에 접근 권한이 없습니다.");
         }
         return ReviewDetailResponse.from(review);

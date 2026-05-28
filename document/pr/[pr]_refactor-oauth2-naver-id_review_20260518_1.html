@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[PR 검수] refactor/oauth2-naver-id → main</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .section { margin-bottom: 40px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+
+  .meta-table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; font-size: .88rem; }
+  .meta-table td { padding: 10px 16px; border-bottom: 1px solid #21262d; vertical-align: top; }
+  .meta-table tr:last-child td { border-bottom: none; }
+  .meta-table td:first-child { color: #8b949e; font-weight: 600; width: 120px; }
+  .branch-pill { font-family: 'Consolas', monospace; font-size: .85rem; background: #1c2128; border: 1px solid #30363d; border-radius: 12px; padding: 2px 10px; color: #79c0ff; }
+  .arrow { color: #8b949e; margin: 0 6px; }
+
+  .commit-list { display: flex; flex-direction: column; gap: 10px; }
+  .commit-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .commit-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #1c2128; border-bottom: 1px solid #30363d; }
+  .commit-tag { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .tag-refactor { background: #6e7681; color: #fff; }
+  .tag-fix { background: #da3633; color: #fff; }
+  .tag-feat { background: #1f6feb; color: #fff; }
+  .commit-title { font-family: 'Consolas', monospace; font-size: .85rem; color: #e6edf3; }
+  .commit-sha { font-family: 'Consolas', monospace; font-size: .75rem; color: #8b949e; margin-left: auto; }
+  .commit-files { padding: 8px 16px; font-family: 'Consolas', monospace; font-size: .78rem; color: #8b949e; }
+
+  .pr-body { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px 24px; font-size: .88rem; }
+  .pr-title { font-size: 1.1rem; font-weight: 700; color: #f0f6fc; margin-bottom: 20px; font-family: 'Consolas', monospace; }
+  .pr-section { margin-bottom: 18px; }
+  .pr-section h3 { font-size: .88rem; font-weight: 700; color: #e6edf3; margin-bottom: 8px; border-bottom: 1px solid #21262d; padding-bottom: 4px; }
+  .pr-section ul { list-style: none; padding: 0; }
+  .pr-section ul li { padding: 3px 0; color: #c9d1d9; font-size: .85rem; }
+  .pr-section ul li::before { content: "- "; color: #8b949e; }
+  .checklist li::before { content: "- [ ] "; color: #8b949e; font-family: 'Consolas', monospace; }
+
+  .decision-list { display: flex; flex-direction: column; gap: 10px; }
+  .decision-card { background: #161b22; border-left: 3px solid #1f6feb; border-radius: 0 8px 8px 0; padding: 12px 16px; }
+  .d-title { font-size: .88rem; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+  .d-body  { font-size: .83rem; color: #8b949e; }
+
+  .alert-box { background: #271d0d; border: 1px solid #d29922; border-radius: 8px; padding: 14px 18px; font-size: .85rem; color: #c9d1d9; margin-top: 14px; }
+  .alert-box strong { color: #d29922; }
+</style>
+</head>
+<body>
+
+<h1>[PR 검수] refactor/oauth2-naver-id → main</h1>
+
+<!-- META -->
+<div class="section">
+  <h2>PR 기본 정보</h2>
+  <table class="meta-table">
+    <tr>
+      <td>브랜치</td>
+      <td>
+        <span class="branch-pill">refactor/oauth2-naver-id</span>
+        <span class="arrow">→</span>
+        <span class="branch-pill">main</span>
+      </td>
+    </tr>
+    <tr><td>Reviewer</td><td>goemgo</td></tr>
+    <tr><td>커밋 수</td><td>7</td></tr>
+    <tr><td>변경 파일</td><td>16 files (백엔드 9 + 프론트 4 + 설정 3)</td></tr>
+  </table>
+</div>
+
+<!-- COMMITS -->
+<div class="section">
+  <h2>포함 커밋</h2>
+  <div class="commit-list">
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-refactor">REFACTOR</span>
+        <span class="commit-title">REFACTOR: [백엔드] OAuth2 Naver 고유 ID 기반 인증으로 전환</span>
+        <span class="commit-sha">78bf8f4</span>
+      </div>
+      <div class="commit-files">OAuth2UserEntity · OAuth2UserRepository · UserRepository · OAuth2UserMapper · CustomAuthenticationSuccessHandler · UserResponse · Controller · application-prod.yml</div>
+    </div>
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-refactor">REFACTOR</span>
+        <span class="commit-title">REFACTOR: [프론트] 로그인 화면에서 이메일/비밀번호 폼 및 회원가입 제거</span>
+        <span class="commit-sha">036adc2</span>
+      </div>
+      <div class="commit-files">LoginView.vue</div>
+    </div>
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-fix">FIX</span>
+        <span class="commit-title">FIX: [백엔드] 로컬 프로파일 활성화 및 scope 동기화</span>
+        <span class="commit-sha">5cd7dc4</span>
+      </div>
+      <div class="commit-files">application.yml · application-local.yml</div>
+    </div>
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-refactor">REFACTOR</span>
+        <span class="commit-title">REFACTOR: [프론트] 페이지 타이틀 및 lang 속성 한국어로 변경</span>
+        <span class="commit-sha">9de8121</span>
+      </div>
+      <div class="commit-files">index.html</div>
+    </div>
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-refactor">REFACTOR</span>
+        <span class="commit-title">REFACTOR: [백엔드] review writer 식별자를 이메일에서 Naver ID로 전환</span>
+        <span class="commit-sha">36e9a19</span>
+      </div>
+      <div class="commit-files">ReviewController.java · ReviewService.java</div>
+    </div>
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-refactor">REFACTOR</span>
+        <span class="commit-title">REFACTOR: [프론트] 독후감 작성 화면에서 작성자 정보 카드 제거</span>
+        <span class="commit-sha">c183d6f</span>
+      </div>
+      <div class="commit-files">ReviewCreateView.vue</div>
+    </div>
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-tag tag-feat">FEAT</span>
+        <span class="commit-title">FEAT: [프론트] 마이페이지 리뷰 개수 표시 및 최신순 정렬</span>
+        <span class="commit-sha">277f000</span>
+      </div>
+      <div class="commit-files">MyPageView.vue</div>
+    </div>
+  </div>
+</div>
+
+<!-- PR BODY -->
+<div class="section">
+  <h2>PR 본문 초안</h2>
+  <div class="pr-body">
+    <div class="pr-title">REFACTOR: OAuth2 Naver ID 기반 인증 전환 및 UI 정리</div>
+
+    <div class="pr-section">
+      <h3>Summary</h3>
+      <ul>
+        <li>OAuth2 사용자 식별 기준을 이메일에서 Naver 고유 ID로 전환합니다.</li>
+        <li>기존 코드에 있던 <code>existsByEmail(id값)</code>, <code>findByProviderEmail(id값)</code> 버그 2개를 제거합니다.</li>
+        <li>로그인 화면에서 이메일/비밀번호 폼 및 회원가입 UI를 제거하고 네이버 로그인만 남깁니다.</li>
+        <li><code>application.yml</code>의 <code>active: prod</code>를 <code>active: local</code>로 변경해 로컬 테스트를 가능하게 합니다.</li>
+        <li>마이페이지 리뷰 목록에 개수 표시 및 최신순 정렬을 추가합니다.</li>
+      </ul>
+    </div>
+
+    <div class="pr-section">
+      <h3>Changes</h3>
+      <ul>
+        <li><strong>[Backend]</strong> <code>OAuth2UserEntity</code> — <code>providerEmail</code> 필드 제거</li>
+        <li><strong>[Backend]</strong> <code>OAuth2UserRepository</code> — <code>findByProviderEmail</code> → <code>findByProviderId</code></li>
+        <li><strong>[Backend]</strong> <code>UserRepository</code> — <code>existsByEmail</code> 제거</li>
+        <li><strong>[Backend]</strong> <code>OAuth2UserMapper</code> — email 의존 제거, 시그니처 단순화</li>
+        <li><strong>[Backend]</strong> <code>CustomAuthenticationSuccessHandler</code> — 중복 체크를 <code>findByProviderId</code> 단일 조회로 통합</li>
+        <li><strong>[Backend]</strong> <code>UserResponse</code> — <code>naverId</code> 단일 필드로 축소</li>
+        <li><strong>[Backend]</strong> <code>Controller</code> — <code>isProfileComplete</code>, <code>"/"</code> 엔드포인트 제거</li>
+        <li><strong>[Backend]</strong> <code>ReviewController</code> / <code>ReviewService</code> — <code>response.get("email")</code> → <code>response.get("id")</code>, 파라미터명 <code>naverId</code>로 통일</li>
+        <li><strong>[Backend]</strong> <code>application.yml</code> — <code>active: local</code>로 변경 (운영서버 <code>SPRING_PROFILES_ACTIVE=prod</code> 필요)</li>
+        <li><strong>[Backend]</strong> <code>application-local.yml</code> — scope <code>id</code> 하나로 축소</li>
+        <li><strong>[Frontend]</strong> <code>LoginView.vue</code> — 이메일/비밀번호 폼, 회원가입 링크 제거. 네이버 로그인만 유지</li>
+        <li><strong>[Frontend]</strong> <code>ReviewCreateView.vue</code> — 작성자 정보 카드 제거, <code>fetchCurrentUser</code> 및 <code>/user/me</code> 호출 제거</li>
+        <li><strong>[Frontend]</strong> <code>MyPageView.vue</code> — 리뷰 개수 표시, <code>regDate</code> 기준 최신순 정렬</li>
+        <li><strong>[Frontend]</strong> <code>index.html</code> — 타이틀 <code>북토커</code>, <code>lang="ko"</code>로 변경</li>
+      </ul>
+    </div>
+
+    <div class="pr-section">
+      <h3>의사결정</h3>
+      <ul>
+        <li><strong>왜 email 대신 Naver ID를 식별자로 쓰는가</strong> — scope를 <code>id</code>만 요청하므로 email을 받을 수 없음. Naver ID는 변경 불가능한 고유값으로 식별에 적합.</li>
+        <li><strong>중복 체크 로직을 oAuth2Repository 하나로 통합한 이유</strong> — 기존 <code>userRepository.existsByEmail(id값)</code>은 항상 false를 반환하는 버그였음. OAuth2 유저는 반드시 OAuth2UserEntity가 있으므로 이를 단일 진실 공급원으로 사용.</li>
+        <li><strong>application.yml active를 local로 변경한 이유</strong> — 기존 <code>active: prod</code>는 로컬 실행 시에도 prod 설정을 로드해 OAuth2 콜백 URL 불일치로 테스트 불가. 운영서버는 <code>SPRING_PROFILES_ACTIVE=prod</code> 환경변수로 override.</li>
+        <li><strong>기존 review.writer 데이터 처리</strong> — 기존 <code>writer</code> 컬럼에 이메일 값이 저장돼 있어 <code>TRUNCATE TABLE review CASCADE;</code>로 초기화. 테스트 단계이므로 마이그레이션 불필요로 판단.</li>
+      </ul>
+    </div>
+
+    <div class="pr-section">
+      <h3>Test Plan</h3>
+      <ul class="checklist">
+        <li>로컬에서 네이버 로그인 후 세션 정상 유지 확인</li>
+        <li>동일 계정 재로그인 시 중복 저장 없는 것 확인 (<code>OAUTH2_USER</code> 테이블 row 수 변화 없음)</li>
+        <li>독후감 작성 → 마이페이지에서 본인 독후감만 조회되는지 확인</li>
+        <li>독후감 삭제 시 타인 독후감 삭제 시도 → 403 반환 확인</li>
+        <li>마이페이지 리뷰 개수 표시 및 최신순 정렬 확인</li>
+        <li>운영서버 재배포 시 <code>SPRING_PROFILES_ACTIVE=prod</code> 환경변수 설정 확인</li>
+        <li>DB <code>provider_email</code> 컬럼 수동 drop: <code>ALTER TABLE OAUTH2_USER DROP COLUMN provider_email;</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="alert-box">
+    <strong>⚠ 배포 체크리스트</strong><br>
+    1. 운영서버 환경변수 <code>SPRING_PROFILES_ACTIVE=prod</code> 추가<br>
+    2. <code>ALTER TABLE OAUTH2_USER DROP COLUMN provider_email;</code> 수동 실행<br>
+    3. <code>TRUNCATE TABLE review CASCADE;</code> 실행 (이미 완료된 경우 생략)
+  </div>
+</div>
+
+</body>
+</html>

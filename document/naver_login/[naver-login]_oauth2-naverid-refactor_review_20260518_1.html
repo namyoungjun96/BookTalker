@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[검수] OAuth2 Naver ID 기반 인증 리팩토링</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .section { margin-bottom: 44px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+  strong { color: #f0f6fc; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  th { background: #1c2128; color: #8b949e; font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid #30363d; }
+  td { padding: 10px 14px; border-bottom: 1px solid #21262d; vertical-align: top; color: #c9d1d9; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; font-size: .7rem; font-weight: 700; padding: 1px 7px; border-radius: 4px; margin-right: 4px; }
+  .b-bug  { background: #da3633; color: #fff; }
+  .b-mod  { background: #388bfd; color: #fff; }
+  .b-del  { background: #6e7681; color: #fff; }
+  .b-add  { background: #3fb950; color: #000; }
+  .b-warn { background: #d29922; color: #000; }
+
+  /* Flow diagram */
+  .flow-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px 24px; font-family: 'Consolas', monospace; font-size: .82rem; color: #8b949e; white-space: pre; line-height: 1.8; }
+  .f-old { color: #f85149; }
+  .f-new { color: #3fb950; }
+  .f-note { color: #d29922; }
+
+  /* Diff blocks */
+  .diff-wrap { display: flex; flex-direction: column; gap: 16px; }
+  .diff-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .diff-header { background: #1c2128; padding: 10px 16px; font-size: .82rem; color: #8b949e; border-bottom: 1px solid #30363d; }
+  .diff-header span { font-family: 'Consolas', monospace; color: #79c0ff; }
+  .diff-body { font-family: 'Consolas', monospace; font-size: .8rem; line-height: 1.7; padding: 12px 0; }
+  .diff-line { padding: 0 16px; }
+  .d-del { background: #3d1e1e; color: #f85149; }
+  .d-add { background: #1a3025; color: #3fb950; }
+  .d-ctx { color: #8b949e; }
+
+  /* Decision */
+  .decision-list { display: flex; flex-direction: column; gap: 10px; }
+  .decision-card { background: #161b22; border-left: 3px solid #1f6feb; border-radius: 0 8px 8px 0; padding: 12px 16px; }
+  .d-title { font-size: .88rem; font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+  .d-body  { font-size: .83rem; color: #8b949e; }
+</style>
+</head>
+<body>
+
+<h1>[검수] OAuth2 Naver ID 기반 인증 리팩토링</h1>
+
+<!-- ─── 현재 버그 ─── -->
+<div class="section">
+  <h2>현재 코드 버그 (수정 전)</h2>
+  <table>
+    <tr>
+      <th>위치</th>
+      <th>버그 내용</th>
+    </tr>
+    <tr>
+      <td><code>CustomAuthenticationSuccessHandler:38</code></td>
+      <td>
+        <span class="badge b-bug">BUG</span>
+        <code>userRepository.existsByEmail(userInfo.get("id"))</code><br>
+        <code>existsByEmail</code>에 Naver <code>id</code>값(숫자 문자열)을 넘김. email 컬럼과 절대 매칭 안 됨 → 항상 새 유저로 판단해 중복 저장
+      </td>
+    </tr>
+    <tr>
+      <td><code>CustomAuthenticationSuccessHandler:44</code></td>
+      <td>
+        <span class="badge b-bug">BUG</span>
+        <code>oAuth2UserRepository.findByProviderEmail(userInfo.get("id"))</code><br>
+        동일 문제. <code>providerEmail</code> 컬럼에 <code>id</code>를 조회 → 항상 null 반환 → 중복 저장
+      </td>
+    </tr>
+    <tr>
+      <td><code>OAuth2UserMapper.toPerson:13</code></td>
+      <td>
+        <span class="badge b-warn">WARN</span>
+        <code>person.setEmail(oAuth2User.get("email").toString())</code><br>
+        email scope 없애면 <code>get("email")</code>이 null → <code>NullPointerException</code>
+      </td>
+    </tr>
+    <tr>
+      <td><code>UserResponse.from:13</code></td>
+      <td>
+        <span class="badge b-warn">WARN</span>
+        name, email, birthday, profile_image 모두 <code>id</code> scope만 남기면 null
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- ─── 변경 흐름 비교 ─── -->
+<div class="section">
+  <h2>인증 흐름 비교</h2>
+  <div class="flow-box"><span class="f-old">[ 기존 흐름 ]</span>
+Naver 로그인 성공
+  → userInfo.get("id") 를 existsByEmail() 에 넘김  ← id를 email로 쓰는 버그
+  → Person 저장 시 email = userInfo.get("email")    ← email scope 필요
+  → findByProviderEmail(userInfo.get("id"))         ← id를 providerEmail로 쿼리하는 버그
+  → OAuth2UserEntity 저장 시 providerEmail = email  ← email scope 필요
+  → 프론트에 UserResponse(name, email, birthday, profileImage) 반환
+
+<span class="f-new">[ 변경 후 흐름 ]</span>
+Naver 로그인 성공
+  → naverId = userInfo.get("id")
+  → oAuth2UserRepository.findByProviderId(naverId) 로 존재 여부 단일 체크
+  → 미존재 시: Person(email=null) + OAuth2UserEntity(providerId=naverId) 저장
+  → 프론트에 UserResponse(naverId) 반환 — id만 scope에서 제공됨
+
+<span class="f-note">[ 핵심 변화 ]</span>
+  - 중복 체크 로직을 userRepository + oAuth2UserRepository 두 곳 → oAuth2UserRepository 하나로 통합
+  - Person.email nullable 허용 (소셜 로그인은 email 없음)
+  - providerEmail 컬럼 완전 제거</div>
+</div>
+
+<!-- ─── 파일별 변경점 ─── -->
+<div class="section">
+  <h2>파일별 변경점</h2>
+  <table>
+    <tr>
+      <th>파일</th>
+      <th>변경 유형</th>
+      <th>내용</th>
+    </tr>
+    <tr>
+      <td><code>application-prod.yml</code></td>
+      <td><span class="badge b-mod">수정</span></td>
+      <td>scope: <code>id</code> 하나만 남김. 나머지(name, email, gender, age, birthday, profile_image, birthyear, mobile) 제거</td>
+    </tr>
+    <tr>
+      <td><code>OAuth2UserEntity</code></td>
+      <td><span class="badge b-del">제거</span></td>
+      <td><code>providerEmail</code> 필드 제거. DB 컬럼 <code>provider_email</code> drop (ddl-auto=update 자동 미반영 → 수동 처리 필요)</td>
+    </tr>
+    <tr>
+      <td><code>OAuth2UserRepository</code></td>
+      <td><span class="badge b-mod">수정</span></td>
+      <td><code>findByProviderEmail</code> → <code>findByProviderId</code>로 변경</td>
+    </tr>
+    <tr>
+      <td><code>UserRepository</code></td>
+      <td><span class="badge b-del">제거</span></td>
+      <td><code>existsByEmail</code> 메서드 제거. OAuth2 흐름에서 더 이상 사용 안 함</td>
+    </tr>
+    <tr>
+      <td><code>OAuth2UserMapper</code></td>
+      <td><span class="badge b-mod">수정</span></td>
+      <td><code>toPerson</code>: email 설정 제거 / <code>toOAuth2UserEntity</code>: providerEmail 설정 제거</td>
+    </tr>
+    <tr>
+      <td><code>CustomAuthenticationSuccessHandler</code></td>
+      <td><span class="badge b-mod">수정</span></td>
+      <td>중복 체크를 <code>oAuth2UserRepository.findByProviderId(naverId)</code> 하나로 통합. <code>userRepository</code> 의존성 제거 가능</td>
+    </tr>
+    <tr>
+      <td><code>UserResponse</code></td>
+      <td><span class="badge b-mod">수정</span></td>
+      <td>name, email, birthday, profileImage 필드 제거. <code>naverId</code>만 남김</td>
+    </tr>
+    <tr>
+      <td><code>Controller.isProfileComplete</code></td>
+      <td><span class="badge b-del">제거</span></td>
+      <td>email/name 속성 체크 로직 → scope 축소로 의미 없어짐. 메서드 제거</td>
+    </tr>
+    <tr>
+      <td><code>Person.email</code></td>
+      <td><span class="badge b-warn">확인 필요</span></td>
+      <td>소셜 로그인 유저는 email이 null. DB 컬럼 nullable 확인 필요</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ─── 코드 diff 미리보기 ─── -->
+<div class="section">
+  <h2>주요 코드 변경 미리보기</h2>
+  <div class="diff-wrap">
+
+    <!-- OAuth2UserEntity -->
+    <div class="diff-card">
+      <div class="diff-header"><span>OAuth2UserEntity.java</span></div>
+      <div class="diff-body">
+        <div class="diff-line d-ctx">  String provider;</div>
+        <div class="diff-line d-ctx">  String providerId;</div>
+        <div class="diff-line d-del">- String providerEmail;</div>
+        <div class="diff-line d-ctx">  LocalDateTime createdAt;</div>
+      </div>
+    </div>
+
+    <!-- OAuth2UserRepository -->
+    <div class="diff-card">
+      <div class="diff-header"><span>OAuth2UserRepository.java</span></div>
+      <div class="diff-body">
+        <div class="diff-line d-del">- OAuth2UserEntity findByProviderEmail(String email);</div>
+        <div class="diff-line d-add">+ OAuth2UserEntity findByProviderId(String providerId);</div>
+      </div>
+    </div>
+
+    <!-- OAuth2UserMapper -->
+    <div class="diff-card">
+      <div class="diff-header"><span>OAuth2UserMapper.java</span></div>
+      <div class="diff-body">
+        <div class="diff-line d-ctx">  public static Person toPerson(Map&lt;String, Object&gt; oAuth2User) {</div>
+        <div class="diff-line d-ctx">      Person person = new Person();</div>
+        <div class="diff-line d-del">-     person.setEmail(oAuth2User.get("email").toString());</div>
+        <div class="diff-line d-ctx">      person.setCreatedAt(LocalDateTime.now());</div>
+        <div class="diff-line d-ctx">      person.setLoginType(LoginType.SOCIAL);</div>
+        <div class="diff-line d-ctx">  }</div>
+        <div class="diff-line d-ctx">&nbsp;</div>
+        <div class="diff-line d-ctx">  public static OAuth2UserEntity toOAuth2UserEntity(...) {</div>
+        <div class="diff-line d-ctx">      oAuth2UserEntity.setProviderId((String) oAuth2User.get("id"));</div>
+        <div class="diff-line d-ctx">      oAuth2UserEntity.setProvider(provider);</div>
+        <div class="diff-line d-del">-     oAuth2UserEntity.setProviderEmail((String) oAuth2User.get("email"));</div>
+        <div class="diff-line d-ctx">      oAuth2UserEntity.setCreatedAt(LocalDateTime.now());</div>
+        <div class="diff-line d-ctx">  }</div>
+      </div>
+    </div>
+
+    <!-- CustomAuthenticationSuccessHandler -->
+    <div class="diff-card">
+      <div class="diff-header"><span>CustomAuthenticationSuccessHandler.java</span></div>
+      <div class="diff-body">
+        <div class="diff-line d-ctx">  Map&lt;String, Object&gt; userInfo = (Map) oauth2User.getAttributes().get("response");</div>
+        <div class="diff-line d-add">+ String naverId = (String) userInfo.get("id");</div>
+        <div class="diff-line d-ctx">&nbsp;</div>
+        <div class="diff-line d-del">- if (!userRepository.existsByEmail((String) userInfo.get("id"))) {</div>
+        <div class="diff-line d-del">-     Person person = OAuth2UserMapper.toPerson(userInfo);</div>
+        <div class="diff-line d-del">-     userRepository.save(person);</div>
+        <div class="diff-line d-del">- }</div>
+        <div class="diff-line d-del">- if (oAuth2UserRepository.findByProviderEmail((String) userInfo.get("id")) == null) {</div>
+        <div class="diff-line d-del">-     oAuth2UserRepository.save(OAuth2UserMapper.toOAuth2UserEntity(userInfo, ...));</div>
+        <div class="diff-line d-del">- }</div>
+        <div class="diff-line d-ctx">&nbsp;</div>
+        <div class="diff-line d-add">+ if (oAuth2UserRepository.findByProviderId(naverId) == null) {</div>
+        <div class="diff-line d-add">+     Person person = OAuth2UserMapper.toPerson(userInfo);</div>
+        <div class="diff-line d-add">+     userRepository.save(person);</div>
+        <div class="diff-line d-add">+     oAuth2UserRepository.save(OAuth2UserMapper.toOAuth2UserEntity(userInfo, ...));</div>
+        <div class="diff-line d-add">+ }</div>
+      </div>
+    </div>
+
+    <!-- UserResponse -->
+    <div class="diff-card">
+      <div class="diff-header"><span>UserResponse.java</span></div>
+      <div class="diff-body">
+        <div class="diff-line d-del">- public record UserResponse(String name, String email, String birthday, String profileImage) {</div>
+        <div class="diff-line d-del">-     return new UserResponse(response.get("name"), response.get("email"), ...);</div>
+        <div class="diff-line d-add">+ public record UserResponse(String naverId) {</div>
+        <div class="diff-line d-add">+     return new UserResponse((String) response.get("id"));</div>
+        <div class="diff-line d-ctx">  }</div>
+      </div>
+    </div>
+
+    <!-- application-prod.yml -->
+    <div class="diff-card">
+      <div class="diff-header"><span>application-prod.yml</span></div>
+      <div class="diff-body">
+        <div class="diff-line d-ctx">      scope:</div>
+        <div class="diff-line d-ctx">        - id</div>
+        <div class="diff-line d-del">-       - name</div>
+        <div class="diff-line d-del">-       - email</div>
+        <div class="diff-line d-del">-       - gender</div>
+        <div class="diff-line d-del">-       - age</div>
+        <div class="diff-line d-del">-       - birthday</div>
+        <div class="diff-line d-del">-       - profile_image</div>
+        <div class="diff-line d-del">-       - birthyear</div>
+        <div class="diff-line d-del">-       - mobile</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─── 의사결정 ─── -->
+<div class="section">
+  <h2>의사결정</h2>
+  <div class="decision-list">
+    <div class="decision-card">
+      <div class="d-title">왜 중복 체크를 oAuth2UserRepository 하나로 통합하는가</div>
+      <div class="d-body">기존 코드는 Person과 OAuth2UserEntity를 각각 따로 체크하는데, Person 존재 여부를 email로 체크하는 로직이 id값을 넘기는 버그가 있어 의미가 없었음. OAuth2 로그인 유저는 반드시 OAuth2UserEntity가 있어야 하므로 이를 단일 진실 공급원으로 삼고, Person은 항상 함께 생성.</div>
+    </div>
+    <div class="decision-card">
+      <div class="d-title">Person.email을 제거하지 않고 nullable로 두는 이유</div>
+      <div class="d-body">추후 일반 이메일/패스워드 로그인 기능을 추가할 경우 email 컬럼이 필요할 수 있음. 현재는 소셜 로그인 유저에 한해 null 허용. DB 스키마 변경 최소화.</div>
+    </div>
+    <div class="decision-card">
+      <div class="d-title">UserResponse를 naverId만 반환하도록 변경하는 이유</div>
+      <div class="d-body">id scope만 동의받으므로 name, email 등이 Naver로부터 오지 않음. null을 반환하면 프론트에서 혼란 발생. naverId 하나만 명시적으로 반환하고, 프론트에서 로그인 여부 판단에 사용.</div>
+    </div>
+    <div class="decision-card">
+      <div class="d-title">provider_email DB 컬럼 처리</div>
+      <div class="d-body"><code>ddl-auto: update</code>는 컬럼 삭제를 자동으로 처리하지 않음. 엔티티에서 필드를 제거해도 DB 컬럼은 남음. 서버 반영 후 별도로 <code>ALTER TABLE OAUTH2_USER DROP COLUMN provider_email;</code> 수동 실행 필요. 데이터가 없거나 초기화 가능하면 테이블을 drop & recreate 해도 됨.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

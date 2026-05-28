@@ -28,24 +28,6 @@
           </div>
         </div>
 
-        <!-- 작성자 정보 -->
-        <div class="info-card" v-if="currentUser">
-          <div class="author-info">
-            <div class="author-avatar">
-              <img
-                v-if="currentUser.profileImage"
-                :src="currentUser.profileImage"
-                alt="profile"
-              />
-              <div v-else class="avatar-placeholder">{{ currentUser.name?.[0] || 'U' }}</div>
-            </div>
-            <div class="author-details">
-              <p class="author-name">{{ currentUser.name }}</p>
-              <p v-if="currentUser.email" class="author-email">{{ currentUser.email }}</p>
-            </div>
-          </div>
-        </div>
-
         <!-- 독후감 작성 폼 (브런치 스타일) -->
         <form @submit.prevent="onSubmitReview" class="review-form">
           <!-- 헤드라인 -->
@@ -141,12 +123,12 @@ import { useSelectionStore } from '../stores/selectionStore';
 
 const router = useRouter();
 const route = useRoute();
-const { selectedBook, currentUser, setCurrentUser } = useSelectionStore();
+const { selectedBook } = useSelectionStore();
 const toast = useToast();
 
 // next-reading 모드 판별
 const isNextReading = computed(() => route.query.mode === 'next-reading');
-const nextReadingCount = ref('?'); // 서버에서 받아올 수도 있지만, 표시용으로만 사용
+const nextReadingCount = computed(() => Number(route.query.readingCount || 1) + 1);
 
 // next-reading 모드일 때 query params로 책 정보 구성
 const activeBook = computed(() => {
@@ -169,7 +151,6 @@ const isPublic = ref(false);
 const isCheckingBook = ref(false);
 const bookExists = ref(null);
 const bookAddError = ref(null);
-const isLoadingUser = ref(false);
 const isSubmitting = ref(false);
 
 const goBackToSearch = () => {
@@ -216,20 +197,6 @@ const checkBookInBackend = async () => {
   }
 };
 
-const fetchCurrentUser = async () => {
-  if (currentUser.value) return;
-
-  isLoadingUser.value = true;
-  try {
-    const response = await apiClient.get('/user/me');
-    setCurrentUser(response.data);
-  } catch (error) {
-    console.error('로그인 사용자 정보 조회 실패:', error);
-  } finally {
-    isLoadingUser.value = false;
-  }
-};
-
 const onSubmitReview = async () => {
   if (!activeBook.value || !reviewHeadline.value.trim() || !reviewContent.value.trim() || isSubmitting.value) return;
 
@@ -273,7 +240,6 @@ const onSubmitReview = async () => {
 
       const reviewData = {
         isbn13: selectedBook.value.isbn13 || selectedBook.value.isbn || '',
-        writer: currentUser.value?.email || 'anonymous',
         headline: reviewHeadline.value.trim(),
         content: reviewContent.value.trim(),
         rating: rating.value,
@@ -302,10 +268,7 @@ onMounted(async () => {
   if (isNextReading.value) {
     if (!route.query.isbn13) {
       router.push({ name: 'mypage' });
-      return;
     }
-    // next-reading 모드: 사용자 정보만 로드
-    await fetchCurrentUser();
     return;
   }
 
@@ -314,7 +277,7 @@ onMounted(async () => {
     return;
   }
 
-  await Promise.all([fetchCurrentUser(), checkBookInBackend()]);
+  await checkBookInBackend();
 });
 </script>
 
@@ -405,59 +368,6 @@ onMounted(async () => {
   border-radius: 4px;
   color: #dc2626;
   font-size: 14px;
-}
-
-/* 작성자 정보 */
-.author-info {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.author-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.author-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #2563eb;
-  color: white;
-  font-weight: 500;
-  font-size: 16px;
-}
-
-.author-details {
-  flex: 1;
-}
-
-.author-name {
-  font-size: 15px;
-  font-weight: 500;
-  color: #1f2937;
-  margin: 0 0 2px 0;
-}
-
-.author-email {
-  font-size: 13px;
-  color: #6b7280;
-  margin: 0;
 }
 
 /* 독후감 폼 (브런치 스타일) */

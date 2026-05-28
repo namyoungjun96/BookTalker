@@ -3,9 +3,6 @@ package com.example.book_talker_backend.user.dao;
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
-import java.util.Map;
-
 public interface OAuth2UserRepository extends JpaRepository<OAuth2UserEntity, Long> {
-    OAuth2UserEntity findByProviderEmail(String email);
+    OAuth2UserEntity findByProviderId(String providerId);
 }

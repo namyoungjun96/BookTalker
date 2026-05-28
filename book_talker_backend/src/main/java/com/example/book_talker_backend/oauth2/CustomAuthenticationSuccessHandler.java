@@ -2,8 +2,6 @@ package com.example.book_talker_backend.oauth2;
 
 import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
 import com.example.book_talker_backend.user.dao.UserRepository;
-import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
-import com.example.book_talker_backend.user.entity.Person;
 import com.example.book_talker_backend.user.mapper.OAuth2UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,25 +27,18 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-        log.debug("onAuthenticationSuccess!");
         OAuth2AuthenticationToken oauth2Token = (OAuth2AuthenticationToken) authentication;
         OAuth2User oauth2User = oauth2Token.getPrincipal();
         Map<String, Object> userInfo = (Map<String, Object>) oauth2User.getAttributes().get("response");
+        String naverId = (String) userInfo.get("id");
 
-        log.debug("user exist or not exist: {}", userInfo.get("email"));
-        if(!userRepository.existsByEmail((String) userInfo.get("email"))) {
-            Person person = OAuth2UserMapper.toPerson(userInfo);
-            log.debug("user does not exist .. save user: {}", person.getEmail());
-            userRepository.save(person);
+        log.debug("naver login: naverId={}", naverId);
+        if (oAuth2UserRepository.findByProviderId(naverId) == null) {
+            log.debug("new user, saving: naverId={}", naverId);
+            userRepository.save(OAuth2UserMapper.toPerson());
+            oAuth2UserRepository.save(OAuth2UserMapper.toOAuth2UserEntity(naverId, oauth2Token.getAuthorizedClientRegistrationId()));
         }
 
-        if (oAuth2UserRepository.findByProviderEmail(((String) userInfo.get("email"))) == null) {
-            log.debug("oauth2 user does not exist .. save user: {}", userInfo.get("email"));
-            OAuth2UserEntity oAuth2UserEntity = OAuth2UserMapper.toOAuth2UserEntity(userInfo, oauth2Token.getAuthorizedClientRegistrationId());
-            oAuth2UserRepository.save(oAuth2UserEntity);
-        }
-
-        log.debug("baseURL: {}", BASE_URL);
         response.sendRedirect(BASE_URL);
     }
 }

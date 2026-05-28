@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[book 도메인] 브랜치 & 커밋 초안</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: 1rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
+  .section { margin-bottom: 40px; }
+
+  /* Branch */
+  .branch-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px 24px; }
+  .branch-name { font-family: 'Consolas', monospace; font-size: 1.15rem; color: #79c0ff; font-weight: 600; }
+  .branch-rationale { margin-top: 10px; font-size: .9rem; color: #8b949e; }
+
+  /* Commits */
+  .commit-list { display: flex; flex-direction: column; gap: 16px; }
+  .commit-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .commit-header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #1c2128; border-bottom: 1px solid #30363d; }
+  .commit-order { font-size: .75rem; color: #8b949e; }
+  .commit-tag { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .tag-fix { background: #da3633; color: #fff; }
+  .tag-test { background: #1f6feb; color: #fff; }
+  .commit-title { font-family: 'Consolas', monospace; font-size: .95rem; color: #e6edf3; }
+  .commit-body { padding: 16px 20px; }
+  .commit-desc { font-size: .88rem; color: #8b949e; margin-bottom: 14px; }
+  .file-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .file-list li { display: flex; align-items: center; gap: 8px; font-family: 'Consolas', monospace; font-size: .82rem; }
+  .file-badge { font-size: .7rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; min-width: 36px; text-align: center; }
+  .badge-m { background: #b08800; color: #fff; }
+  .badge-a { background: #238636; color: #fff; }
+  .file-path { color: #79c0ff; }
+
+  /* Reason */
+  .reason-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 18px 22px; }
+  .reason-row { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; font-size: .88rem; }
+  .reason-row:last-child { margin-bottom: 0; }
+  .reason-q { color: #f0883e; font-weight: 600; min-width: 24px; }
+  .reason-a { color: #c9d1d9; }
+
+  .tip { font-size: .8rem; color: #8b949e; margin-top: 8px; border-left: 3px solid #30363d; padding-left: 10px; }
+</style>
+</head>
+<body>
+
+<h1>book 도메인 — 브랜치 & 커밋 초안</h1>
+
+<!-- ──────────────────────────────── BRANCH ──────────────────────────────── -->
+<div class="section">
+  <h2>Branch</h2>
+  <div class="branch-box">
+    <div class="branch-name">test/book-domain</div>
+    <div class="branch-rationale">
+      이 브랜치의 핵심 목적이 "book 도메인 테스트 추가"이기 때문에 <code>test/</code> prefix를 사용합니다.<br>
+      기존 브랜치 패턴(<code>feat/</code>, <code>refactor/</code>) 과 동일한 규칙을 따릅니다.
+    </div>
+  </div>
+</div>
+
+<!-- ──────────────────────────────── COMMITS ──────────────────────────────── -->
+<div class="section">
+  <h2>Commits (2개 분리)</h2>
+  <div class="commit-list">
+
+    <!-- Commit 1 -->
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-order">1st</span>
+        <span class="commit-tag tag-fix">FIX</span>
+        <span class="commit-title">FIX: [백엔드] BookService null 응답 에러 메시지 수정</span>
+      </div>
+      <div class="commit-body">
+        <div class="commit-desc">
+          알라딘 API 통신 실패(<code>response == null</code>) 시 "does not exist" 메시지를 반환하던 문제를 수정합니다.<br>
+          통신 실패는 책의 존재 여부와 무관하므로, 에러 출처(<code>[Aladin]</code>)와 사유를 명확히 전달합니다.
+        </div>
+        <ul class="file-list">
+          <li>
+            <span class="file-badge badge-m">M</span>
+            <span class="file-path">book_talker_backend/src/main/java/.../book/service/BookService.java</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Commit 2 -->
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-order">2nd</span>
+        <span class="commit-tag tag-test">TEST</span>
+        <span class="commit-title">TEST: [백엔드] BookService, AladinBookMapper 단위 테스트 추가</span>
+      </div>
+      <div class="commit-body">
+        <div class="commit-desc">
+          book 도메인의 서비스 레이어와 매퍼 레이어에 대한 단위 테스트를 추가합니다.<br>
+          BookService 13개, AladinBookMapper 6개로 총 19개의 테스트 케이스를 포함합니다.
+        </div>
+        <ul class="file-list">
+          <li>
+            <span class="file-badge badge-a">A</span>
+            <span class="file-path">book_talker_backend/src/test/java/.../book/service/BookServiceTest.java</span>
+          </li>
+          <li>
+            <span class="file-badge badge-a">A</span>
+            <span class="file-path">book_talker_backend/src/test/java/.../book/infrastructure/AladinBookMapperTest.java</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+  <p class="tip" style="margin-top: 12px;">
+    FIX → TEST 순서로 커밋하면 "수정 후 검증" 맥락이 명확하게 남습니다.
+  </p>
+</div>
+
+<!-- ──────────────────────────────── RATIONALE ──────────────────────────────── -->
+<div class="section">
+  <h2>결정 근거</h2>
+  <div class="reason-box">
+    <div class="reason-row">
+      <span class="reason-q">Q</span>
+      <span class="reason-a">커밋을 왜 2개로 분리했나요?</span>
+    </div>
+    <div class="reason-row">
+      <span class="reason-q">A</span>
+      <span class="reason-a">
+        <code>BookService.java</code> 수정은 버그 픽스이고, 테스트 파일 2개 추가는 별도 기능입니다.
+        분리하면 git blame/bisect 시 각 변경의 의도가 명확하게 남습니다.
+      </span>
+    </div>
+    <div class="reason-row">
+      <span class="reason-q">Q</span>
+      <span class="reason-a">document 파일들(HTML)은 커밋하지 않나요?</span>
+    </div>
+    <div class="reason-row">
+      <span class="reason-q">A</span>
+      <span class="reason-a">
+        설계 문서와 테스트 코드를 같은 커밋에 섞으면 코드 리뷰 범위가 모호해집니다.
+        document 파일은 별도 커밋으로 남기거나 .gitignore 처리하는 것을 추천합니다.
+        단, 팀 컨벤션에 따라 함께 커밋해도 무방합니다.
+      </span>
+    </div>
+    <div class="reason-row">
+      <span class="reason-q">Q</span>
+      <span class="reason-a">application.yml, docker-compose.yml 수정분은요?</span>
+    </div>
+    <div class="reason-row">
+      <span class="reason-q">A</span>
+      <span class="reason-a">
+        git status에서 수정이 확인되지만 book 도메인 테스트와 무관합니다.
+        의도한 변경인지 확인 후, 별도 커밋 또는 stash 권장합니다.
+      </span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PR Review — feat/next-reading → main</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --green-bg: #0f2a1a;
+      --green-border: #238636;
+      --red: #f85149;
+      --red-bg: #2a0d0d;
+      --red-border: #da3633;
+      --yellow: #d29922;
+      --yellow-bg: #1f1a00;
+      --yellow-border: #9e6a03;
+      --purple: #bc8cff;
+      --purple-bg: #1b0e2f;
+      --radius: 8px;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 24px;
+    }
+
+    .page-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+    }
+
+    .page-header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .page-header .meta {
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .page-header .meta span { display: flex; align-items: center; gap: 4px; }
+
+    .branch-flow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .branch-tag {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .arrow { color: var(--muted); font-size: 18px; }
+
+    /* Status Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-green  { background: var(--green-bg);  border: 1px solid var(--green-border);  color: var(--green);  }
+    .badge-red    { background: var(--red-bg);    border: 1px solid var(--red-border);    color: var(--red);    }
+    .badge-yellow { background: var(--yellow-bg); border: 1px solid var(--yellow-border); color: var(--yellow); }
+    .badge-purple { background: var(--purple-bg); border: 1px solid #6e40c9; color: var(--purple); }
+
+    /* Section */
+    .section {
+      margin-bottom: 28px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title .icon { font-size: 18px; }
+
+    /* Check Table */
+    .check-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .check-table th {
+      background: var(--surface2);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+      text-align: left;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .check-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .check-table tr:last-child td { border-bottom: none; }
+
+    .check-table .item-col { color: var(--text); font-weight: 500; }
+    .check-table .note-col { color: var(--muted); font-size: 12px; }
+
+    /* PR Rules */
+    .rules-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 700px) { .rules-grid { grid-template-columns: 1fr; } }
+
+    .rule-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .rule-card h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .rule-card ul { padding-left: 18px; }
+    .rule-card li { color: var(--text); font-size: 13px; margin-bottom: 5px; }
+    .rule-card li .muted { color: var(--muted); font-size: 12px; }
+
+    .code-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #a5d6ff;
+      margin-top: 8px;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .type-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    .type-table td {
+      padding: 5px 10px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .type-table td:first-child {
+      font-family: var(--font-mono);
+      color: var(--accent);
+      width: 80px;
+    }
+
+    .type-table td:last-child { color: var(--muted); }
+
+    /* PR Preview */
+    .pr-preview {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .pr-preview-header {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .pr-title-block { flex: 1; }
+    .pr-number { color: var(--muted); font-size: 14px; margin-bottom: 4px; }
+    .pr-title { font-size: 18px; font-weight: 700; color: var(--text); }
+
+    .pr-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--bg);
+    }
+
+    .pr-meta span { display: flex; align-items: center; gap: 4px; }
+    .pr-meta a { color: var(--accent); text-decoration: none; }
+
+    .pr-body {
+      padding: 20px;
+      line-height: 1.8;
+    }
+
+    .pr-section-h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      margin: 20px 0 12px;
+    }
+
+    .pr-section-h2:first-child { margin-top: 0; }
+
+    .pr-section-h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 14px 0 6px;
+    }
+
+    .pr-body ul { padding-left: 20px; margin-bottom: 8px; }
+    .pr-body li { margin-bottom: 5px; font-size: 13px; }
+    .pr-body li code, .pr-body p code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: #a5d6ff;
+    }
+
+    .checklist { list-style: none !important; padding-left: 4px !important; }
+    .checklist li { display: flex; align-items: flex-start; gap: 8px; }
+    .checklist li::before { content: "☐"; color: var(--muted); flex-shrink: 0; margin-top: 1px; }
+
+    .breaking-box {
+      background: var(--yellow-bg);
+      border: 1px solid var(--yellow-border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-top: 10px;
+    }
+
+    .breaking-box p { color: var(--yellow); font-size: 13px; margin-bottom: 4px; font-weight: 600; }
+    .breaking-box li { color: var(--text); font-size: 13px; }
+
+    .followup-box {
+      background: var(--purple-bg);
+      border: 1px solid #6e40c9;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-top: 10px;
+    }
+
+    .followup-box span { color: var(--purple); font-size: 13px; font-weight: 600; }
+    .followup-box code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: rgba(188, 140, 255, 0.1);
+      border: 1px solid #6e40c9;
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--purple);
+    }
+
+    /* Commit list */
+    .commit-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .commit-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .commit-item:last-child { border-bottom: none; }
+
+    .commit-hash {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 7px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .commit-msg { font-size: 13px; color: var(--text); flex: 1; }
+    .commit-msg .type-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-right: 6px;
+    }
+
+    .type-feat { background: #1a3a1a; color: var(--green); border: 1px solid var(--green-border); }
+    .type-test { background: #1a1a3a; color: #79c0ff; border: 1px solid #388bfd; }
+
+    .commit-files { color: var(--muted); font-size: 12px; margin-top: 3px; }
+
+    /* Stat bar */
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .stat-num { font-size: 22px; font-weight: 700; color: var(--text); }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .stat-divider { width: 1px; height: 36px; background: var(--border); }
+
+    .diff-stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .diff-add { color: var(--green); font-weight: 700; }
+    .diff-del { color: var(--red); font-weight: 700; }
+
+    /* Top notice */
+    .notice {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 28px;
+      font-size: 13px;
+    }
+
+    .notice strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>📋 PR 검증 리포트</h1>
+    <div class="meta">
+      <span>📁 feat/next-reading → main</span>
+      <span>📅 2026-04-27</span>
+      <span>👤 namyoungjun96</span>
+      <span>👥 Reviewer: goemgo</span>
+    </div>
+    <div class="branch-flow">
+      <span class="branch-tag">feat/next-reading</span>
+      <span class="arrow">→</span>
+      <span class="branch-tag">main</span>
+      <span class="badge badge-green">✅ PR 생성 가능</span>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>참고</strong> — <code>refactor/review-security</code> 브랜치의 Critical 수정 3건 (동시 요청 처리, DTO 보안, 예외 핸들러)은
+    이 PR에 <strong>포함되지 않습니다</strong>. 별도 PR로 이어집니다.
+  </div>
+
+  <!-- 1. PR 가능 여부 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🔍</span> 1. PR 가능 여부 체크</div>
+    <table class="check-table">
+      <thead>
+        <tr>
+          <th>항목</th>
+          <th>상태</th>
+          <th>비고</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="item-col">origin/feat/next-reading 원격 브랜치 존재</td>
+          <td><span class="badge badge-green">✅ 확인</span></td>
+          <td class="note-col">push 완료 상태</td>
+        </tr>
+        <tr>
+          <td class="item-col">로컬 ↔ 원격 동기화</td>
+          <td><span class="badge badge-green">✅ 일치</span></td>
+          <td class="note-col">미푸시 커밋 없음</td>
+        </tr>
+        <tr>
+          <td class="item-col">main과의 차이 (커밋 3개)</td>
+          <td><span class="badge badge-green">✅ 정상</span></td>
+          <td class="note-col">feat/next-reading에만 존재하는 커밋</td>
+        </tr>
+        <tr>
+          <td class="item-col">충돌 가능성</td>
+          <td><span class="badge badge-green">✅ 없음</span></td>
+          <td class="note-col">main과 독립된 변경</td>
+        </tr>
+        <tr>
+          <td class="item-col">application.yml / docker-compose.yml</td>
+          <td><span class="badge badge-green">✅ PR 미포함</span></td>
+          <td class="note-col">로컬 테스트용 수정, 미커밋 상태</td>
+        </tr>
+        <tr>
+          <td class="item-col">HTML 문서 파일들</td>
+          <td><span class="badge badge-green">✅ PR 미포함</span></td>
+          <td class="note-col">untracked, PR에 영향 없음</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 2. 포함 커밋 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">📝</span> 2. 포함될 커밋 (3개)</div>
+    <div class="stat-row" style="margin-bottom: 12px;">
+      <div class="stat-item">
+        <span class="stat-num">3</span>
+        <span class="stat-label">Commits</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-num">10</span>
+        <span class="stat-label">Files</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="diff-stat">
+        <span class="diff-add">+566</span>
+        <span class="muted" style="color: var(--muted)">/</span>
+        <span class="diff-del">-132</span>
+      </div>
+    </div>
+
+    <div class="commit-list">
+      <div class="commit-item">
+        <span class="commit-hash">4a69fc5</span>
+        <div>
+          <div class="commit-msg"><span class="type-badge type-feat">FEAT</span>[백엔드] 독후감 회독 기능 추가</div>
+          <div class="commit-files">ReviewController, ReviewRepository, ReviewService, Review, ReviewDetailResponse, ReviewListResponse, ReviewRequest</div>
+        </div>
+      </div>
+      <div class="commit-item">
+        <span class="commit-hash">c817dc4</span>
+        <div>
+          <div class="commit-msg"><span class="type-badge type-test">TEST</span>[백엔드] 독후감 서비스 테스트 코드 수정</div>
+          <div class="commit-files">ReviewServiceTest — 기능별 분리 + 회독 기능 테스트 추가</div>
+        </div>
+      </div>
+      <div class="commit-item">
+        <span class="commit-hash">5328cf4</span>
+        <div>
+          <div class="commit-msg"><span class="type-badge type-feat">FEAT</span>[프론트] 독후감 회독 기능 추가</div>
+          <div class="commit-files">MyPageView, ReviewCreateView, ReviewDetailView</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. PR 규칙 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">📐</span> 3. 제안 PR 규칙</div>
+    <div class="rules-grid">
+      <div class="rule-card">
+        <h4>📌 제목 형식</h4>
+        <div class="code-block">[type]: 한 줄 요약 (70자 이내)</div>
+        <table class="type-table">
+          <tr><td>feat</td><td>신규 기능</td></tr>
+          <tr><td>fix</td><td>버그 수정</td></tr>
+          <tr><td>refactor</td><td>리팩터링 (동작 변경 없음)</td></tr>
+          <tr><td>test</td><td>테스트만 변경</td></tr>
+          <tr><td>docs</td><td>문서 변경</td></tr>
+          <tr><td>chore</td><td>빌드·설정 변경</td></tr>
+        </table>
+      </div>
+      <div class="rule-card">
+        <h4>📋 본문 필수 섹션</h4>
+        <ul>
+          <li><strong>Summary</strong> — 3~5줄 변경 요약</li>
+          <li><strong>Changes</strong> — Backend / Frontend / Test 분리</li>
+          <li><strong>Test Plan</strong> — 체크리스트 형식</li>
+          <li><strong>Breaking Changes</strong> — 있을 때만</li>
+          <li><strong>Screenshots</strong> — 프론트 변경 시</li>
+          <li><strong>Related</strong> — 관련 이슈 / PR 링크</li>
+        </ul>
+      </div>
+      <div class="rule-card">
+        <h4>🔍 리뷰 기준</h4>
+        <ul>
+          <li>한 PR은 하나의 목적만 <span class="muted">(단일 책임)</span></li>
+          <li>파일 10개 이하 권장 <span class="muted">(큰 경우 분리)</span></li>
+          <li>머지 전 최소 Approve 1개</li>
+          <li>CI 통과 필수</li>
+        </ul>
+      </div>
+      <div class="rule-card">
+        <h4>🏷️ 브랜치 네이밍</h4>
+        <ul>
+          <li><code>feat/기능명</code></li>
+          <li><code>fix/버그명</code></li>
+          <li><code>refactor/대상명</code></li>
+          <li><code>docs/문서명</code></li>
+          <li><code>chore/작업명</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. PR Preview -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🚀</span> 4. PR 초안 미리보기</div>
+    <div class="pr-preview">
+
+      <!-- Header -->
+      <div class="pr-preview-header">
+        <div class="pr-title-block">
+          <div class="pr-number">Draft PR — 승인 대기중</div>
+          <div class="pr-title">feat: 독후감 회독 기능 추가 (readingCount 관리 및 다독 UI)</div>
+        </div>
+        <span class="badge badge-yellow">⏳ 검토 중</span>
+      </div>
+
+      <!-- Meta -->
+      <div class="pr-meta">
+        <span>🌿 <a>feat/next-reading</a> → <a>main</a></span>
+        <span>📝 3 commits</span>
+        <span>📁 10 files changed</span>
+        <span>👤 namyoungjun96</span>
+        <span>👥 Reviewer: goemgo</span>
+      </div>
+
+      <!-- Body -->
+      <div class="pr-body">
+
+        <div class="pr-section-h2">📌 Summary</div>
+        <ul>
+          <li>독후감에 <strong>회독(多読) 개념</strong>을 도입하여 같은 책을 여러 번 읽은 기록을 별도로 남길 수 있도록 구현</li>
+          <li>1회독은 기존 <code>POST /api/review</code>, 2회독부터는 <code>POST /api/review/next-reading</code> 신규 엔드포인트 사용</li>
+          <li>2회독+ 독후감은 <strong>공개 설정 불가</strong> (<code>isPublic</code> 강제 false)</li>
+          <li>회독 중복 방지: DB 레벨 unique constraint + 서비스 레벨 사전 검증</li>
+        </ul>
+
+        <div class="pr-section-h2">⚙️ Changes</div>
+
+        <div class="pr-section-h3">Backend</div>
+        <ul>
+          <li><code>Review</code> 엔티티에 <code>readingCount</code> 필드 추가 및 <code>(writer, isbn13, readingCount)</code> unique constraint 적용</li>
+          <li><code>ReviewRepository</code>: <code>existsByWriterAndBookIsbn13AndReadingCount</code>, <code>findMaxReadingCount</code> 쿼리 추가</li>
+          <li><code>ReviewService</code>: <code>insertNextReading()</code> 신규 메서드 — 선행 회독 없으면 400, readingCount 자동 increment</li>
+          <li><code>ReviewController</code>: <code>POST /api/review/next-reading</code> 엔드포인트 추가</li>
+          <li><code>ReviewListResponse</code>, <code>ReviewDetailResponse</code>: <code>readingCount</code> 응답 필드 추가</li>
+          <li>공개 독후감 / 랭킹 집계 쿼리: <code>readingCount = 1</code> 조건 추가 (첫 인상 기준)</li>
+        </ul>
+
+        <div class="pr-section-h3">Frontend</div>
+        <ul>
+          <li><code>MyPageView</code>: 독후감 카드에 회독 배지 표시, "한 번 더 봤어요" 버튼으로 next-reading 화면 이동</li>
+          <li><code>ReviewCreateView</code>: <code>?mode=next-reading</code> query param으로 다독 작성 모드 지원, 1회독 isPublic 토글 추가</li>
+          <li><code>ReviewDetailView</code>: 회독 배지 표시, 2회독+ 편집 시 공개 설정 비활성화</li>
+        </ul>
+
+        <div class="pr-section-h3">Test</div>
+        <ul>
+          <li><code>ReviewServiceTest</code> 전면 재작성: 4개 <code>@Nested</code> 클래스, 16개 시나리오</li>
+          <li>추가된 시나리오: <code>insertNextReading</code> 자동 증가, 선행 회독 없음 검증, isPublic 강제 false 검증 등</li>
+        </ul>
+
+        <div class="pr-section-h2">✅ Test Plan</div>
+        <ul class="checklist">
+          <li>1회독 독후감 작성 → 정상 저장</li>
+          <li>같은 책 1회독 중복 작성 → 409 Conflict</li>
+          <li>마이페이지 "한 번 더 봤어요" 클릭 → 2회독 작성 화면 이동</li>
+          <li>2회독 작성 → isPublic false 고정 확인</li>
+          <li>1회독 없이 2회독 직접 요청 → 400 Bad Request</li>
+          <li>3회독 이후 readingCount 자동 증가 확인</li>
+          <li><code>ReviewServiceTest</code> 전체 통과 (16개)</li>
+        </ul>
+
+        <div class="pr-section-h2">⚠️ Breaking Changes</div>
+        <div class="breaking-box">
+          <p>⚠️ 응답 스키마 변경</p>
+          <ul>
+            <li><code>ReviewListResponse</code>, <code>ReviewDetailResponse</code>에 <code>readingCount</code> 필드 추가됨</li>
+            <li>클라이언트가 응답 필드 추가에 엄격한 경우 주의 (현재 자체 프론트이므로 영향 없음)</li>
+          </ul>
+        </div>
+
+        <div class="pr-section-h2">🔗 Related</div>
+        <div class="followup-box">
+          <span>📌 Follow-up PR</span>
+          <p style="margin-top: 6px; font-size: 13px; color: var(--text);">
+            브랜치 <code>refactor/review-security</code> — 코드 리뷰 Critical 3건 수정
+            (동시 요청 처리, DTO <code>writer</code> 보안, Spring Security 예외 핸들러 위임)
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

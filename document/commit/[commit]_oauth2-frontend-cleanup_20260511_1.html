@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>[커밋 정리] OAuth2 리디렉션 + 프론트 환경 정리</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.7; padding: 40px 24px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 12px; margin-bottom: 32px; }
+  h2 { font-size: .85rem; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .section { margin-bottom: 40px; }
+  code { font-family: 'Consolas', monospace; background: #1c2128; padding: 1px 6px; border-radius: 4px; font-size: .88em; color: #79c0ff; }
+
+  .branch-pill { display: inline-block; font-family: 'Consolas', monospace; font-size: 1rem; color: #79c0ff; font-weight: 600; background: #161b22; border: 1px solid #30363d; border-radius: 20px; padding: 6px 18px; }
+
+  /* Alert */
+  .alert { border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; font-size: .88rem; }
+  .alert-warn { background: #2d1e00; border: 1px solid #d29922; color: #e3b341; }
+  .alert-info { background: #0d1f3c; border: 1px solid #1f6feb; color: #79c0ff; }
+  .alert-title { font-weight: 700; margin-bottom: 4px; }
+  .alert-body { color: #c9d1d9; }
+
+  /* File table */
+  table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; font-size: .85rem; margin-bottom: 10px; }
+  th { background: #1c2128; color: #8b949e; text-align: left; padding: 9px 14px; font-weight: 600; border-bottom: 1px solid #30363d; }
+  td { padding: 9px 14px; border-bottom: 1px solid #21262d; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .badge { font-size: .7rem; font-weight: 700; padding: 2px 7px; border-radius: 3px; display: inline-block; }
+  .badge-m { background: #b08800; color: #fff; }
+  .badge-skip { background: #3d1a1a; color: #f85149; border: 1px solid #f85149; }
+  td.path { font-family: 'Consolas', monospace; font-size: .82rem; color: #79c0ff; }
+  td.desc { color: #c9d1d9; font-size: .82rem; }
+
+  /* Commit cards */
+  .commit-list { display: flex; flex-direction: column; gap: 14px; }
+  .commit-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  .commit-header { display: flex; align-items: center; gap: 10px; padding: 12px 18px; background: #1c2128; border-bottom: 1px solid #30363d; }
+  .commit-order { font-size: .75rem; color: #8b949e; }
+  .commit-tag { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .tag-fix { background: #da3633; color: #fff; }
+  .tag-refactor { background: #6e7681; color: #fff; }
+  .commit-title { font-family: 'Consolas', monospace; font-size: .88rem; color: #e6edf3; }
+  .commit-body { padding: 12px 18px; }
+  .commit-files { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+  .commit-file { font-family: 'Consolas', monospace; font-size: .78rem; color: #8b949e; }
+</style>
+</head>
+<body>
+
+<h1>[커밋 정리] OAuth2 리디렉션 + 프론트 환경/API 경로 정리</h1>
+
+<!-- ─── BRANCH ─── -->
+<div class="section">
+  <h2>Branch</h2>
+  <div class="branch-pill">fix/oauth2-redirect-endpoint</div>
+  <p style="margin-top:10px;font-size:.85rem;color:#8b949e;">
+    현재 브랜치 유지 권장. OAuth2 리디렉션 수정 + 그에 맞춘 프론트 환경 정리가 동일한 맥락(nginx 프록시 전환)이므로 하나의 브랜치에서 처리합니다.
+  </p>
+</div>
+
+<!-- ─── ALERT ─── -->
+<div class="section">
+  <h2>⚠️ 커밋 전 확인 필요</h2>
+
+  <div class="alert alert-warn">
+    <div class="alert-title">SecurityConfig.java — redirectionEndpoint 변경이 사라져 있음</div>
+    <div class="alert-body">
+      <code>oauth2Login</code>에 추가한 <code>.redirectionEndpoint(endpoint -> endpoint.baseUri("/api/login/oauth2/code/*"))</code>가 현재 파일에 없습니다.
+      <code>application-prod.yml</code>의 redirect-uri(<code>/api/login/oauth2/code/naver</code>)와 쌍을 이뤄야 동작하므로, 커밋 전에 재적용이 필요합니다.
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    <div class="alert-title">application.yml / logback-spring.xml / docker-compose.yml — 커밋 제외</div>
+    <div class="alert-body">
+      <code>application.yml</code>은 로컬 테스트용(<code>active: local</code>), <code>logback-spring.xml</code>은 DEBUG 임시 설정, <code>docker-compose.yml</code>은 이번 작업과 무관합니다. 스테이징 대상에서 제외합니다.
+    </div>
+  </div>
+</div>
+
+<!-- ─── COMMIT FILES ─── -->
+<div class="section">
+  <h2>커밋 대상 파일</h2>
+
+  <p style="font-size:.8rem;color:#8b949e;margin-bottom:8px;">1st commit — FIX (백엔드)</p>
+  <table>
+    <tr><th style="width:8%">구분</th><th style="width:50%">파일</th><th>변경</th></tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">book_talker_backend/.../config/SecurityConfig.java</td>
+      <td class="desc">oauth2Login에 <code>redirectionEndpoint.baseUri("/api/login/oauth2/code/*")</code> 추가 <strong style="color:#d29922;">(재적용 필요)</strong></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">book_talker_backend/.../resources/application-prod.yml</td>
+      <td class="desc">redirect-uri: <code>:8010/login/...</code> → <code>/api/login/oauth2/code/naver</code></td>
+    </tr>
+  </table>
+
+  <p style="font-size:.8rem;color:#8b949e;margin-bottom:8px;margin-top:16px;">2nd commit — REFACTOR (프론트)</p>
+  <table>
+    <tr><th style="width:8%">구분</th><th style="width:50%">파일</th><th>변경</th></tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">book_talker_frontend/.env.development</td>
+      <td class="desc">VITE_API_BASE_URL: 빈값 → <code>http://localhost:8010</code></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">book_talker_frontend/.env.dev</td>
+      <td class="desc">미정(빈값)으로 정리, 주석 수정</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">book_talker_frontend/.env.staging</td>
+      <td class="desc">미정(빈값)으로 정리, 주석 수정</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">book_talker_frontend/.env.prod</td>
+      <td class="desc">VITE_API_BASE_URL: <code>http://161.118.143.129/api</code></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">book_talker_frontend/package.json</td>
+      <td class="desc">build:dev 추가, build:staging → <code>--mode staging</code>으로 수정</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">book_talker_frontend/vite.config.js</td>
+      <td class="desc">미사용 변수 <code>apiBaseUrl</code> 제거</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">src/components/AppHeader.vue</td>
+      <td class="desc"><code>/api/auth/session</code> → <code>/auth/session</code></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">src/router/index.js</td>
+      <td class="desc"><code>/api/auth/session</code>, <code>/api/user/me</code> → prefix 제거</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">src/views/LoginView.vue</td>
+      <td class="desc"><code>/api/oauth2/...</code>, <code>/api/auth/session</code> → prefix 제거</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">src/views/HomeView.vue, BookSearchView.vue, BookReviewsView.vue</td>
+      <td class="desc"><code>/api/rank/*</code>, <code>/api/book/*</code> → prefix 제거</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-m">M</span></td>
+      <td class="path">src/views/MyPageView.vue, ReviewDetailView.vue, ReviewCreateView.vue</td>
+      <td class="desc"><code>/api/review/*</code>, <code>/api/user/me</code>, <code>/api/book</code> → prefix 제거</td>
+    </tr>
+  </table>
+
+  <p style="font-size:.8rem;color:#8b949e;margin-bottom:8px;margin-top:16px;">커밋 제외</p>
+  <table>
+    <tr>
+      <td><span class="badge badge-skip">SKIP</span></td>
+      <td class="path">book_talker_backend/.../resources/application.yml</td>
+      <td class="desc" style="color:#6e7681;">active: local (로컬 테스트용)</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-skip">SKIP</span></td>
+      <td class="path">book_talker_backend/.../resources/logback-spring.xml</td>
+      <td class="desc" style="color:#6e7681;">DEBUG 임시 설정 (feat/logback 작업 내용 덮어씀)</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-skip">SKIP</span></td>
+      <td class="path">docker/docker-compose.yml</td>
+      <td class="desc" style="color:#6e7681;">이번 작업과 무관</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ─── COMMITS ─── -->
+<div class="section">
+  <h2>커밋 메시지 (2개)</h2>
+  <div class="commit-list">
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-order">1st</span>
+        <span class="commit-tag tag-fix">FIX</span>
+        <span class="commit-title">FIX: [백엔드] OAuth2 콜백 redirect-uri nginx 프록시 경로로 수정</span>
+      </div>
+      <div class="commit-body">
+        <div class="commit-files">
+          <div class="commit-file">M  config/SecurityConfig.java</div>
+          <div class="commit-file">M  resources/application-prod.yml</div>
+        </div>
+      </div>
+    </div>
+    <div class="commit-card">
+      <div class="commit-header">
+        <span class="commit-order">2nd</span>
+        <span class="commit-tag tag-refactor">REFACTOR</span>
+        <span class="commit-title">REFACTOR: [프론트] 환경 분리 정리 및 /api prefix 제거</span>
+      </div>
+      <div class="commit-body">
+        <div class="commit-files">
+          <div class="commit-file">M  .env.development / .env.dev / .env.staging / .env.prod</div>
+          <div class="commit-file">M  package.json / vite.config.js</div>
+          <div class="commit-file">M  AppHeader.vue / router/index.js / LoginView.vue / HomeView.vue</div>
+          <div class="commit-file">M  BookSearchView.vue / BookReviewsView.vue / MyPageView.vue</div>
+          <div class="commit-file">M  ReviewDetailView.vue / ReviewCreateView.vue</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
