@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: local  # 운영서버는 SPRING_PROFILES_ACTIVE=prod 환경변수로 override
+    active: local
 
   application:
     name: book_talker_backend
@@ -8,3 +8,9 @@ spring:
 server:
   port: 8010
   forward-headers-strategy: native
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
