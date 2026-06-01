@@ -54,6 +54,7 @@ const routes = [
     path: '/books/:isbn13/reviews',
     name: 'book-reviews',
     component: BookReviewsView,
+    meta: { activeNav: '/' },
   },
 ];
 
