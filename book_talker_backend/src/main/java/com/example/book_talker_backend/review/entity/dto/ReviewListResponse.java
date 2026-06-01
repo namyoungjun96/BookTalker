@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public record ReviewListResponse(
         Long id,
         String headline,
+        String content,
         Integer rating,
         Integer readingCount,
         LocalDateTime regDate,
@@ -18,6 +19,7 @@ public record ReviewListResponse(
         return new ReviewListResponse(
                 review.getId(),
                 review.getHeadline(),
+                review.getContent(),
                 review.getRating(),
                 review.getReadingCount(),
                 review.getRegDate(),

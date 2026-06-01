@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>[commit] PR — 마이페이지·네비게이션 UX 개선</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f9fafb; color: #1f2937; padding: 40px 24px; }
+    .container { max-width: 820px; margin: 0 auto; }
+
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .meta { font-size: 13px; color: #6b7280; margin-bottom: 40px; }
+    .meta span { margin-right: 16px; }
+
+    section { margin-bottom: 36px; }
+    h2 { font-size: 16px; font-weight: 600; color: #374151; border-left: 4px solid #2563eb; padding-left: 12px; margin-bottom: 16px; }
+
+    .summary-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px 20px; font-size: 14px; line-height: 1.8; color: #1e40af; }
+
+    .commit-list { display: flex; flex-direction: column; gap: 12px; }
+    .commit-item { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px 20px; }
+    .commit-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .commit-hash { font-family: monospace; font-size: 12px; color: #6b7280; background: #f3f4f6; padding: 2px 7px; border-radius: 4px; }
+    .commit-title { font-size: 15px; font-weight: 600; }
+    .commit-desc { font-size: 13px; color: #6b7280; line-height: 1.7; }
+    .chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+    .chip.feat { background: #dbeafe; color: #1d4ed8; }
+    .chip.fix  { background: #fef9c3; color: #854d0e; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { background: #f3f4f6; text-align: left; padding: 10px 14px; font-weight: 600; color: #374151; border: 1px solid #e5e7eb; }
+    td { padding: 10px 14px; border: 1px solid #e5e7eb; vertical-align: top; }
+    td code { font-family: monospace; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
+    .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .ba-box { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+    .ba-label { font-size: 12px; font-weight: 600; padding: 8px 14px; }
+    .ba-label.before { background: #fef2f2; color: #991b1b; }
+    .ba-label.after  { background: #f0fdf4; color: #166534; }
+    .ba-content { padding: 14px; font-size: 13px; line-height: 1.7; background: white; color: #374151; }
+    .ba-content .title { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
+    .ba-content .preview { color: #6b7280; font-size: 12px; margin-bottom: 8px; }
+    .ba-content .empty { color: #d1d5db; font-style: italic; font-size: 12px; margin-bottom: 8px; }
+    .ba-content .divider { border-top: 1px solid #f3f4f6; margin: 8px 0; }
+    .ba-content .tag-row { display: flex; gap: 6px; align-items: center; }
+    .ba-content .tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+    .ba-content .tag.active { background: #dbeafe; color: #1d4ed8; }
+    .ba-content .tag.inactive { background: #f3f4f6; color: #9ca3af; }
+
+    .test-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .test-list li { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.6; }
+    .test-list li::before { content: '☐'; font-size: 15px; color: #9ca3af; flex-shrink: 0; }
+
+    pre { background: #1e293b; color: #e2e8f0; padding: 14px 18px; border-radius: 8px; font-size: 12px; line-height: 1.7; overflow-x: auto; }
+    pre .add { color: #34d399; }
+
+    .pr-box { background: #1e293b; border-radius: 8px; padding: 16px 20px; font-family: monospace; font-size: 13px; color: #e2e8f0; line-height: 1.7; }
+    .pr-box .branch { color: #34d399; }
+    .pr-box .base { color: #fbbf24; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>[commit] PR — 마이페이지·네비게이션 UX 개선</h1>
+  <p class="meta">
+    <span>📅 2026-06-01</span>
+    <span>🌿 feat/mypage-content-preview → main</span>
+    <span>🗂 mypage / navigation</span>
+  </p>
+
+  <!-- PR 요약 -->
+  <section>
+    <h2>PR 요약</h2>
+    <div class="summary-box">
+      마이페이지 독후감 카드 UX 개선 및 반복적으로 발생하던 네비게이션 탭 활성화 버그 2건 수정.<br>
+      서비스 출시 전 최종 UX 점검 차원의 변경으로, 기능 추가 1건 + 버그 수정 2건으로 구성됩니다.
+    </div>
+  </section>
+
+  <!-- 커밋 목록 -->
+  <section>
+    <h2>포함 커밋 (3건)</h2>
+    <div class="commit-list">
+
+      <div class="commit-item">
+        <div class="commit-header">
+          <span class="chip feat">FEAT</span>
+          <span class="commit-hash">3fc2666</span>
+          <span class="commit-title">마이페이지 단일 독후감 카드에 본문 미리보기 추가</span>
+        </div>
+        <p class="commit-desc">
+          1회독 단일 카드의 책 제목 아래 빈 공간에 독후감 본문 60자 미리보기 표시.<br>
+          백엔드 <code>ReviewListResponse</code>에 <code>content</code> 필드 추가.
+          2회독 이상 카드는 기존 회독 배지 유지.
+        </p>
+      </div>
+
+      <div class="commit-item">
+        <div class="commit-header">
+          <span class="chip fix">FIX</span>
+          <span class="commit-hash">a0dbe6a</span>
+          <span class="commit-title">BookReviewsView 진입 시 홈 탭 활성화 안 되는 버그 수정</span>
+        </div>
+        <p class="commit-desc">
+          <code>book-reviews</code> 라우트에 <code>meta: &#123; activeNav: '/' &#125;</code> 추가.<br>
+          <code>review-detail</code>, <code>my-book-detail</code>과 동일 패턴으로 통일.
+        </p>
+      </div>
+
+      <div class="commit-item">
+        <div class="commit-header">
+          <span class="chip fix">FIX</span>
+          <span class="commit-hash">8c5b915</span>
+          <span class="commit-title">로그아웃 시 nav 즉시 갱신 및 홈으로 리다이렉트</span>
+        </div>
+        <p class="commit-desc">
+          <code>isLoggedIn</code>을 <code>useAuth.js</code> 싱글턴 composable로 분리하여 AppHeader·useNav가 공유.<br>
+          로그아웃 API 성공 즉시 <code>isLoggedIn.value = false</code> 반영 → 새로고침 없이 nav 갱신.<br>
+          로그아웃 후 리다이렉트: <code>login</code> → <code>home</code>.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Before / After -->
+  <section>
+    <h2>주요 변경 Before / After</h2>
+
+    <p style="font-size:13px; font-weight:600; color:#374151; margin-bottom:10px;">① 마이페이지 카드 본문 미리보기</p>
+    <div class="before-after" style="margin-bottom:20px;">
+      <div class="ba-box">
+        <div class="ba-label before">Before</div>
+        <div class="ba-content">
+          <div class="title">사피엔스</div>
+          <div class="empty">(빈 공간)</div>
+          <div class="divider"></div>
+          <div class="tag-row"><span class="tag inactive">⭐ 5</span></div>
+        </div>
+      </div>
+      <div class="ba-box">
+        <div class="ba-label after">After</div>
+        <div class="ba-content">
+          <div class="title">사피엔스</div>
+          <div class="preview">하라리의 통찰이 역사를 전혀 다른 시각으로 보게 만든다…</div>
+          <div class="divider"></div>
+          <div class="tag-row"><span class="tag inactive">⭐ 5</span></div>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:13px; font-weight:600; color:#374151; margin-bottom:10px;">② 랭킹 → 공개 리뷰 페이지 진입 시 탭 활성화</p>
+    <div class="before-after" style="margin-bottom:20px;">
+      <div class="ba-box">
+        <div class="ba-label before">Before</div>
+        <div class="ba-content">
+          <div class="tag-row">
+            <span class="tag inactive">홈</span>
+            <span class="tag inactive">마이페이지</span>
+            <span class="tag inactive">검색</span>
+          </div>
+          <p style="font-size:11px; color:#9ca3af; margin-top:6px;">어떤 탭도 활성화되지 않음</p>
+        </div>
+      </div>
+      <div class="ba-box">
+        <div class="ba-label after">After</div>
+        <div class="ba-content">
+          <div class="tag-row">
+            <span class="tag active">홈</span>
+            <span class="tag inactive">마이페이지</span>
+            <span class="tag inactive">검색</span>
+          </div>
+          <p style="font-size:11px; color:#065f46; margin-top:6px;">홈 탭 활성화</p>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:13px; font-weight:600; color:#374151; margin-bottom:10px;">③ 로그아웃 후 nav 상태</p>
+    <div class="before-after">
+      <div class="ba-box">
+        <div class="ba-label before">Before</div>
+        <div class="ba-content">
+          로그아웃 성공 → 로그인 페이지로 이동<br>
+          새로고침 전까지 nav에 마이페이지·검색 탭 잔존
+        </div>
+      </div>
+      <div class="ba-box">
+        <div class="ba-label after">After</div>
+        <div class="ba-content">
+          로그아웃 성공 → 홈으로 이동<br>
+          nav 즉시 비로그인 상태로 전환 (새로고침 불필요)
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 변경 파일 -->
+  <section>
+    <h2>변경 파일</h2>
+    <table>
+      <thead>
+        <tr><th>구분</th><th>파일</th><th>변경 내용</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>BE</td>
+          <td><code>review/entity/dto/ReviewListResponse.java</code></td>
+          <td>content 필드 추가</td>
+        </tr>
+        <tr>
+          <td>FE</td>
+          <td><code>src/views/MyPageView.vue</code></td>
+          <td>본문 미리보기 렌더링 및 CSS 추가</td>
+        </tr>
+        <tr>
+          <td>FE</td>
+          <td><code>src/router/index.js</code></td>
+          <td>book-reviews 라우트에 meta.activeNav 추가</td>
+        </tr>
+        <tr>
+          <td>FE</td>
+          <td><code>src/composables/useAuth.js</code> (신규)</td>
+          <td>isLoggedIn 공유 상태 싱글턴 composable</td>
+        </tr>
+        <tr>
+          <td>FE</td>
+          <td><code>src/components/AppHeader.vue</code></td>
+          <td>useAuth로 isLoggedIn 이전</td>
+        </tr>
+        <tr>
+          <td>FE</td>
+          <td><code>src/composables/useNav.js</code></td>
+          <td>로그아웃 후 isLoggedIn 즉시 갱신, 홈 리다이렉트</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 테스트 체크리스트 -->
+  <section>
+    <h2>테스트 체크리스트</h2>
+    <ul class="test-list">
+      <li>마이페이지 접속 → 1회독 단일 카드에 본문 미리보기 표시 확인</li>
+      <li>본문 60자 초과 시 말줄임표(…) 처리 확인</li>
+      <li>2회독 이상 카드에는 회독 배지만 표시되는지 확인</li>
+      <li>랭킹 페이지에서 책 클릭 → BookReviewsView 진입 시 홈 탭 활성화 확인</li>
+      <li>로그아웃 버튼 클릭 → nav 즉시 비로그인 상태로 전환 확인</li>
+      <li>로그아웃 후 홈으로 이동하는지 확인</li>
+    </ul>
+  </section>
+
+  <!-- PR 정보 -->
+  <section>
+    <h2>PR 정보</h2>
+    <div class="pr-box">
+      <div>title: <span style="color:#e2e8f0; font-weight:600;">UX 개선 — 마이페이지 본문 미리보기 및 네비게이션 버그 수정</span></div>
+      <div style="margin-top:6px;">base: <span class="base">main</span> ← head: <span class="branch">feat/mypage-content-preview</span></div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
