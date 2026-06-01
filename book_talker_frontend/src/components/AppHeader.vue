@@ -24,27 +24,14 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { watch } from 'vue';
 import { useRoute } from 'vue-router';
-import axios from 'axios';
 import { useNav } from '../composables/useNav';
-import { API_BASE_URL } from '../api/client';
+import { useAuth } from '../composables/useAuth';
 
 const route = useRoute();
 const { isActiveNav, onLogout } = useNav();
-
-const isLoggedIn = ref(false);
-
-const checkLoginStatus = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/auth/session`, {
-      withCredentials: true,
-    });
-    isLoggedIn.value = response.status === 200;
-  } catch {
-    isLoggedIn.value = false;
-  }
-};
+const { isLoggedIn, checkLoginStatus } = useAuth();
 
 // 라우트 변경 시마다 로그인 상태 재확인 (로그인/로그아웃 반영)
 watch(() => route.path, checkLoginStatus, { immediate: true });
