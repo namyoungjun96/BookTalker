@@ -25,6 +25,7 @@ public class Review {
     @JoinColumn(name = "isbn13")
     private Book book;
     private String writer;
+    @Column(columnDefinition = "TEXT")
     private String content;
     private String headline;  // 필수, 항상 공개
     private Integer rating;
