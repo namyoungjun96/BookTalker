@@ -43,6 +43,9 @@
                 <span v-if="group.maxReadingCount >= 2" class="reading-badge">
                   {{ group.maxReadingCount }}회독까지
                 </span>
+                <p v-else-if="group.reviews[0].content" class="content-preview">
+                  {{ group.reviews[0].content.length > 60 ? group.reviews[0].content.slice(0, 60).replace(/\s+$/, '') + '…' : group.reviews[0].content }}
+                </p>
               </div>
             </div>
 
@@ -240,6 +243,7 @@ onMounted(async () => {
 .date { font-size: 13px; color: #9ca3af; flex-shrink: 0; }
 
 .reading-badge { display: inline-block; font-size: 12px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 2px 10px; }
+.content-preview { font-size: 13px; color: #6b7280; margin: 4px 0 0 0; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .review-meta { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; border-top: 1px solid #f3f4f6; }
 .rating { font-size: 14px; color: #2563eb; font-weight: 500; }
