@@ -121,8 +121,7 @@ onMounted(fetchReviews);
 
 <style scoped>
 .app-container {
-  min-height: 100vh;
-  background-color: #f9fafb;
+  min-height: 100%;
 }
 
 .main-content {

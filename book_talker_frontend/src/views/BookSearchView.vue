@@ -239,8 +239,7 @@ const handleImageError = (event) => {
 
 <style scoped>
 .app-container {
-  min-height: 100vh;
-  background-color: #f9fafb;
+  min-height: 100%;
 }
 
 /* 메인 콘텐츠 */
