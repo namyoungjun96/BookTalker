@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>[design] Footer 추가 설계서</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f9fafb; color: #1f2937; line-height: 1.6; }
+    .container { max-width: 760px; margin: 48px auto; padding: 0 24px 80px; }
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .meta { font-size: 13px; color: #6b7280; margin-bottom: 40px; }
+    h2 { font-size: 17px; font-weight: 600; color: #1f2937; margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; }
+    h3 { font-size: 15px; font-weight: 600; color: #374151; margin: 20px 0 8px; }
+    p { font-size: 14px; color: #374151; margin-bottom: 10px; }
+    ul, ol { font-size: 14px; color: #374151; padding-left: 20px; margin-bottom: 12px; }
+    li { margin-bottom: 6px; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-yellow { background: #fef3c7; color: #92400e; }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+
+    /* 현재 vs 목표 비교 */
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    .compare-box { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; }
+    .compare-box.current { border-left: 3px solid #f59e0b; }
+    .compare-box.target  { border-left: 3px solid #2563eb; }
+    .compare-label { font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* 레이아웃 다이어그램 */
+    .layout-diagram { background: white; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; margin: 16px 0; max-width: 360px; }
+    .diagram-row { padding: 10px 16px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+    .diagram-header { background: white; border-bottom: 2px solid #2563eb; color: #1f2937; }
+    .diagram-main   { background: #f9fafb; color: #6b7280; flex: 1; min-height: 80px; }
+    .diagram-footer { background: white; border-top: 1px solid #e5e7eb; color: #6b7280; }
+    .diagram-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* 코드 블록 */
+    pre { background: #1f2937; color: #e5e7eb; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 12px 0 16px; }
+    code { font-family: 'Fira Code', 'Consolas', monospace; }
+    .hl { color: #93c5fd; }   /* 파란색 강조 */
+    .hl-g { color: #6ee7b7; } /* 초록색 강조 */
+    .hl-y { color: #fcd34d; } /* 노란색 강조 */
+
+    /* 파일 변경 목록 */
+    .file-list { margin: 12px 0; }
+    .file-item { background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .file-item .file-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; flex-shrink: 0; }
+    .file-item .file-badge.new { background: #d1fae5; color: #065f46; }
+    .file-item .file-badge.mod { background: #dbeafe; color: #1e40af; }
+    .file-item .file-path { font-family: monospace; color: #374151; }
+    .file-item .file-desc { color: #6b7280; font-size: 12px; margin-left: auto; }
+
+    /* 트레이드오프 테이블 */
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 14px; }
+    th { background: #f3f4f6; text-align: left; padding: 10px 14px; font-size: 13px; color: #374151; border-bottom: 1px solid #e5e7eb; }
+    td { padding: 10px 14px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+
+    /* 미리보기 목업 */
+    .mockup-wrap { background: white; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; margin: 16px 0; }
+    .mockup-header { background: white; border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .mockup-header-brand { font-size: 14px; font-weight: 600; }
+    .mockup-header-nav { display: flex; gap: 16px; }
+    .mockup-header-nav span { font-size: 12px; color: #9ca3af; }
+    .mockup-header-nav span.active-nav { color: #2563eb; font-weight: 500; }
+    .mockup-body { background: #f9fafb; padding: 24px 20px; min-height: 160px; }
+    .mockup-body-title { font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 6px; }
+    .mockup-body-sub { font-size: 12px; color: #9ca3af; margin-bottom: 16px; }
+    .mockup-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .mockup-card-num { font-size: 14px; font-weight: 700; color: #2563eb; width: 20px; }
+    .mockup-card-img { width: 32px; height: 44px; background: #e5e7eb; border-radius: 3px; flex-shrink: 0; }
+    .mockup-card-info { flex: 1; }
+    .mockup-card-title { font-size: 12px; font-weight: 500; color: #1f2937; }
+    .mockup-card-meta { font-size: 11px; color: #9ca3af; }
+    .mockup-footer { background: white; border-top: 1px solid #e5e7eb; padding: 14px 20px; }
+    .mockup-footer-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .mockup-footer-brand { font-size: 13px; font-weight: 600; color: #1f2937; }
+    .mockup-footer-email { font-size: 11px; color: #6b7280; }
+    .mockup-footer-copy { font-size: 10px; color: #9ca3af; }
+
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 16px; margin: 12px 0; font-size: 14px; color: #1e40af; }
+    .warn-box  { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 16px; margin: 12px 0; font-size: 14px; color: #92400e; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Footer 추가 설계서</h1>
+  <p class="meta">
+    <span class="badge badge-blue">[design]</span>&nbsp;
+    작성일: 2026-06-09 &nbsp;|&nbsp; 대상: book_talker_frontend &nbsp;|&nbsp; 작성: Claude
+  </p>
+
+  <!-- 1. 목표 -->
+  <h2>1. 목표 및 요구사항</h2>
+  <ul>
+    <li>사이트 하단에 서비스 피드백 이메일(<strong>fuswns96@naver.com</strong>)을 노출하는 Footer 추가</li>
+    <li>콘텐츠가 짧을 때도 <strong>스크롤 없이 한 화면에 Footer가 보여야 함</strong></li>
+    <li>콘텐츠가 길어지면 Footer는 아래로 자연스럽게 밀려남 (고정 오버레이 아님)</li>
+    <li>로그인 페이지(<code>route.name === 'login'</code>)에는 Footer 미노출</li>
+    <li>기존 디자인 시스템 유지 (흰 배경, <code>#e5e7eb</code> 구분선, <code>max-width: 720px</code>)</li>
+  </ul>
+
+  <!-- 2. 현재 구조 문제 -->
+  <h2>2. 현재 구조와 문제점</h2>
+
+  <div class="compare">
+    <div class="compare-box current">
+      <div class="compare-label">현재 (문제)</div>
+      <p>각 View가 <code>min-height: 100vh</code>를 직접 보유<br>→ Footer를 단순 추가 시 스크롤해야 보임</p>
+    </div>
+    <div class="compare-box target">
+      <div class="compare-label">목표</div>
+      <p>App.vue가 Flex 레이아웃으로 전체 높이를 관리<br>→ 콘텐츠가 짧아도 Footer가 하단에 위치</p>
+    </div>
+  </div>
+
+  <p>현재 각 View(HomeView, MyPageView 등)가 <code>.app-container { min-height: 100vh }</code>를 갖고 있어,
+  단순히 Footer를 추가하면 총 높이가 <strong>100vh + Footer 높이</strong>가 되어 스크롤이 발생합니다.</p>
+
+  <!-- 3. 설계안 -->
+  <h2>3. 설계안 — Sticky Footer 패턴</h2>
+
+  <h3>레이아웃 구조</h3>
+  <div style="display:flex; gap:24px; align-items:flex-start; margin: 16px 0;">
+    <div>
+      <div class="layout-diagram" style="display:flex; flex-direction:column; height:280px;">
+        <div class="diagram-row diagram-header"><div class="diagram-dot" style="background:#2563eb;"></div> AppHeader (sticky)</div>
+        <div class="diagram-row diagram-main" style="flex:1; align-items:flex-start; padding-top:16px;"><div class="diagram-dot" style="background:#9ca3af;"></div> &lt;main flex:1&gt; → RouterView (각 View)</div>
+        <div class="diagram-row diagram-footer"><div class="diagram-dot" style="background:#e5e7eb;"></div> AppFooter</div>
+      </div>
+      <p style="font-size:12px; color:#9ca3af; text-align:center; margin-top:6px;">Flex column, min-height: 100vh</p>
+    </div>
+    <div style="flex:1;">
+      <h3 style="margin-top:0;">동작 원리</h3>
+      <ul>
+        <li>App.vue 래퍼: <code>display:flex; flex-direction:column; min-height:100vh</code></li>
+        <li><code>&lt;main&gt;</code>(RouterView 감싸기): <code>flex:1</code> → 남은 공간을 모두 차지</li>
+        <li>콘텐츠가 짧으면 → main이 늘어나 Footer를 하단에 고정</li>
+        <li>콘텐츠가 길면 → main이 콘텐츠 높이만큼 늘어나 Footer가 자연스럽게 아래로</li>
+        <li>각 View의 <code>min-height: 100vh</code> → <code>min-height: 100%</code>로 교체<br>
+          <small style="color:#6b7280;">(부모 flex가 높이를 결정하므로 100vh 불필요)</small></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>App.vue 변경안</h3>
+  <pre><code><span class="hl">&lt;template&gt;</span>
+  <span class="hl-g">&lt;div class="app-layout"&gt;</span>
+    &lt;AppHeader v-if="route.name !== 'login'" /&gt;
+    <span class="hl-g">&lt;main class="app-main"&gt;</span>
+      &lt;RouterView /&gt;
+    <span class="hl-g">&lt;/main&gt;</span>
+    &lt;AppFooter v-if="route.name !== 'login'" /&gt;
+  <span class="hl-g">&lt;/div&gt;</span>
+<span class="hl">&lt;/template&gt;</span>
+
+<span class="hl-y">&lt;style&gt;</span>
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  <span class="hl">min-height: 100vh;</span>
+}
+.app-main {
+  <span class="hl">flex: 1;</span>
+  display: flex;
+  flex-direction: column;
+  background: #f9fafb;   /* 배경색 통합 */
+}
+<span class="hl-y">&lt;/style&gt;</span></code></pre>
+
+  <h3>각 View 변경 포인트</h3>
+  <p>App.vue가 배경(<code>#f9fafb</code>)과 최소 높이를 담당하므로, 각 View에서 중복 제거:</p>
+  <pre><code><span class="hl-y">/* 변경 전 (각 View) */</span>
+.app-container {
+  <span class="hl">min-height: 100vh;</span>
+  background-color: #f9fafb;   <span class="hl-y">/* 삭제 */</span>
+}
+
+<span class="hl-y">/* 변경 후 */</span>
+.app-container {
+  <span class="hl">min-height: 100%;</span>   <span class="hl-g">/* flex 부모 기준으로 채움 */</span>
+  <span class="hl-y">/* background 제거 — app-main에서 처리 */</span>
+}</code></pre>
+
+  <!-- 4. 파일 변경 목록 -->
+  <h2>4. 변경 파일 목록</h2>
+  <div class="file-list">
+    <div class="file-item">
+      <span class="file-badge new">NEW</span>
+      <span class="file-path">src/components/AppFooter.vue</span>
+      <span class="file-desc">Footer 컴포넌트 신규 생성</span>
+    </div>
+    <div class="file-item">
+      <span class="file-badge mod">MOD</span>
+      <span class="file-path">src/App.vue</span>
+      <span class="file-desc">flex 레이아웃 래퍼 추가, AppFooter import</span>
+    </div>
+    <div class="file-item">
+      <span class="file-badge mod">MOD</span>
+      <span class="file-path">src/views/HomeView.vue</span>
+      <span class="file-desc">.app-container: min-height 100vh→100%, background 제거</span>
+    </div>
+    <div class="file-item">
+      <span class="file-badge mod">MOD</span>
+      <span class="file-path">src/views/MyPageView.vue</span>
+      <span class="file-desc">동일</span>
+    </div>
+    <div class="file-item">
+      <span class="file-badge mod">MOD</span>
+      <span class="file-path">src/views/BookSearchView.vue</span>
+      <span class="file-desc">동일</span>
+    </div>
+    <div class="file-item">
+      <span class="file-badge mod">MOD</span>
+      <span class="file-path">src/views/MyBookDetailView.vue</span>
+      <span class="file-desc">동일</span>
+    </div>
+    <div class="file-item">
+      <span class="file-badge mod">MOD</span>
+      <span class="file-path">src/views/ReviewCreateView.vue</span>
+      <span class="file-desc">동일</span>
+    </div>
+    <div class="file-item">
+      <span class="file-badge mod">MOD</span>
+      <span class="file-path">src/views/ReviewDetailView.vue</span>
+      <span class="file-desc">동일</span>
+    </div>
+    <div class="file-item">
+      <span class="file-badge mod">MOD</span>
+      <span class="file-path">src/views/BookReviewsView.vue</span>
+      <span class="file-desc">동일</span>
+    </div>
+  </div>
+
+  <div class="info-box">
+    ℹ️ LoginView는 미노출 대상이므로 변경 없음. <code>min-height: 100vh</code>를 그대로 유지.
+  </div>
+
+  <!-- 5. 목업 -->
+  <h2>5. UI 목업</h2>
+  <p>콘텐츠가 적은 상태에서도 Footer가 한 화면에 보이는 예시:</p>
+  <div class="mockup-wrap">
+    <div class="mockup-header">
+      <span class="mockup-header-brand">BookTalker</span>
+      <div class="mockup-header-nav">
+        <span class="active-nav">홈</span>
+        <span>마이페이지</span>
+        <span>검색</span>
+        <span>로그아웃</span>
+      </div>
+    </div>
+    <div class="mockup-body">
+      <div class="mockup-body-title">장르별 평점 TOP 10</div>
+      <div class="mockup-body-sub">독자들이 가장 높게 평가한 책을 장르별로 만나보세요</div>
+      <div class="mockup-card">
+        <span class="mockup-card-num">1</span>
+        <div class="mockup-card-img"></div>
+        <div class="mockup-card-info">
+          <div class="mockup-card-title">책 제목 예시</div>
+          <div class="mockup-card-meta">★ 4.8 · 리뷰 12개</div>
+        </div>
+      </div>
+      <div class="mockup-card">
+        <span class="mockup-card-num">2</span>
+        <div class="mockup-card-img"></div>
+        <div class="mockup-card-info">
+          <div class="mockup-card-title">책 제목 예시</div>
+          <div class="mockup-card-meta">★ 4.5 · 리뷰 8개</div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup-footer">
+      <div class="mockup-footer-row">
+        <span class="mockup-footer-brand">BookTalker</span>
+        <span class="mockup-footer-email">피드백 · fuswns96@naver.com</span>
+      </div>
+      <div class="mockup-footer-copy">© 2025 BookTalker. All rights reserved.</div>
+    </div>
+  </div>
+  <p style="font-size:13px; color:#6b7280;">↑ 콘텐츠가 2~3개뿐이어도 Footer가 하단에 자연스럽게 위치</p>
+
+  <!-- 6. 트레이드오프 -->
+  <h2>6. 트레이드오프</h2>
+  <table>
+    <thead>
+      <tr><th>항목</th><th>설명</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-green">장점</span></td>
+        <td>콘텐츠 길이에 상관없이 Footer가 항상 자연스러운 위치에 노출됨.<br>
+            고정(fixed) Footer와 달리 콘텐츠 영역을 침범하지 않음.</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-yellow">변경 범위</span></td>
+        <td>View 파일 7개를 수정해야 함. 하지만 각 파일당 변경은 2줄(CSS 2줄 삭제/수정) 수준으로 단순.</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">주의</span></td>
+        <td>View별로 background 색상이 다를 경우 app-main 배경과 충돌 가능.<br>
+            현재 모든 View가 동일하게 <code>#f9fafb</code>를 사용하므로 문제 없음.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 7. 승인 요청 -->
+  <h2>7. 승인 요청</h2>
+  <div class="warn-box">
+    ⏳ 위 설계 방향으로 구현을 진행해도 될지 승인 부탁드립니다.<br>
+    승인 후 모든 파일 수정 → <code>[commit]</code> 문서 작성 → 검수 순서로 진행하겠습니다.
+  </div>
+
+</div>
+</body>
+</html>

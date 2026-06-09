@@ -210,7 +210,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.app-container { min-height: 100vh; background-color: #f9fafb; }
+.app-container { min-height: 100%; }
 .main-content { padding: 48px 24px; }
 .content-wrapper { max-width: 720px; margin: 0 auto; }
 
