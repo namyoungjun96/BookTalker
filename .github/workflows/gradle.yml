@@ -10,8 +10,6 @@ name: Java CI with Gradle
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
@@ -53,8 +51,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT }} # Defaults to 22 if omitted
         script: |
-          sh backend.sh start 8082
-          sh healthcheck.sh
+          sh deploy.sh
           
 
     # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
