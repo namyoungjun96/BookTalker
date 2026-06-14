@@ -33,7 +33,7 @@ jobs:
 
     - name: Build with Gradle Wrapper
       working-directory: ./book_talker_backend
-      run: ./gradlew build -x test
+      run: ./gradlew build -x test 
 
     - name: Send java package with SCP
       uses: appleboy/scp-action@v0.1.7
