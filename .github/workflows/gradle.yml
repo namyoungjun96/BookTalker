@@ -44,6 +44,7 @@ jobs:
         source: "./book_talker_backend/build/libs/book_talker_backend-0.0.1-SNAPSHOT.jar"
         target: "/home/ubuntu/apps/backend/"
         debug: true
+        strip_components: 4
 
     - name: Execute Remote SSH Commands
       uses: appleboy/ssh-action@v1.2.2
