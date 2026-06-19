@@ -56,7 +56,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT }} # Defaults to 22 if omitted
         script: |
-          /bin/bash /home/ubuntu/apps/backend/deploy.sh
+          /bin/bash /home/ubuntu/deploy.sh
           
 
     # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
