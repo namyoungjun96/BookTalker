@@ -36,3 +36,7 @@ spring:
 
 base-url:
   frontend: http://localhost:5173
+
+aladin:
+  api:
+    key: ttbehdgornltls1927003

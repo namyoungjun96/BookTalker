@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>커밋 메시지 & PR 내용 검수</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f9fafb; color: #1f2937; padding: 40px 24px; }
+    .container { max-width: 820px; margin: 0 auto; }
+
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .meta { font-size: 13px; color: #6b7280; margin-bottom: 36px; }
+
+    section { margin-bottom: 36px; }
+    h2 { font-size: 15px; font-weight: 600; color: #374151; border-left: 4px solid #2563eb; padding-left: 12px; margin-bottom: 14px; }
+
+    /* 커밋 박스 */
+    .commit-box { background: #1e293b; border-radius: 8px; padding: 20px 24px; font-family: monospace; font-size: 13px; color: #e2e8f0; line-height: 1.8; }
+    .commit-box .subject { color: #fbbf24; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+    .commit-box .body-line { color: #94a3b8; }
+    .commit-box .add { color: #34d399; }
+
+    /* PR 미리보기 */
+    .pr-preview { background: white; border: 1px solid #d0d7de; border-radius: 8px; overflow: hidden; }
+    .pr-title-bar { background: #f6f8fa; border-bottom: 1px solid #d0d7de; padding: 14px 20px; }
+    .pr-title-label { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+    .pr-title-text { font-size: 18px; font-weight: 600; color: #1f2937; }
+    .pr-branch-bar { padding: 10px 20px; background: #f6f8fa; border-bottom: 1px solid #d0d7de; font-size: 13px; color: #6b7280; }
+    .pr-branch-bar code { background: #dbeafe; color: #1d4ed8; padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+    .pr-body { padding: 24px; font-size: 14px; line-height: 1.8; }
+
+    .md h2 { font-size: 16px; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin: 20px 0 10px; border-left: none; padding-left: 0; }
+    .md h2:first-child { margin-top: 0; }
+    .md ul { padding-left: 20px; margin: 6px 0 10px; }
+    .md li { margin-bottom: 3px; }
+    .md code { font-family: monospace; background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+    .md table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+    .md th { background: #f6f8fa; border: 1px solid #d0d7de; padding: 8px 12px; text-align: left; }
+    .md td { border: 1px solid #d0d7de; padding: 8px 12px; vertical-align: top; }
+    .md pre { background: #1e293b; color: #e2e8f0; padding: 12px 16px; border-radius: 6px; font-size: 12px; line-height: 1.7; margin: 8px 0; overflow-x: auto; }
+    .md .warn { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 10px 14px; color: #9a3412; margin: 10px 0; font-size: 13px; }
+    .md .test-list { list-style: none; padding-left: 0; }
+    .md .test-list li::before { content: '- [ ] '; font-family: monospace; }
+    .md p { margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>커밋 메시지 & PR 내용 검수</h1>
+  <p class="meta">브랜치: <strong>fix/aladin-api-security</strong> → <strong>main</strong></p>
+
+  <!-- 커밋 메시지 -->
+  <section>
+    <h2>커밋 메시지 (검수 요청)</h2>
+    <div class="commit-box">
+      <div class="subject">FIX: 알라딘 API 보안 강화 및 헬스체크 엔드포인트 허용</div>
+      <div class="body-line">- BookService 알라딘 API URL http → https 변경</div>
+      <div class="body-line">- TTBKey 하드코딩 제거, @Value("${aladin.api.key}") 환경변수로 분리</div>
+      <div class="body-line">- local: application-local.yml에 로컬 전용 키 직접 기재</div>
+      <div class="body-line">- prod: ALADIN_API_KEY 환경변수 필수 주입으로 변경</div>
+      <div class="body-line">- SecurityConfig /actuator/health permitAll 추가 (302 → 200)</div>
+      <br/>
+      <div class="add">Co-Authored-By: Claude Sonnet 4.6 &lt;noreply@anthropic.com&gt;</div>
+    </div>
+  </section>
+
+  <!-- PR 미리보기 -->
+  <section>
+    <h2>PR 내용 (검수 요청)</h2>
+    <div class="pr-preview">
+      <div class="pr-title-bar">
+        <div class="pr-title-label">TITLE</div>
+        <div class="pr-title-text">알라딘 API 보안 강화 및 헬스체크 엔드포인트 허용</div>
+      </div>
+      <div class="pr-branch-bar">
+        <code>fix/aladin-api-security</code> → <code>main</code>
+      </div>
+      <div class="pr-body md">
+
+        <h2>Summary</h2>
+        <ul>
+          <li>알라딘 API URL <code>http</code> → <code>https</code> 변경</li>
+          <li>TTBKey 하드코딩 제거 — 환경변수(<code>ALADIN_API_KEY</code>)로 분리</li>
+          <li><code>/actuator/health</code> 인증 없이 접근 허용 (302 → 200)</li>
+        </ul>
+
+        <h2>변경 내용</h2>
+        <table>
+          <thead><tr><th>파일</th><th>변경 내용</th></tr></thead>
+          <tbody>
+            <tr><td><code>BookService.java</code></td><td>URL <code>http</code> → <code>https</code>, TTBKey 3곳 → <code>@Value("${aladin.api.key}")</code></td></tr>
+            <tr><td><code>application-local.yml</code></td><td>로컬 전용 알라딘 키 직접 기재</td></tr>
+            <tr><td><code>application-prod.yml</code></td><td><code>aladin.api.key: ${ALADIN_API_KEY}</code> 환경변수 필수 주입</td></tr>
+            <tr><td><code>SecurityConfig.java</code></td><td><code>/actuator/health</code> <code>permitAll</code> 추가</td></tr>
+          </tbody>
+        </table>
+
+        <h2>기술적 의사결정</h2>
+        <ul>
+          <li><strong>local/prod 키 분리</strong>: prod는 환경변수 필수(<code>${ALADIN_API_KEY}</code>), local은 yml에 직접 기재 — 개발 편의와 운영 보안을 분리.</li>
+          <li><strong>@Lob 대신 @Value 사용</strong>: Spring의 <code>@Value</code>로 프로퍼티 바인딩, <code>@RequiredArgsConstructor</code>와 충돌 없이 필드 주입.</li>
+        </ul>
+
+        <div class="warn">
+          ⚠️ <strong>운영 서버 조치 필요</strong><br>
+          배포 전 운영 서버에 환경변수 설정: <code>ALADIN_API_KEY=&lt;실제 키&gt;</code>
+        </div>
+
+        <h2>Test plan</h2>
+        <ul class="test-list">
+          <li>알라딘 책 검색 정상 동작 확인 (https 전환 후)</li>
+          <li><code>curl https://booktalker.co.kr/actuator/health</code> → 200 응답 확인</li>
+          <li>prod 배포 후 <code>ALADIN_API_KEY</code> 환경변수 미설정 시 앱 기동 실패 확인 (의도된 동작)</li>
+        </ul>
+
+        <p style="margin-top:16px; font-size:12px; color:#9ca3af;">🤖 Generated with Claude Code</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

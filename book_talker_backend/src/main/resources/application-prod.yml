@@ -40,3 +40,7 @@ base-url:
 app:
   discord:
     webhook-url: ${DISCORD_WEBHOOK_URL:}
+
+aladin:
+  api:
+    key: ${ALADIN_API_KEY}
