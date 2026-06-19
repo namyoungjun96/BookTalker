@@ -15,6 +15,10 @@ java {
 }
 
 jar {
+    enabled = false
+}
+
+bootJar {
     archiveFileName = "book_talker_backend-${System.getenv('GIT_SHA') ?: 'local'}.jar"
 }
 
