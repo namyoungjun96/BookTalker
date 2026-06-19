@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -24,11 +25,14 @@ public class BookService {
     private final RestTemplate restTemplate;
     private final BookRepository bookRepository;
 
-    private final static String ALADIN_BASE_URL = "http://www.aladin.co.kr/ttb/api";
+    @Value("${aladin.api.key}")
+    private String aladinApiKey;
+
+    private final static String ALADIN_BASE_URL = "https://www.aladin.co.kr/ttb/api";
 
     public AladinResponse list(ListRequest request) {
         String url = UriComponentsBuilder.fromUriString(ALADIN_BASE_URL + "/ItemList.aspx")
-                .queryParam("TTBKey", "ttbehdgornltls1927001")
+                .queryParam("TTBKey", aladinApiKey)
                 .queryParam("QueryType", request.queryType().getValue())
                 .queryParam("SearchTarget", "Book")
                 .queryParam("Start", request.start())
@@ -44,7 +48,7 @@ public class BookService {
     public AladinResponse search(SearchRequest request) {
         String url = UriComponentsBuilder
                 .fromUriString(ALADIN_BASE_URL + "/ItemSearch.aspx")
-                .queryParam("TTBKey", "ttbehdgornltls1927001")
+                .queryParam("TTBKey", aladinApiKey)
                 .queryParam("Query", request.query())
                 .queryParam("QueryType", "Title")
                 .queryParam("SearchTarget", "Book")
@@ -79,7 +83,7 @@ public class BookService {
     public AladinResponse searchByIsbn13(String isbn13) {
         String url = UriComponentsBuilder
                 .fromUriString(ALADIN_BASE_URL + "/ItemLookUp.aspx")
-                .queryParam("TTBKey", "ttbehdgornltls1927001")
+                .queryParam("TTBKey", aladinApiKey)
                 .queryParam("ItemIdType", "ISBN13")
                 .queryParam("ItemId", isbn13)
                 .queryParam("Cover", "Small")
