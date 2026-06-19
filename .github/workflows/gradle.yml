@@ -34,6 +34,8 @@ jobs:
     - name: Build with Gradle Wrapper
       working-directory: ./book_talker_backend
       run: ./gradlew build -x test 
+      env:
+        GIT_SHA: ${{ github.sha }}
 
     - name: Send java package with SCP
       uses: appleboy/scp-action@v0.1.7
