@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>가중 평점 랭킹 · 남은 작업 로드맵</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF8F3; --paper-2:#F1EDE3; --panel:#FFFFFFcc;
+    --ink:#1C2733; --ink-soft:#46535F; --muted:#8A93A0;
+    --line:#E4DFD3; --line-2:#D6D0C2;
+    --teal:#0E7C6B; --teal-deep:#0A5447;
+    --amber:#F4CF6A; --amber-soft:#FBEFC7;
+    --red:#BE5440; --red-soft:#F4DED7;
+    --done:#0E7C6B; --now:#C98A2B; --todo:#B7B1A4;
+    --code-bg:#14202B; --code-text:#DCE4EC; --code-key:#7FD3C2; --code-num:#E6B873; --code-com:#5E7081;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'Pretendard','Pretendard Variable',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.7;font-size:16px;letter-spacing:-0.01em;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:0 28px}
+
+  header.top{padding:72px 0 38px;border-bottom:2px solid var(--ink)}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--teal-deep);font-weight:500;display:flex;gap:10px;align-items:center}
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--teal)}
+  h1{font-size:clamp(34px,6vw,52px);line-height:1.1;font-weight:800;margin:20px 0 16px;letter-spacing:-0.03em}
+  h1 .hl{background:linear-gradient(transparent 62%,var(--amber) 62%);padding:0 2px}
+  .lede{font-size:17px;color:var(--ink-soft);max-width:62ch}
+
+  /* current state strip */
+  .state{margin:34px 0 4px;padding:22px 24px;border:1px solid var(--line-2);border-radius:12px;background:var(--panel)}
+  .state .st-h{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .state ul{list-style:none}
+  .state li{position:relative;padding-left:26px;margin:7px 0;font-size:14.5px;color:var(--ink-soft)}
+  .state li::before{content:"✓";position:absolute;left:2px;top:0;color:var(--done);font-weight:700;font-family:var(--mono);font-size:13px}
+  .state li b{color:var(--ink)}
+
+  section{padding:48px 0;border-bottom:1px solid var(--line)}
+  .sec-no{font-family:var(--mono);font-size:13px;color:var(--teal);font-weight:700}
+  h2{font-size:27px;font-weight:800;margin:8px 0 6px;letter-spacing:-0.025em}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:8px}
+  p{margin:12px 0;color:var(--ink-soft)}
+  p strong{color:var(--ink);font-weight:700}
+  code.inl{font-family:var(--mono);font-size:0.88em;background:var(--paper-2);border:1px solid var(--line);padding:1px 6px;border-radius:5px;color:var(--teal-deep)}
+  .hl{background:linear-gradient(transparent 60%,var(--amber-soft) 60%);padding:0 1px}
+
+  /* roadmap steps */
+  .steps{margin-top:14px}
+  .step{position:relative;padding:0 0 8px 56px;margin-bottom:30px}
+  .step::before{content:attr(data-n);position:absolute;left:0;top:0;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:15px;background:var(--paper-2);color:var(--teal-deep);border:2px solid var(--teal)}
+  .step::after{content:"";position:absolute;left:18px;top:42px;bottom:-30px;width:2px;background:var(--line-2)}
+  .step:last-child::after{display:none}
+  .step.next::before{background:var(--teal);color:#fff;box-shadow:0 0 0 5px var(--amber-soft)}
+  .step .badge{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-bottom:8px}
+  .step.next .badge{background:var(--amber);color:#5a4710}
+  .step .badge.layer{background:var(--paper-2);color:var(--muted);border:1px solid var(--line-2)}
+  .step h3{font-size:19px;font-weight:800;margin:2px 0 8px;letter-spacing:-0.02em}
+  .step .meta-row{display:grid;grid-template-columns:64px 1fr;gap:5px 14px;margin:8px 0;align-items:start}
+  .step .ml{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;padding-top:3px}
+  .step .mv{font-size:14.5px;color:var(--ink-soft)}
+  .step .mv b{color:var(--ink)}
+
+  pre{background:var(--code-bg);border-radius:10px;padding:16px 18px;margin:14px 0;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;color:var(--code-text)}
+  pre .k{color:var(--code-key)} pre .n{color:var(--code-num)} pre .c{color:var(--code-com)}
+
+  .note{border-radius:10px;padding:14px 17px;margin:14px 0;font-size:14px;display:flex;gap:12px;align-items:flex-start}
+  .note .tag{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;padding:3px 8px;border-radius:5px;margin-top:1px}
+  .note.tip{background:var(--amber-soft);color:#6f5a1c}
+  .note.tip .tag{background:var(--amber);color:#5a4710}
+  .note.warn{background:var(--red-soft);color:#7a3526}
+  .note.warn .tag{background:var(--red);color:#fff}
+
+  .horizon{list-style:none;margin-top:10px}
+  .horizon li{position:relative;padding:13px 0 13px 30px;border-bottom:1px solid var(--line);color:var(--ink-soft);font-size:15px}
+  .horizon li::before{content:"";position:absolute;left:4px;top:19px;width:8px;height:8px;border:2px solid var(--todo);border-radius:50%}
+  .horizon li b{color:var(--ink)}
+  .horizon .micro{font-family:var(--mono);font-size:11.5px;color:var(--muted);display:block;margin-top:2px}
+
+  .principle{border-left:3px solid var(--amber);padding:4px 0 4px 18px;margin:16px 0;font-size:15.5px;color:var(--ink);font-weight:500}
+
+  footer{padding:40px 0 64px;color:var(--muted);font-family:var(--mono);font-size:12.5px;text-align:center}
+
+  @media(max-width:600px){
+    .step .meta-row{grid-template-columns:1fr}
+    .step .ml{padding-top:0}
+    body{font-size:15.5px}
+  }
+  @media(prefers-reduced-motion:no-preference){
+    section,header.top{animation:fade .6s ease both}
+    @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">BookTalker · 결정 기록 02</div>
+  <h1>가중 평점 랭킹<br><span class="hl">남은 작업</span> 로드맵</h1>
+  <p class="lede">계산 로직(가중 평점 · C)은 단위 테스트까지 끝냈다. 이제 그 계산을 실제 배치 흐름에 엮고, 쿼리·엔티티를 맞추고, 흐름 전체를 테스트하는 일이 남았다. 순서대로 무엇을·왜·어떻게 검증하는지 정리했다.</p>
+
+  <div class="state">
+    <div class="st-h">현재 상태 · 완료</div>
+    <ul>
+      <li><b>calculateWeightedScore</b> — 책 한 권 가중 평점 · 단위 테스트 2개(정상 / shrinkage)</li>
+      <li><b>calculateGlobalAverage</b> — C(리뷰 단위 전체 평균) · 단위 테스트 2개(정상 / 빈 리스트 예외)</li>
+      <li><b>BookRatingStats</b> — 집계 재료 record(불변)</li>
+      <li>방향 확정 — 집계는 DB, 계산·정렬·Top10은 배치에서 / Rank엔 avgRating(표시) + weightedScore(정렬)</li>
+    </ul>
+  </div>
+</header>
+
+<section>
+  <div class="sec-no">01</div>
+  <h2>남은 작업 순서</h2>
+  <p class="sec-sub">아래로 갈수록 기존 코드에 손이 커진다 — 테스트가 안전망이 되어주는 순서</p>
+
+  <div class="steps">
+
+    <div class="step next" data-n="1">
+      <span class="badge">다음 차례</span>
+      <h3>Rank 엔티티에 weightedScore 컬럼 추가</h3>
+      <div class="meta-row"><div class="ml">무엇</div><div class="mv"><code class="inl">avgRating</code>(단순 평균, 화면 표시용)은 그대로 두고 <code class="inl">weightedScore</code>(가중 평점, 정렬용)를 추가.</div></div>
+      <div class="meta-row"><div class="ml">왜</div><div class="mv">사용자에겐 익숙한 단순 평균을 보여주고 순위만 가중 평점으로 매기기로 했으니 둘 다 저장해야 한다.</div></div>
+      <div class="meta-row"><div class="ml">검증</div><div class="mv">엔티티 변경만이라 별도 테스트는 작음. 마이그레이션/컬럼 추가 확인 정도.</div></div>
+    </div>
+
+    <div class="step" data-n="2">
+      <span class="badge layer">DB 레이어</span>
+      <h3>집계 쿼리: Object[] → BookRatingStats 생성자 표현식</h3>
+      <div class="meta-row"><div class="ml">무엇</div><div class="mv"><code class="inl">SELECT new ...BookRatingStats(...)</code> 형태로 바꿔 의미 있는 객체로 받기. <span class="hl">정렬(ORDER BY AVG)은 제거</span> — 어차피 자바에서 가중 평점으로 다시 정렬.</div></div>
+      <div class="meta-row"><div class="ml">주의</div><div class="mv">생성자 파라미터 순서를 SELECT 순서와 정확히 맞춰야 함. 패키지 경로 풀로 적기. 회독1·HAVING COUNT>=3 조건은 그대로.</div></div>
+      <div class="meta-row"><div class="ml">검증</div><div class="mv"><code class="inl">@DataJpaTest</code> — 실제 데이터 넣고 쿼리 실행해서 <b>1회독만/리뷰 3개 경계/장르 분리</b>가 진짜 맞는지. (Mockito로는 못 잡는다 — 쿼리 자체가 검증 대상)</div></div>
+    </div>
+
+    <div class="step" data-n="3">
+      <span class="badge layer">조립</span>
+      <h3>배치(aggregateRank)에서 전체 흐름 엮기</h3>
+      <pre><span class="c">집계 쿼리 → List&lt;BookRatingStats&gt;</span>
+<span class="k">if</span> (비어있으면) { 로그 + <span class="k">return</span>; }   <span class="c">// 정상 종료</span>
+C = calculateGlobalAverage(목록)
+각 책: weightedScore = calculateWeightedScore(v, R, m, C)
+가중 평점 내림차순 정렬 → 장르별 Top10 → Rank 변환 → 저장</pre>
+      <div class="meta-row"><div class="ml">왜</div><div class="mv">계산기 두 개는 독립적으로 테스트했고, 여기서 비로소 "재료 → 완제품(Rank)" 변환과 조율이 일어난다. Top10 자르기도 여기(집계 시점)로.</div></div>
+      <div class="meta-row"><div class="ml">검증</div><div class="mv">배치 흐름 테스트 — <b>Top10 컷, 가중 평점 정렬, 장르 안 섞임, 빈 결과면 저장 안 함</b>. (행동 목록의 남은 항목 대부분이 여기)</div></div>
+    </div>
+
+    <div class="step" data-n="4">
+      <span class="badge layer">조회 정리</span>
+      <h3>getRank를 순수 읽기로 단순화</h3>
+      <div class="meta-row"><div class="ml">무엇</div><div class="mv">조회 시점의 <code class="inl">findTop10By...</code> 계산 제거. 테이블에 이미 장르별 10개씩만 들어 있으니 장르 필터해서 weightedScore 순으로 꺼내기만.</div></div>
+      <div class="meta-row"><div class="ml">왜</div><div class="mv">계산 0, 자르기 0 — Rank 테이블을 캐시로 둔 취지 회복(DR-01).</div></div>
+    </div>
+
+  </div>
+
+  <div class="note tip"><span class="tag">순서의 의미</span><div>위에서 아래로 갈수록 기존 코드 변경 폭이 커진다. 그래도 <span class="hl">각 단계마다 테스트가 먼저/함께 서기 때문에</span> "옮겨도 결과 같다"가 보장된 채로 안전하게 진행된다. 이게 테스트를 안전망 삼은 리팩토링.</div></div>
+</section>
+
+<section>
+  <div class="sec-no">02</div>
+  <h2>이번에 새로 만날 것들</h2>
+  <p class="sec-sub">남은 단계에서 처음 부딪힐 개념 — 미리 알고 가면 덜 막힌다</p>
+  <p><strong>JPQL 생성자 표현식</strong> — 쿼리 결과를 DTO 생성자로 바로 매핑. GROUP BY·AVG·COUNT 집계엔 인터페이스 Projection보다 이게 잘 맞는다. 잔손(경로·순서)이 있어 처음엔 헷갈릴 수 있음.</p>
+  <p><strong>@DataJpaTest</strong> — 단위 테스트와 달리 실제 DB(보통 인메모리 또는 테스트 컨테이너)에 데이터를 넣고 쿼리를 돌린다. given이 "객체 몇 개"가 아니라 "DB에 행 삽입"이라 손이 더 간다. 쿼리에 든 로직(회독수·필터)은 이걸로만 검증된다.</p>
+  <p><strong>배치 흐름 테스트</strong> — 계산기 단위 테스트와 달리, 집계→계산→정렬→저장이 엮인 걸 본다. 어디까지 실제로 돌리고 어디를 가짜로 둘지(예: 쿼리 결과를 미리 준 목록으로 대체) 판단이 필요하다.</p>
+</section>
+
+<section>
+  <div class="sec-no">03</div>
+  <h2>그 너머 (서두르지 않기)</h2>
+  <p class="sec-sub">랭킹이 일단락된 뒤, 데이터·피드백을 보고 결정할 것들</p>
+  <ul class="horizon">
+    <li><b>Rank 도메인 분리</b> — review 패키지에서 rank로 독립 검토<span class="micro">방향은 분리가 맞음(다른 생명주기·변경 이유). 집계 쿼리 소속이 회색지대라 차분히 결정</span></li>
+    <li><b>변수·이름·예외 메시지 다듬기</b><span class="micro">테스트 이름은 "상황 + 기대결과"까지 / 예외엔 이유 메시지 / 매직 넘버 상수화</span></li>
+    <li><b>캐싱(Caffeine) 도입 검토</b><span class="micro">사용자·트래픽 데이터 확인 후. 지금은 과함</span></li>
+    <li><b>장르별 C 재검토</b><span class="micro">데이터 쌓이고 장르별 평점 분포가 갈리면</span></li>
+  </ul>
+
+  <div class="principle">데이터가 적은 지금, 가중 평점의 실효는 거의 없다. 하지만 이건 "지금 더 나은 랭킹"이 아니라 "데이터가 쌓였을 때 올바르게 동작하도록 한 설계"다. 불확실한 미래 대비는 YAGNI지만, 데이터가 쌓이는 건 확정된 방향이라 이건 정당한 대비다.</div>
+
+  <div class="note warn"><span class="tag">우선순위</span><div>결정의 무게를 결정의 영향에 맞춘다. 영향 큰 결정(가중 평점 도입, C 정의)엔 시간을 쓰고, 영향이 0에 수렴하는 결정(static이냐 빈이냐 같은)엔 빨리 고르고 넘어간다 — 그것도 엔지니어링 능력.</div></div>
+</section>
+
+<footer>
+  BookTalker · 결정 기록 02 / 02 &nbsp;·&nbsp; 가중 평점 랭킹 · 남은 작업 로드맵
+</footer>
+
+</div>
+</body>
+</html>

@@ -14,8 +14,9 @@ public class Rank {
     @Id
     private String isbn13;
     private String genre;
-    private Double avgRating;
-    private Integer reviewCount;
+    private double avgRating;
+    private double weightedScore;
+    private int reviewCount;
     private String title;
     private String cover;
     private LocalDateTime updatedAt;
