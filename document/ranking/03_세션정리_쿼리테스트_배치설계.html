@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>가중 평점 랭킹 · 세션 정리 (쿼리·테스트·배치 설계)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF8F3; --paper-2:#F1EDE3; --panel:#FFFFFFcc;
+    --ink:#1C2733; --ink-soft:#46535F; --muted:#8A93A0;
+    --line:#E4DFD3; --line-2:#D6D0C2;
+    --teal:#0E7C6B; --teal-deep:#0A5447;
+    --amber:#F4CF6A; --amber-soft:#FBEFC7;
+    --red:#BE5440; --red-soft:#F4DED7;
+    --done:#0E7C6B; --todo:#B7B1A4;
+    --code-bg:#14202B; --code-text:#DCE4EC; --code-key:#7FD3C2; --code-num:#E6B873; --code-com:#5E7081; --code-str:#C6E29A;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'Pretendard','Pretendard Variable',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.7;font-size:16px;letter-spacing:-0.01em;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:0 28px}
+
+  header.top{padding:72px 0 38px;border-bottom:2px solid var(--ink)}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--teal-deep);font-weight:500;display:flex;gap:10px;align-items:center}
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--teal)}
+  h1{font-size:clamp(32px,5.6vw,50px);line-height:1.1;font-weight:800;margin:20px 0 16px;letter-spacing:-0.03em}
+  h1 .hl{background:linear-gradient(transparent 62%,var(--amber) 62%);padding:0 2px}
+  .lede{font-size:17px;color:var(--ink-soft);max-width:62ch}
+
+  .state{margin:34px 0 4px;padding:22px 24px;border:1px solid var(--line-2);border-radius:12px;background:var(--panel)}
+  .state .st-h{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .state ul{list-style:none}
+  .state li{position:relative;padding-left:26px;margin:8px 0;font-size:14.5px;color:var(--ink-soft)}
+  .state li::before{content:"✓";position:absolute;left:2px;top:0;color:var(--done);font-weight:700;font-family:var(--mono);font-size:13px}
+  .state li b{color:var(--ink)}
+
+  section{padding:50px 0;border-bottom:1px solid var(--line)}
+  .sec-no{font-family:var(--mono);font-size:13px;color:var(--teal);font-weight:700}
+  h2{font-size:27px;font-weight:800;margin:8px 0 6px;letter-spacing:-0.025em}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px}
+  h3{font-size:18px;font-weight:700;margin:26px 0 8px;letter-spacing:-0.02em}
+  p{margin:11px 0;color:var(--ink-soft)}
+  p strong,li strong{color:var(--ink);font-weight:700}
+  .ink{color:var(--ink)}
+  code.inl{font-family:var(--mono);font-size:0.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 6px;border-radius:5px;color:var(--teal-deep)}
+  .hl{background:linear-gradient(transparent 60%,var(--amber-soft) 60%);padding:0 1px}
+
+  pre{background:var(--code-bg);border-radius:10px;padding:16px 18px;margin:14px 0;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.62;color:var(--code-text)}
+  pre .k{color:var(--code-key)} pre .n{color:var(--code-num)} pre .c{color:var(--code-com)} pre .s{color:var(--code-str)}
+
+  /* learning notes */
+  .ln{border:1px solid var(--line-2);border-left:4px solid var(--teal);border-radius:10px;padding:18px 22px;margin:16px 0;background:var(--panel)}
+  .ln .lt{font-family:var(--mono);font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:6px}
+  .ln h3{margin:2px 0 8px;font-size:17px}
+  .ln p{margin:7px 0;font-size:14.5px}
+
+  .note{border-radius:10px;padding:14px 17px;margin:15px 0;font-size:14px;display:flex;gap:12px;align-items:flex-start}
+  .note .tag{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;padding:3px 8px;border-radius:5px;margin-top:1px}
+  .note.warn{background:var(--red-soft);color:#7a3526}
+  .note.warn .tag{background:var(--red);color:#fff}
+  .note.tip{background:var(--amber-soft);color:#6f5a1c}
+  .note.tip .tag{background:var(--amber);color:#5a4710}
+
+  /* batch flow */
+  .flow{margin:18px 0;counter-reset:step}
+  .fstep{position:relative;padding:12px 0 12px 50px;border-bottom:1px solid var(--line)}
+  .fstep::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:11px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:13px;background:var(--paper-2);color:var(--teal-deep);border:2px solid var(--teal)}
+  .fstep.guard::before{border-color:var(--red);color:var(--red);background:var(--red-soft)}
+  .fstep .ft{font-weight:700;color:var(--ink);font-size:15.5px}
+  .fstep .fd{font-size:13.5px;color:var(--ink-soft);margin-top:1px}
+  .fstep .fwhere{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:3px}
+
+  /* problem cards */
+  .prob{border:1px solid var(--line-2);border-radius:10px;padding:18px 22px;margin:14px 0;background:var(--panel)}
+  .prob .pt{font-family:var(--mono);font-size:13.5px;font-weight:700;color:var(--ink)}
+  .prob .pstat{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle}
+  .prob .pstat.dead{background:var(--paper-2);color:var(--muted);border:1px solid var(--line-2)}
+  .prob .pstat.live{background:var(--amber-soft);color:#6f5a1c}
+  .prob ul{list-style:none;margin:10px 0 0}
+  .prob li{position:relative;padding-left:20px;margin:6px 0;font-size:14px;color:var(--ink-soft)}
+  .prob li::before{content:"!";position:absolute;left:4px;top:0;color:var(--red);font-weight:700;font-family:var(--mono)}
+
+  /* test scenario map */
+  .tmap{display:grid;grid-template-columns:1fr;gap:14px;margin:16px 0}
+  .tcol{border:1px solid var(--line-2);border-radius:10px;padding:16px 20px;background:var(--panel)}
+  .tcol .tc-h{font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--teal-deep);letter-spacing:0.04em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .tcol .tc-h .type{font-size:10.5px;color:var(--muted);font-weight:500;background:var(--paper-2);padding:2px 8px;border-radius:20px;border:1px solid var(--line)}
+  .tcol ul{list-style:none}
+  .tcol li{position:relative;padding:6px 0 6px 26px;font-size:14px;color:var(--ink-soft)}
+  .tcol li::before{position:absolute;left:2px;top:6px;font-family:var(--mono);font-size:12px;font-weight:700}
+  .tcol li.done::before{content:"✓";color:var(--done)}
+  .tcol li.todo::before{content:"○";color:var(--todo)}
+  .tcol li b{color:var(--ink)}
+
+  .principle{border-left:3px solid var(--amber);padding:4px 0 4px 18px;margin:16px 0;font-size:15.5px;color:var(--ink);font-weight:500}
+
+  footer{padding:40px 0 64px;color:var(--muted);font-family:var(--mono);font-size:12.5px;text-align:center}
+
+  @media(max-width:600px){body{font-size:15.5px}}
+  @media(prefers-reduced-motion:no-preference){
+    section,header.top{animation:fade .6s ease both}
+    @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">BookTalker · 결정 기록 03</div>
+  <h1>쿼리 · 테스트 · <span class="hl">배치 흐름</span> 설계</h1>
+  <p class="lede">이번 세션엔 집계 쿼리를 의미 있는 객체로 바꾸고, 첫 <code class="inl">@DataJpaTest</code>로 실제 DB에서 쿼리를 검증했고, 가중 평점 배치의 전체 흐름을 확정했다. 새로 부딪힌 것과 다음에 이어갈 지점을 정리한다.</p>
+
+  <div class="state">
+    <div class="st-h">이번 세션 · 완료</div>
+    <ul>
+      <li><b>Rank에 weightedScore 컬럼</b> 추가 + 타입 일관성 정리(double/int) · prod는 배포 전 ALTER 필요</li>
+      <li><b>집계 쿼리 Object[] → BookRatingStats</b> 생성자 표현식 + <code class="inl">CAST(COUNT(r) AS Integer)</code></li>
+      <li><b>첫 @DataJpaTest 세팅</b> — 실제 PostgreSQL(도커)로, H2 대체 끔</li>
+      <li><b>쿼리 테스트 2개</b> — 리뷰 3개 집계+평균 검증 / 2개 제외 (경계 양쪽)</li>
+      <li><b>배치 전체 흐름 확정</b> (집계 → C → 가중평점 → 정렬 → Top10 → 저장)</li>
+      <li><b>조회단 문제 발견</b> — getRank(미사용) · getRankByGenre(조회 시점 계산) 둘 다 정리 대상</li>
+    </ul>
+  </div>
+</header>
+
+<!-- 1 -->
+<section>
+  <div class="sec-no">01</div>
+  <h2>새로 부딪힌 것 · 배운 것</h2>
+  <p class="sec-sub">@DataJpaTest와 생성자 표현식에서 실제로 막혔던 지점들</p>
+
+  <div class="ln">
+    <div class="lt">@DataJpaTest란</div>
+    <h3>필요한 만큼만 스프링을 띄운다</h3>
+    <p>순수 계산은 컨텍스트 없이 단위 테스트. 하지만 <span class="hl">쿼리 자체가 검증 대상</span>일 땐(회독1·리뷰3개 필터가 진짜 거르나) 실제 DB에 데이터를 넣고 쿼리를 돌려야 한다 — Mockito로는 못 잡는다.</p>
+    <p>@DataJpaTest는 JPA 빈만 띄우고(가벼움), 각 테스트를 트랜잭션으로 감싸 <strong>끝나면 자동 롤백</strong> → 테스트끼리 데이터가 안 섞인다. 여기선 <code class="inl">@Autowired</code>가 다시 맞다 — Repository는 스프링/JPA가 조립해줘야 동작하니까.</p>
+  </div>
+
+  <div class="ln">
+    <div class="lt">테스트 DB 선택</div>
+    <h3>H2 대신 진짜 PostgreSQL</h3>
+    <p>@DataJpaTest는 기본적으로 H2로 갈아끼우려 한다. 하지만 <code class="inl">CAST</code>·생성자 표현식 매핑은 <strong>방언 의존적</strong>이라, H2에서 통과해도 운영 PostgreSQL에선 다를 수 있다. <code class="inl">@AutoConfigureTestDatabase(replace = NONE)</code>로 운영과 같은 DB를 쓴다.</p>
+  </div>
+
+  <div class="ln">
+    <div class="lt">생성자 표현식</div>
+    <h3>SELECT new {풀경로} + COUNT의 타입 함정</h3>
+    <pre><span class="k">SELECT new</span> com.example...dto.BookRatingStats(
+  r.book.isbn13, r.book.genre, r.book.title, r.book.cover,
+  AVG(r.rating), <span class="n">CAST(COUNT(r) AS Integer)</span>)
+<span class="k">FROM</span> Review r <span class="k">WHERE</span> r.readingCount = <span class="n">1</span>
+<span class="k">GROUP BY</span> ... <span class="k">HAVING</span> COUNT(r) >= <span class="n">3</span></pre>
+    <p><code class="inl">new</code>와 <strong>풀 패키지 경로</strong>가 있어야 JPA가 객체로 만든다. 그리고 <span class="hl">COUNT는 Long을 반환</span>하는데 record의 reviewCount는 int라 "Missing constructor" 에러 → <code class="inl">CAST(COUNT(r) AS Integer)</code>로 맞췄다. (객체는 도메인이 원하는 int로 두고, 변환은 쿼리에서 — DB 반환 타입에 객체가 끌려가지 않는다.)</p>
+  </div>
+
+  <div class="note warn"><span class="tag">잔실수 모음</span><div>
+    JPQL 문자열 이어붙일 때 줄 끝 <strong>공백</strong> 빠지면 <code class="inl">COUNT(r))FROM</code>으로 붙어 문법 에러 · <code class="inl">@GeneratedValue</code> id는 직접 넣지 말고 DB가 채우게 · <code class="inl">hasSize()</code>는 컬렉션용이라 <code class="inl">result.size()</code>(숫자)엔 못 씀 → <code class="inl">assertThat(result).hasSize(1)</code> 또는 <code class="inl">.size()).isEqualTo(1)</code>
+  </div></div>
+
+  <div class="ln">
+    <div class="lt">쓰기 지연</div>
+    <h3>save 후 em.flush()</h3>
+    <p>JPA는 <code class="inl">save</code>해도 INSERT를 미룰 수 있다(쓰기 지연). 그 상태로 쿼리를 날리면 데이터를 못 봐 결과가 빈다. <code class="inl">em.flush()</code>로 DB에 강제 반영, <code class="inl">em.clear()</code>로 캐시를 비워 쿼리가 진짜 DB를 읽게 한다. "어쩌다 통과"가 아니라 <span class="hl">통제된 통과</span>로.</p>
+  </div>
+
+  <div class="ln">
+    <div class="lt">검증 강도</div>
+    <h3>size만 보지 말고 값까지</h3>
+    <p><code class="inl">hasSize(1)</code>만 보면 리뷰 수가 틀려도, 평균이 깨져도, CAST가 값을 망쳐도 통과한다. <strong>"동작했나"가 아니라 "올바른 결과인가"</strong>를 봐야 안전망이 된다 → <code class="inl">reviewCount()==3</code>, <code class="inl">avgRating().isCloseTo(4.0)</code>, 그리고 제외 케이스는 isbn으로 "남은 게 진짜 그 책"인지 직접 확인.</p>
+  </div>
+
+  <div class="ln">
+    <div class="lt">정렬의 성질</div>
+    <h3>전체 정렬 → 그룹핑해도 장르 내 순서는 보존</h3>
+    <p>정렬은 "전체 등수"가 아니라 <strong>상대 비교</strong>다. 소설 A가 B보다 높으면, 전체에서 정렬하든 소설끼리 정렬하든 A가 앞인 건 안 변한다. 중간에 다른 장르가 빠져도 등수만 당겨질 뿐 순서는 그대로. 그래서 <span class="hl">전체 정렬 → 장르 그룹핑 → 각 10개</span>(방식 A)로 충분하다 — 정렬 1회, 기존 패턴 재사용. 단, <strong>정렬이 그룹핑보다 반드시 먼저</strong>여야 "상위"가 보장된다.</p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section>
+  <div class="sec-no">02</div>
+  <h2>확정된 배치 흐름</h2>
+  <p class="sec-sub">aggregateRank — 계산은 전부 새벽 4시에, 조회는 순수 읽기로</p>
+
+  <div class="flow">
+    <div class="fstep"><div class="ft">집계 쿼리 실행</div><div class="fd">1회독·리뷰3개 이상인 책의 평균·개수 → List&lt;BookRatingStats&gt;</div><div class="fwhere">DB · 쿼리</div></div>
+    <div class="fstep guard"><div class="ft">비어있으면 → 로그 + 종료</div><div class="fd">데이터 없음은 정상 상황. C 계산도 안 부른다 (0 나누기/NaN 원천 차단)</div><div class="fwhere">가드</div></div>
+    <div class="fstep"><div class="ft">C(전체 평균) 계산</div><div class="fd">calculateGlobalAverage · 리뷰 단위 가중평균 · 한 번만</div><div class="fwhere">자바 · 계산기</div></div>
+    <div class="fstep"><div class="ft">각 책 가중 평점 계산</div><div class="fd">calculateWeightedScore(v, R, m, C)</div><div class="fwhere">자바 · 계산기</div></div>
+    <div class="fstep"><div class="ft">가중 평점 내림차순 정렬</div><div class="fd">전체를 한 번 정렬 (그룹핑보다 반드시 먼저)</div><div class="fwhere">자바</div></div>
+    <div class="fstep"><div class="ft">장르별 Top10 추리기</div><div class="fd">groupingBy(genre) → 각 그룹 앞 10개. 조회가 아니라 여기서 자른다</div><div class="fwhere">자바</div></div>
+    <div class="fstep"><div class="ft">Rank로 변환 → deleteAll → saveAll</div><div class="fd">avgRating(표시용) + weightedScore(정렬용) 함께 저장</div><div class="fwhere">DB · 저장</div></div>
+  </div>
+
+  <div class="note tip"><span class="tag">4·5 단계 구조</span><div>
+    가중 평점 계산과 Rank 변환은 <strong>다른 단계</strong>로 끊는다(섞으면 책임이 엉켜 테스트가 못 가른다). 계산·정렬은 <strong>재료(BookRatingStats) 단계에서 끝내고</strong>, Rank는 마지막에 변환 — "재료 ≠ 완제품" 원칙. 정렬하려면 점수를 들고 있어야 하니 <span class="hl">weightedScore를 일단 BookRatingStats에 추가</span>. 재료에 가공물 섞이는 게 거슬리면 나중에 ScoredBook 별도 객체로 분리(지금은 YAGNI).
+  </div></div>
+</section>
+
+<!-- 3 -->
+<section>
+  <div class="sec-no">03</div>
+  <h2>발견한 정리 대상 · 조회단</h2>
+  <p class="sec-sub">"안 쓰는 줄 알았더니" — 둘 다 조회 시점에 계산하는 같은 병</p>
+
+  <div class="prob">
+    <div class="pt">getRank(genre)<span class="pstat dead">미사용</span></div>
+    <ul>
+      <li>엔드포인트·호출처 모두 없음 — 죽은 코드</li>
+      <li>정렬이 <code class="inl">AvgRating</code> 기준 (가중 평점 아님)</li>
+      <li><code class="inl">findTop10By...</code> — 조회 시점에 Top10 자름</li>
+    </ul>
+  </div>
+
+  <div class="prob">
+    <div class="pt">getRankByGenre()<span class="pstat live">실제 사용</span></div>
+    <ul>
+      <li><code class="inl">findAllGroupable()</code>로 전체를 끌어와 stream <code class="inl">groupingBy → limit(10)</code> — 매 조회마다 그룹핑·자르기 곡예</li>
+      <li>정렬 보장이 불분명 — 정렬 안 된 채 limit이면 "상위 10"이 아니라 "아무 10"</li>
+    </ul>
+  </div>
+
+  <p>두 메서드 다 <span class="hl">Rank 테이블을 캐시로 둔 취지를 무너뜨린다.</span> 배치(다음 단계)가 정렬·Top10을 미리 끝내 저장하면, 조회는 "장르 필터 + weightedScore 순 읽기"로 단순해지고 이 곡예가 사라진다.</p>
+
+  <div class="note warn"><span class="tag">순서</span><div>조회단 정리는 <strong>배치 구현 다음</strong>. 배치가 weightedScore를 채워줘야 그 기준으로 정렬·검증할 수 있다. 지금 조회부터 고치면 정렬할 값이 없다.</div></div>
+</section>
+
+<!-- 4 -->
+<section style="border-bottom:none">
+  <div class="sec-no">04</div>
+  <h2>다음에 할 일 · 테스트 시나리오 맵</h2>
+  <p class="sec-sub">행동 목록을 "어디서 검증할지"로 분류하면 그게 곧 작업 순서</p>
+
+  <div class="tmap">
+    <div class="tcol">
+      <div class="tc-h">쿼리 단 <span class="type">@DataJpaTest</span></div>
+      <ul>
+        <li class="done"><b>리뷰 3개는 집계 + 평균 검증</b></li>
+        <li class="done"><b>리뷰 2개는 제외</b> (경계 반대쪽)</li>
+        <li class="todo">1회독만 집계 / 2회독 이상 제외</li>
+        <li class="todo">장르가 다르면 다른 그룹으로 분리</li>
+      </ul>
+    </div>
+    <div class="tcol">
+      <div class="tc-h">계산 단 <span class="type">단위 테스트</span></div>
+      <ul>
+        <li class="done"><b>가중 평점 정상 계산</b></li>
+        <li class="done"><b>리뷰 적으면 전체평균쪽으로</b> (shrinkage)</li>
+        <li class="done"><b>C 정상 계산</b> / <b>빈 리스트면 예외</b></li>
+      </ul>
+    </div>
+    <div class="tcol">
+      <div class="tc-h">배치 단 <span class="type">새로 나올 시나리오</span></div>
+      <ul>
+        <li class="todo">결과가 가중 평점 내림차순 정렬된다</li>
+        <li class="todo">한 장르에 11개여도 상위 10개만 저장</li>
+        <li class="todo">빈 결과면 저장하지 않고 종료</li>
+        <li class="todo">저장된 Rank의 weightedScore가 맞다</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="principle">엣지케이스는 무한하지 않다. 핵심은 경계 — 리뷰 3개/2개, Top10의 10개/11개, 빈 리스트. 경계만 양쪽으로 찌르면 대부분 잡힌다. "모든 경우의 수"가 아니라 "버그가 숨는 경계"만 골라 친다.</div>
+
+  <div class="note tip"><span class="tag">다음 시작점</span><div>다음 세션은 <strong>배치 구현</strong>부터. 확정된 흐름 1~7을 코드로 옮기고, 위 "배치 단" 시나리오를 테스트로. 결정 기록 01의 행동 목록 체크리스트를 함께 펴면 백지에서 시작하지 않는다.</div></div>
+</section>
+
+<footer>
+  BookTalker · 결정 기록 03 &nbsp;·&nbsp; 쿼리 · 테스트 · 배치 흐름 설계
+</footer>
+
+</div>
+</body>
+</html>

@@ -38,9 +38,9 @@ public class WeightedScoreCalculatorTest {
     @Test
     void 리뷰_단위_가중평균_정상_계산() {
         List<BookRatingStats> bookRatingStats = List.of(
-            new BookRatingStats(3, 100),
-            new BookRatingStats(5, 5),
-            new BookRatingStats(5, 5)
+            stats(3, 100),
+            stats(5, 5),
+            stats(5, 5)
         );
 
         double cScore = WeightedScoreCalculator.calculateGlobalAverage(bookRatingStats);
@@ -54,5 +54,9 @@ public class WeightedScoreCalculatorTest {
         assertThatThrownBy(() -> 
             WeightedScoreCalculator.calculateGlobalAverage(bookRatingStats)
         ).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    private BookRatingStats stats(double avg, int count) {
+        return new BookRatingStats("dummy", "dummy", "dummy", "dummy", avg, count);
     }
 }

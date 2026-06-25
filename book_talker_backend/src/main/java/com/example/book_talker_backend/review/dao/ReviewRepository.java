@@ -2,6 +2,8 @@ package com.example.book_talker_backend.review.dao;
 
 
 import com.example.book_talker_backend.review.entity.Review;
+import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,12 +27,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Page<Review> findPublicReviews(@Param("isbn13") String isbn13, Pageable pageable);
 
     // 집계: 1회독 리뷰만 대상, 3개 이상인 책
-    @Query("SELECT r.book.isbn13, r.book.genre, r.book.title, r.book.cover, " +
-           "AVG(r.rating), COUNT(r) " +
+    @Query("SELECT new com.example.book_talker_backend.review.entity.dto.BookRatingStats(" +
+           "r.book.isbn13, r.book.genre, r.book.title, r.book.cover, " +
+           "AVG(r.rating), CAST(COUNT(r) AS Integer)) " +
            "FROM Review r " +
            "WHERE r.readingCount = 1 " +
            "GROUP BY r.book.isbn13, r.book.genre, r.book.title, r.book.cover " +
-           "HAVING COUNT(r) >= 3 " +
-           "ORDER BY AVG(r.rating) DESC, COUNT(r) DESC")
-    List<Object[]> aggregateRankData();
+           "HAVING COUNT(r) >= 3 ")
+    List<BookRatingStats> aggregateRankData();
 }

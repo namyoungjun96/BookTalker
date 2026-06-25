@@ -3,6 +3,8 @@ package com.example.book_talker_backend.review.service;
 import com.example.book_talker_backend.review.dao.RankRepository;
 import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Rank;
+import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,18 +26,18 @@ public class RankService {
     @Transactional
     @Scheduled(cron = "0 0 4 * * ?")
     public void aggregateRank() {
-        List<Object[]> rawData = reviewRepository.aggregateRankData();
+        List<BookRatingStats> rawData = reviewRepository.aggregateRankData();
 
         rankRepository.deleteAll();
 
         List<Rank> ranks = rawData.stream().map(row -> {
             Rank rank = new Rank();
-            rank.setIsbn13((String) row[0]);
-            rank.setGenre((String) row[1]);
-            rank.setTitle((String) row[2]);
-            rank.setCover((String) row[3]);
-            rank.setAvgRating((Double) row[4]);
-            rank.setReviewCount(((Long) row[5]).intValue());
+            rank.setIsbn13(row.isbn13());
+            rank.setGenre(row.genre());
+            rank.setTitle(row.title());
+            rank.setCover(row.cover());
+            rank.setAvgRating(row.avgRating());
+            rank.setReviewCount(row.reviewCount());
             rank.setUpdatedAt(LocalDateTime.now());
             return rank;
         }).collect(Collectors.toList());
