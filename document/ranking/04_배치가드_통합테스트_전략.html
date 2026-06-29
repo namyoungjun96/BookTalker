@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>가중 평점 랭킹 · 배치 가드와 통합 테스트 전략</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF8F3; --paper-2:#F1EDE3; --panel:#FFFFFFcc;
+    --ink:#1C2733; --ink-soft:#46535F; --muted:#8A93A0;
+    --line:#E4DFD3; --line-2:#D6D0C2;
+    --teal:#0E7C6B; --teal-deep:#0A5447;
+    --amber:#F4CF6A; --amber-soft:#FBEFC7;
+    --red:#BE5440; --red-soft:#F4DED7;
+    --done:#0E7C6B; --todo:#B7B1A4;
+    --code-bg:#14202B; --code-text:#DCE4EC; --code-key:#7FD3C2; --code-num:#E6B873; --code-com:#5E7081; --code-str:#C6E29A;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'Pretendard','Pretendard Variable',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.7;font-size:16px;letter-spacing:-0.01em;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:0 28px}
+
+  header.top{padding:72px 0 38px;border-bottom:2px solid var(--ink)}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--teal-deep);font-weight:500;display:flex;gap:10px;align-items:center}
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--teal)}
+  h1{font-size:clamp(32px,5.4vw,48px);line-height:1.12;font-weight:800;margin:20px 0 16px;letter-spacing:-0.03em}
+  h1 .hl{background:linear-gradient(transparent 62%,var(--amber) 62%);padding:0 2px}
+  .lede{font-size:17px;color:var(--ink-soft);max-width:62ch}
+
+  .state{margin:34px 0 4px;padding:22px 24px;border:1px solid var(--line-2);border-radius:12px;background:var(--panel)}
+  .state .st-h{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .state ul{list-style:none}
+  .state li{position:relative;padding-left:26px;margin:8px 0;font-size:14.5px;color:var(--ink-soft)}
+  .state li::before{content:"✓";position:absolute;left:2px;top:0;color:var(--done);font-weight:700;font-family:var(--mono);font-size:13px}
+  .state li b{color:var(--ink)}
+
+  section{padding:50px 0;border-bottom:1px solid var(--line)}
+  .sec-no{font-family:var(--mono);font-size:13px;color:var(--teal);font-weight:700}
+  h2{font-size:27px;font-weight:800;margin:8px 0 6px;letter-spacing:-0.025em}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px}
+  h3{font-size:18px;font-weight:700;margin:26px 0 8px;letter-spacing:-0.02em}
+  p{margin:11px 0;color:var(--ink-soft)}
+  p strong,li strong{color:var(--ink);font-weight:700}
+  .ink{color:var(--ink)}
+  code.inl{font-family:var(--mono);font-size:0.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 6px;border-radius:5px;color:var(--teal-deep)}
+  .hl{background:linear-gradient(transparent 60%,var(--amber-soft) 60%);padding:0 1px}
+
+  pre{background:var(--code-bg);border-radius:10px;padding:16px 18px;margin:14px 0;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.62;color:var(--code-text)}
+  pre .k{color:var(--code-key)} pre .n{color:var(--code-num)} pre .c{color:var(--code-com)} pre .s{color:var(--code-str)}
+
+  .ln{border:1px solid var(--line-2);border-left:4px solid var(--teal);border-radius:10px;padding:18px 22px;margin:16px 0;background:var(--panel)}
+  .ln .lt{font-family:var(--mono);font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:6px}
+  .ln h3{margin:2px 0 8px;font-size:17px}
+  .ln p{margin:7px 0;font-size:14.5px}
+
+  .note{border-radius:10px;padding:14px 17px;margin:15px 0;font-size:14px;display:flex;gap:12px;align-items:flex-start}
+  .note .tag{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;padding:3px 8px;border-radius:5px;margin-top:1px}
+  .note.warn{background:var(--red-soft);color:#7a3526}
+  .note.warn .tag{background:var(--red);color:#fff}
+  .note.tip{background:var(--amber-soft);color:#6f5a1c}
+  .note.tip .tag{background:var(--amber);color:#5a4710}
+
+  /* compare two columns */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  .cmp .box{border:1px solid var(--line-2);border-radius:10px;padding:16px 18px;background:var(--panel)}
+  .cmp .box.bad{border-top:3px solid var(--red)}
+  .cmp .box.good{border-top:3px solid var(--teal)}
+  .cmp .bt{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:0.04em;margin-bottom:8px}
+  .cmp .box.bad .bt{color:var(--red)}
+  .cmp .box.good .bt{color:var(--teal-deep)}
+  .cmp p{font-size:13.5px;margin:6px 0}
+
+  .principle{border-left:3px solid var(--amber);padding:4px 0 4px 18px;margin:16px 0;font-size:15.5px;color:var(--ink);font-weight:500}
+
+  /* next steps */
+  .next{list-style:none;margin-top:12px}
+  .next li{position:relative;padding:11px 0 11px 30px;border-bottom:1px solid var(--line);color:var(--ink-soft)}
+  .next li::before{content:"○";position:absolute;left:4px;top:11px;color:var(--todo);font-family:var(--mono);font-weight:700}
+  .next li.halfdone::before{content:"◐";color:var(--amber)}
+  .next li b{color:var(--ink)}
+  .next .micro{font-family:var(--mono);font-size:11.5px;color:var(--muted);display:block;margin-top:2px}
+
+  footer{padding:40px 0 64px;color:var(--muted);font-family:var(--mono);font-size:12.5px;text-align:center}
+
+  @media(max-width:600px){.cmp{grid-template-columns:1fr}body{font-size:15.5px}}
+  @media(prefers-reduced-motion:no-preference){
+    section,header.top{animation:fade .6s ease both}
+    @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">BookTalker · 결정 기록 04</div>
+  <h1>배치 가드와 <span class="hl">통합 테스트</span> 전략</h1>
+  <p class="lede">배치 맨 앞에 "빈 결과면 종료" 가드를 넣고, 그것을 실제 DB로 검증하는 통합 테스트를 처음 세웠다. 행위 검증 대신 상태 검증을 택한 이유, 트랜잭션·롤백의 함정, 그리고 이 테스트가 왜 "반쪽"인지를 정리한다.</p>
+
+  <div class="state">
+    <div class="st-h">이번 세션 · 완료</div>
+    <ul>
+      <li><b>배치 가드 구현</b> — 집계 결과가 비면 로그 + 종료 (deleteAll보다 앞)</li>
+      <li><b>쿼리 단 테스트 마무리</b> — 회독수(규칙 A) / 리뷰 3개 경계(규칙 B) 각각 검증</li>
+      <li><b>장르 분리는 쿼리 단 아님</b> 확인 → 배치 단으로 이동</li>
+      <li><b>배치 테스트 전략 확정</b> — 실제 DB 통합 테스트(@SpringBootTest), 상태 검증</li>
+      <li><b>빈 결과 가드 통합 테스트</b> 작성 (별도 클래스, @AfterEach 수동 정리)</li>
+    </ul>
+  </div>
+</header>
+
+<!-- 1 -->
+<section>
+  <div class="sec-no">01</div>
+  <h2>가드의 위치가 곧 안전장치</h2>
+  <p class="sec-sub">"빈 결과면 종료"는 단순 return이 아니라 데이터 보호다</p>
+
+  <p>집계 결과가 비었을 때 만약 <code class="inl">deleteAll</code>을 <strong>먼저</strong> 하고 종료하면 — 어제 만든 멀쩡한 랭킹이 다 지워진 뒤 "오늘 집계할 게 없네" 하고 끝나서 <span class="hl">랭킹 테이블이 텅 빈다.</span> 사용자는 빈 화면을 본다. 그래서 가드는 반드시 <strong>deleteAll보다 앞</strong>, 실제 로직이 돌기 전에 위치한다.</p>
+
+  <pre><span class="c">List&lt;BookRatingStats&gt; stats = reviewRepository.aggregateRankData();</span>
+<span class="k">if</span> (stats.isEmpty()) { log.info(<span class="s">"집계 대상 없음, 갱신 건너뜀"</span>); <span class="k">return</span>; }  <span class="c">// 가드</span>
+<span class="c">// ↓ 여기부터 C 계산 · 가중평점 · 정렬 · Top10 · deleteAll · saveAll</span></pre>
+
+  <div class="ln">
+    <div class="lt">이중 안전망</div>
+    <h3>가드 + @Transactional</h3>
+    <p>가드가 "빈 결과면 아예 시작 안 함"을 막고, <code class="inl">@Transactional</code>이 "중간에 터지면 deleteAll까지 롤백"을 보장한다. 둘이 합쳐져 <strong>"전부 되거나 전부 안 되거나"(원자성)</strong>가 지켜진다. 면접 "배치 중간 실패 시?" → 이 두 가지로 답.</p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section>
+  <div class="sec-no">02</div>
+  <h2>상태 검증 vs 행위 검증</h2>
+  <p class="sec-sub">"deleteAll이 호출됐나"가 아니라 "기존 랭킹이 살아남았나"</p>
+
+  <div class="cmp">
+    <div class="box bad">
+      <div class="bt">✗ 행위 검증</div>
+      <p><code class="inl">verify(repo, never()).deleteAll()</code></p>
+      <p>"어떻게 동작하는지(내부 구현)"를 테스트에 박는다. 나중에 deleteAll → upsert로 <strong>구현만 바꿔도</strong> 결과는 멀쩡한데 테스트가 깨진다. 리팩토링의 발목.</p>
+    </div>
+    <div class="box good">
+      <div class="bt">✓ 상태 검증</div>
+      <p>기존 Rank를 넣어두고 → 배치 실행 → <strong>그대로 남았나</strong></p>
+      <p>"무엇을 하는가(결과)"를 본다. 구현이 deleteAll이든 upsert든, "빈 결과면 보존된다"는 결과만 맞으면 통과. 튼튼하다.</p>
+    </div>
+  </div>
+
+  <p>가드로 지키려던 진짜 가치는 "사용자가 빈 랭킹을 보지 않는 것"이었다. 그 가치를 <span class="hl">랭킹이 살아있나로 직접 확인</span>하는 게 상태 검증이다. deleteAll 호출 여부는 간접 증거일 뿐.</p>
+</section>
+
+<!-- 3 -->
+<section>
+  <div class="sec-no">03</div>
+  <h2>@SpringBootTest와 트랜잭션 함정</h2>
+  <p class="sec-sub">통합 테스트는 "진짜 커밋"을 봐야 하므로 자동 롤백을 일부러 안 쓴다</p>
+
+  <p><strong>왜 @SpringBootTest인가</strong> — 배치는 쿼리·계산기·저장을 조율해 <span class="hl">최종 DB 상태</span>를 만드는 게 핵심이다. 그 최종 상태가 맞는지 보려면 실제 빈을 다 띄워 진짜로 돌려야 한다. 개별 계산은 이미 단위 테스트(WeightedScoreCalculatorTest)로 분리했으니, 배치 테스트는 "합쳐져서 제대로 저장되나"만 본다.</p>
+
+  <div class="note warn"><span class="tag">롤백 함정</span><div>
+    @SpringBootTest에 <code class="inl">@Transactional</code>을 붙이면 자동 롤백은 되지만 — 배치의 deleteAll·saveAll이 <strong>같은 트랜잭션이라 진짜 커밋을 못 본다.</strong> 영속성 컨텍스트 캐시인지 진짜 DB 상태인지 흐려진다. 그래서 배치 통합 테스트는 <strong>@Transactional을 안 붙이고</strong>, 대신 자동 롤백이 없으니 <code class="inl">@AfterEach</code>로 데이터를 직접 비운다.
+  </div></div>
+
+  <div class="ln">
+    <div class="lt">잔실수</div>
+    <h3>TestEntityManager는 @DataJpaTest 전용</h3>
+    <p><code class="inl">TestEntityManager</code>를 @SpringBootTest에 넣으면 주입 실패로 컨텍스트가 깨질 수 있다. @SpringBootTest에선 그냥 <code class="inl">repository.save()</code>(또는 <code class="inl">saveAndFlush()</code>)로 저장. <code class="inl">em.flush()/clear()</code>도 불필요.</p>
+  </div>
+
+  <div class="ln">
+    <div class="lt">클래스 분리</div>
+    <h3>단위와 통합은 같은 클래스에 안 섞는다</h3>
+    <p>@SpringBootTest는 클래스 단위로 붙어 모든 테스트가 무거운 컨텍스트를 띄운다. 순수 단위 테스트(계산기)는 이미 별도 클래스로 빠져 있음. RankService에 통합 테스트만 있다면 <code class="inl">RankServiceIntegrationTest</code>(또는 IT) 접미사로 의도를 드러내는 게 관례 — 다만 지금처럼 통합밖에 없으면 분리는 취향(YAGNI 관점에선 미뤄도 됨).</p>
+  </div>
+</section>
+
+<!-- 4 -->
+<section>
+  <div class="sec-no">04</div>
+  <h2>이 테스트는 "반쪽"이다</h2>
+  <p class="sec-sub">빈 결과만 검증한다 — 짝이 있어야 가드가 완전히 증명된다</p>
+
+  <p>지금 가드 테스트는 <strong>"빈 결과 → 보존"</strong> 한 방향만 본다. 누가 실수로 <code class="inl">aggregateRank</code> 맨 앞에 <code class="inl">if(true) return;</code>을 박아 <span class="hl">항상 종료하게 만들어도 이 테스트는 통과</span>한다(빈 결과처럼 보존되니까).</p>
+
+  <p>완전해지려면 짝이 필요하다 — <strong>"데이터 있음 → 기존 지우고 새 랭킹으로 갱신"</strong>. 이게 있어야 가드가 "빈 때만" 작동함이 증명된다. 그리고 이 짝은 곧 만들 <strong>배치 흐름 전체 테스트</strong>(Review 넣고 → 배치 → 가중평점 정렬되어 저장됐나)와 같다. 따로 만들 필요 없이 자연스럽게 채워진다.</p>
+
+  <div class="principle">하나의 테스트는 하나의 방향만 증명한다. 가드 같은 분기는 양쪽(작동할 때 / 안 할 때)이 다 잡혀야 완전하다. 지금은 한쪽, 나머지는 배치 흐름 테스트가 채운다.</div>
+
+  <div class="note tip"><span class="tag">검증 슬림하게</span><div>보존을 보는 테스트는 <code class="inl">hasSize(1)</code> + isbn 정도면 충분. 모든 필드(weightedScore·avgRating·title…)를 다 확인하면 "보존을 본다"는 의도가 흐려진다. 필드 정확성은 "데이터 있을 때 저장" 테스트의 몫.</div></div>
+</section>
+
+<!-- 5 -->
+<section style="border-bottom:none">
+  <div class="sec-no">05</div>
+  <h2>다음 · 배치 흐름 테스트</h2>
+  <p class="sec-sub">구현이 아직 없는 부분을 만들고, 그 결과를 통합 테스트로</p>
+
+  <ul class="next">
+    <li><b>배치 본체 구현</b> — 흐름 1~7 중 C 계산·가중평점·정렬·Top10·변환·저장 (가드는 완료)<span class="micro">계산기 두 개는 이미 있음 · 조립만</span></li>
+    <li class="halfdone"><b>가중 평점 순 정렬 검증</b> — 저장된 Rank가 weightedScore 내림차순인가<span class="micro">이게 04의 "반쪽" 가드 테스트의 짝</span></li>
+    <li><b>장르별 Top10 컷</b> — 한 장르에 11개여도 10개만 저장<span class="micro">배치 단 · groupingBy + limit(10)</span></li>
+    <li><b>장르 분리</b> — 장르별로 올바르게 묶여 저장되나<span class="micro">쿼리 단에서 배치 단으로 이동한 항목</span></li>
+    <li><b>weightedScore 값 정확성</b> — 저장된 점수가 계산식과 일치<span class="micro">avgRating은 표시용, weightedScore는 정렬용 둘 다 저장 확인</span></li>
+  </ul>
+
+  <div class="note tip"><span class="tag">시작점</span><div>다음 세션은 <strong>배치 본체 구현</strong>부터. 흐름은 결정 기록 03에 1~7로 확정돼 있고, 전략(@SpringBootTest, 트랜잭션 안 씀, @AfterEach 정리)은 이번에 정했다. 구현을 얹고 위 항목을 통합 테스트로 검증하면 된다.</div></div>
+</section>
+
+<footer>
+  BookTalker · 결정 기록 04 &nbsp;·&nbsp; 배치 가드와 통합 테스트 전략
+</footer>
+
+</div>
+</body>
+</html>

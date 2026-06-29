@@ -1,5 +1,6 @@
 package com.example.book_talker_backend.review.service;
 
+import com.example.book_talker_backend.review.WeightedScoreCalculator;
 import com.example.book_talker_backend.review.dao.RankRepository;
 import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Rank;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,25 +25,43 @@ import java.util.stream.Collectors;
 public class RankService {
     private final RankRepository rankRepository;
     private final ReviewRepository reviewRepository;
+    private static final int CONFIDENCE_THRESHOLD = 3;
 
     @Transactional
     @Scheduled(cron = "0 0 4 * * ?")
     public void aggregateRank() {
         List<BookRatingStats> rawData = reviewRepository.aggregateRankData();
 
-        rankRepository.deleteAll();
+        if (rawData.isEmpty()) {
+            log.info("aggregateRank -> 집계 데이터가 없습니다.");
+            return ;
+        }
 
-        List<Rank> ranks = rawData.stream().map(row -> {
+        double globalAverage = WeightedScoreCalculator.calculateGlobalAverage(rawData);
+
+        Map<String, List<Rank>> grouped = rawData.stream().map(row -> {
             Rank rank = new Rank();
             rank.setIsbn13(row.isbn13());
             rank.setGenre(row.genre());
             rank.setTitle(row.title());
             rank.setCover(row.cover());
+            rank.setWeightedScore(WeightedScoreCalculator.calculateWeightedScore(row.reviewCount(), 
+                row.avgRating(), CONFIDENCE_THRESHOLD, globalAverage));
             rank.setAvgRating(row.avgRating());
             rank.setReviewCount(row.reviewCount());
             rank.setUpdatedAt(LocalDateTime.now());
             return rank;
-        }).collect(Collectors.toList());
+        })
+        .sorted(Comparator.comparing(Rank::getWeightedScore).reversed())
+        .collect(Collectors.groupingBy(Rank::getGenre))
+        ;
+
+        List<Rank> ranks = grouped.values().stream()
+            .flatMap(item -> item.stream().limit(10))
+            .toList()
+        ;
+
+        rankRepository.deleteAll();
 
         rankRepository.saveAll(ranks);
         log.info("Rank aggregation completed. Total: {}", ranks.size());
