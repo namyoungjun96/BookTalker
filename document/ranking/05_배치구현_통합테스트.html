@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>가중 평점 랭킹 · 배치 구현과 통합 테스트</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF8F3; --paper-2:#F1EDE3; --panel:#FFFFFFcc;
+    --ink:#1C2733; --ink-soft:#46535F; --muted:#8A93A0;
+    --line:#E4DFD3; --line-2:#D6D0C2;
+    --teal:#0E7C6B; --teal-deep:#0A5447;
+    --amber:#F4CF6A; --amber-soft:#FBEFC7;
+    --red:#BE5440; --red-soft:#F4DED7;
+    --done:#0E7C6B; --todo:#B7B1A4;
+    --code-bg:#14202B; --code-text:#DCE4EC; --code-key:#7FD3C2; --code-num:#E6B873; --code-com:#5E7081; --code-str:#C6E29A;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'Pretendard','Pretendard Variable',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.7;font-size:16px;letter-spacing:-0.01em;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:0 28px}
+
+  header.top{padding:72px 0 38px;border-bottom:2px solid var(--ink)}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--teal-deep);font-weight:500;display:flex;gap:10px;align-items:center}
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--teal)}
+  h1{font-size:clamp(32px,5.4vw,48px);line-height:1.12;font-weight:800;margin:20px 0 16px;letter-spacing:-0.03em}
+  h1 .hl{background:linear-gradient(transparent 62%,var(--amber) 62%);padding:0 2px}
+  .lede{font-size:17px;color:var(--ink-soft);max-width:62ch}
+
+  .state{margin:34px 0 4px;padding:22px 24px;border:1px solid var(--line-2);border-radius:12px;background:var(--panel)}
+  .state .st-h{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .state ul{list-style:none}
+  .state li{position:relative;padding-left:26px;margin:8px 0;font-size:14.5px;color:var(--ink-soft)}
+  .state li::before{content:"✓";position:absolute;left:2px;top:0;color:var(--done);font-weight:700;font-family:var(--mono);font-size:13px}
+  .state li b{color:var(--ink)}
+
+  section{padding:50px 0;border-bottom:1px solid var(--line)}
+  .sec-no{font-family:var(--mono);font-size:13px;color:var(--teal);font-weight:700}
+  h2{font-size:27px;font-weight:800;margin:8px 0 6px;letter-spacing:-0.025em}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:22px}
+  h3{font-size:18px;font-weight:700;margin:26px 0 8px;letter-spacing:-0.02em}
+  p{margin:11px 0;color:var(--ink-soft)}
+  p strong,li strong{color:var(--ink);font-weight:700}
+  code.inl{font-family:var(--mono);font-size:0.86em;background:var(--paper-2);border:1px solid var(--line);padding:1px 6px;border-radius:5px;color:var(--teal-deep)}
+  .hl{background:linear-gradient(transparent 60%,var(--amber-soft) 60%);padding:0 1px}
+
+  pre{background:var(--code-bg);border-radius:10px;padding:16px 18px;margin:14px 0;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.62;color:var(--code-text)}
+  pre .k{color:var(--code-key)} pre .n{color:var(--code-num)} pre .c{color:var(--code-com)} pre .s{color:var(--code-str)}
+
+  .ln{border:1px solid var(--line-2);border-left:4px solid var(--teal);border-radius:10px;padding:18px 22px;margin:16px 0;background:var(--panel)}
+  .ln .lt{font-family:var(--mono);font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:6px}
+  .ln h3{margin:2px 0 8px;font-size:17px}
+  .ln p{margin:7px 0;font-size:14.5px}
+
+  .note{border-radius:10px;padding:14px 17px;margin:15px 0;font-size:14px;display:flex;gap:12px;align-items:flex-start}
+  .note .tag{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;padding:3px 8px;border-radius:5px;margin-top:1px}
+  .note.warn{background:var(--red-soft);color:#7a3526}
+  .note.warn .tag{background:var(--red);color:#fff}
+  .note.tip{background:var(--amber-soft);color:#6f5a1c}
+  .note.tip .tag{background:var(--amber);color:#5a4710}
+
+  /* flow steps */
+  .flow{margin:18px 0;counter-reset:step}
+  .fstep{position:relative;padding:11px 0 11px 48px;border-bottom:1px solid var(--line)}
+  .fstep::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:10px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:12px;background:var(--paper-2);color:var(--teal-deep);border:2px solid var(--teal)}
+  .fstep.guard::before{border-color:var(--red);color:var(--red);background:var(--red-soft)}
+  .fstep.new::before{background:var(--teal);color:#fff}
+  .fstep .ft{font-weight:700;color:var(--ink);font-size:15px}
+  .fstep .fd{font-size:13px;color:var(--ink-soft);margin-top:1px}
+  .fstep .badge{display:inline-block;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:0.05em;padding:1px 7px;border-radius:20px;margin-left:6px;background:var(--amber-soft);color:#6f5a1c;vertical-align:middle}
+
+  /* compare */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  .cmp .box{border:1px solid var(--line-2);border-radius:10px;padding:16px 18px;background:var(--panel)}
+  .cmp .box.bad{border-top:3px solid var(--red)}
+  .cmp .box.good{border-top:3px solid var(--teal)}
+  .cmp .bt{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:0.04em;margin-bottom:8px}
+  .cmp .box.bad .bt{color:var(--red)}
+  .cmp .box.good .bt{color:var(--teal-deep)}
+  .cmp p{font-size:13.5px;margin:6px 0}
+
+  .principle{border-left:3px solid var(--amber);padding:4px 0 4px 18px;margin:16px 0;font-size:15.5px;color:var(--ink);font-weight:500}
+
+  .next{list-style:none;margin-top:12px}
+  .next li{position:relative;padding:11px 0 11px 30px;border-bottom:1px solid var(--line);color:var(--ink-soft)}
+  .next li::before{content:"○";position:absolute;left:4px;top:11px;color:var(--todo);font-family:var(--mono);font-weight:700}
+  .next li b{color:var(--ink)}
+  .next .micro{font-family:var(--mono);font-size:11.5px;color:var(--muted);display:block;margin-top:2px}
+
+  footer{padding:40px 0 64px;color:var(--muted);font-family:var(--mono);font-size:12.5px;text-align:center}
+
+  @media(max-width:600px){.cmp{grid-template-columns:1fr}body{font-size:15.5px}}
+  @media(prefers-reduced-motion:no-preference){
+    section,header.top{animation:fade .6s ease both}
+    @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">BookTalker · 결정 기록 05</div>
+  <h1>배치 구현과 <span class="hl">통합 테스트</span></h1>
+  <p class="lede">설계만 해뒀던 배치 본체를 처음으로 끝까지 구현했고(가드부터 Top10 컷까지), 그것을 실제 DB로 검증하는 통합 테스트를 세웠다. 그리고 "테스트에 랜덤을 쓰면 안 되는 이유"를 직접 부딪혀 정리했다.</p>
+
+  <div class="state">
+    <div class="st-h">이번 세션 · 완료</div>
+    <ul>
+      <li><b>배치 본체 구현 완료</b> — 가드 → C → 가중평점 → 정렬 → 장르별 Top10 → deleteAll/saveAll</li>
+      <li><b>m을 상수로</b> (CONFIDENCE_THRESHOLD) · 호출부에서 넘기고 계산기는 파라미터로 받음</li>
+      <li><b>정렬·그룹핑·Top10을 stream으로</b> — sorted().reversed() → groupingBy → flatMap(limit)</li>
+      <li><b>통합 테스트 "생성·갈아엎기"</b> — 빈 결과 가드 테스트의 짝</li>
+      <li><b>랜덤 rating 제거</b> — 결정적 테스트 원칙 정리</li>
+    </ul>
+  </div>
+</header>
+
+<!-- 1 -->
+<section>
+  <div class="sec-no">01</div>
+  <h2>배치 본체 — 흐름 1~7 완성</h2>
+  <p class="sec-sub">설계(결정 기록 03)대로, 빠졌던 정렬·Top10까지 채움</p>
+
+  <div class="flow">
+    <div class="fstep guard"><div class="ft">집계 결과가 비면 로그 + 종료</div><div class="fd">deleteAll보다 앞 · 기존 랭킹 보호</div></div>
+    <div class="fstep"><div class="ft">C 계산</div><div class="fd">calculateGlobalAverage(rawData) · 한 번만</div></div>
+    <div class="fstep"><div class="ft">각 책 가중 평점 → Rank로 변환</div><div class="fd">calculateWeightedScore(reviewCount, avgRating, CONFIDENCE_THRESHOLD, globalAverage)</div></div>
+    <div class="fstep new"><div class="ft">가중 평점 내림차순 정렬<span class="badge">이번에 추가</span></div><div class="fd">sorted(comparing(getWeightedScore).reversed()) · 그룹핑보다 먼저</div></div>
+    <div class="fstep new"><div class="ft">장르별 그룹핑 → 각 Top10<span class="badge">이번에 추가</span></div><div class="fd">groupingBy(genre) → flatMap(list.stream().limit(10))</div></div>
+    <div class="fstep"><div class="ft">deleteAll → saveAll</div><div class="fd">@Transactional로 원자성 보장</div></div>
+  </div>
+
+  <pre><span class="k">if</span> (rawData.isEmpty()) { log.info(...); <span class="k">return</span>; }
+<span class="k">double</span> globalAverage = WeightedScoreCalculator.calculateGlobalAverage(rawData);
+
+Map&lt;String, List&lt;Rank&gt;&gt; grouped = rawData.stream()
+    .map(row -> { <span class="c">/* Rank 생성 + setWeightedScore(...) */</span> })
+    .sorted(Comparator.comparing(Rank::getWeightedScore).reversed())
+    .collect(Collectors.groupingBy(Rank::getGenre));
+
+List&lt;Rank&gt; ranks = grouped.values().stream()
+    .flatMap(list -> list.stream().limit(<span class="n">10</span>))
+    .collect(Collectors.toList());
+
+rankRepository.deleteAll();
+rankRepository.saveAll(ranks);</pre>
+
+  <div class="note warn"><span class="tag">limit 위치</span><div><code class="inl">limit(10)</code>은 <strong>그룹핑 후, 각 그룹 안에서</strong>여야 한다. 정렬 직후 전체에 limit을 걸면 "전체 상위 10개"가 되어 한 장르가 통째로 빠질 수 있다 — 원하는 건 "장르마다 각각 10개". 그리고 <span class="hl">정렬이 그룹핑보다 먼저</span>여야 각 그룹이 정렬된 상태를 유지한다.</div></div>
+
+  <div class="ln">
+    <div class="lt">stream vs for</div>
+    <h3>일관성도 가독성이다</h3>
+    <p>"각 장르 10개 뽑아 합치기"를 for문으로 풀 수도 있었지만, <strong>위에서 stream을 쓰다 아래서 for로 바꾸면 패러다임이 섞여 더 헷갈린다.</strong> flatMap이 충분히 읽힌다고 판단해 stream으로 통일. (도구를 맹목적으로가 아니라 일관성 기준으로 고른 것 — 면접 포인트.)</p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section>
+  <div class="sec-no">02</div>
+  <h2>통합 테스트 · 생성과 갈아엎기</h2>
+  <p class="sec-sub">결정 기록 04의 "반쪽 가드 테스트"를 완성하는 짝</p>
+
+  <p>가드 테스트는 "빈 결과 → 기존 보존"만 봤다(반쪽). 이 테스트는 <strong>"데이터 있음 → 기존 지우고 새로 생성"</strong>을 본다. 둘이 합쳐져 deleteAll이 <span class="hl">"데이터 있을 때만" 작동함</span>이 증명된다. <code class="inl">if(true) return;</code> 같은 "항상 종료" 버그도 이 테스트가 잡는다.</p>
+
+  <div class="ln">
+    <div class="lt">핵심 트릭</div>
+    <h3>기존과 새 것의 isbn을 다르게</h3>
+    <p>given의 기존 Rank(예: <code class="inl">...1011</code>)와 오늘 집계될 책(예: <code class="inl">...1112</code>)을 다른 isbn으로 둔다. 배치 후 <code class="inl">hasSize(1)</code> + "남은 게 1112"를 확인하면 — 기존 1011이 사라졌고(deleteAll) 새 1112가 생긴 것(saveAll)이 한 번에 증명된다. 기존이 안 지워졌으면 size가 2일 테니.</p>
+  </div>
+
+  <div class="note tip"><span class="tag">데이터 정리</span><div>@Transactional을 안 쓰는 통합 테스트라 자동 롤백이 없다. <code class="inl">@AfterEach</code>에서 review → book 순으로 deleteAll(외래키 때문에 자식 먼저). rank도 함께. 안 그러면 다음 테스트가 오염된다.</div></div>
+</section>
+
+<!-- 3 -->
+<section>
+  <div class="sec-no">03</div>
+  <h2>테스트에 랜덤을 쓰면 안 된다</h2>
+  <p class="sec-sub">"다양한 값이 필요하다"는 직감은 맞았지만, 랜덤은 그 답이 아니다</p>
+
+  <div class="cmp">
+    <div class="box bad">
+      <div class="bt">✗ 랜덤 rating</div>
+      <p><code class="inl">random.nextInt(5)</code></p>
+      <p>매번 값이 달라져 <strong>같은 입력 → 같은 결과(결정적)</strong>가 깨진다. 어떤 날 통과, 어떤 날 실패하는 flaky 테스트. 평균이 매번 달라 <strong>기대값을 못 적는다</strong> — 정렬·점수 검증이 불가능해진다. (게다가 nextInt(5)는 0~4라 0점이 섞임.)</p>
+    </div>
+    <div class="box good">
+      <div class="bt">✓ 의도된 고정값</div>
+      <p>책 A=5점들, B=4점들, C=3점들</p>
+      <p>결과 순서가 <strong>확정</strong>된다 → then에서 "A, B, C 순으로 저장됐다"를 단언할 수 있다. 테스트 데이터는 결과를 예측할 수 있게 <span class="hl">내가 설계</span>한다.</p>
+    </div>
+  </div>
+
+  <div class="principle">"다양한 값"이 필요한 게 아니라 "서로 다른, 내가 아는 값"이 필요했다. 랜덤은 예측 불가라 정반대 도구다. 테스트가 보려던 건 "배치가 집계를 제대로 하나"이지 "무작위 입력에 견디나"가 아니었다.</div>
+</section>
+
+<!-- 4 -->
+<section style="border-bottom:none">
+  <div class="sec-no">04</div>
+  <h2>다음 · 남은 배치 테스트</h2>
+  <p class="sec-sub">rating을 의도적으로 설계해 결과를 예측 가능하게 만드는 게 관건</p>
+
+  <ul class="next">
+    <li><b>가중 평점 정렬 검증</b> — rating·리뷰 개수를 설계해 순서를 확정하고, 저장된 Rank가 그 순서인지<span class="micro">shrinkage까지: 5.0(리뷰 3개) &lt; 4.5(리뷰 10개)가 나오면 가중평점이 진짜 작동하는 증거 · 면접에서 제일 보여줄 테스트</span></li>
+    <li><b>장르별 Top10 컷 + 장르 분리</b> — 장르 2개 × 각 11권, 각 장르 10개씩만 저장되나<span class="micro">상수를 낮추지 말고 진짜 11권으로 — 테스트와 운영이 같은 값으로 돌아야 함</span></li>
+    <li><b>weightedScore 값 정확성</b> — 저장된 점수가 계산식과 일치, avgRating은 표시용으로 따로 저장됐나</li>
+  </ul>
+
+  <div class="note tip"><span class="tag">현재 손에 있는 것</span><div>배치 본체 구현 완료 · 쿼리 단 테스트(리뷰3개·회독수) · 계산 단 테스트(가중평점·C·예외) · 통합 테스트(가드 / 생성·갈아엎기). 다음은 정렬·Top10을 통합 테스트로 — 헬퍼는 책마다 다른 rating·개수를 줄 수 있게 유연하게.</div></div>
+</section>
+
+<footer>
+  BookTalker · 결정 기록 05 &nbsp;·&nbsp; 배치 구현과 통합 테스트
+</footer>
+
+</div>
+</body>
+</html>

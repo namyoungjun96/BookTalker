@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>가중 평점 랭킹 · 개념과 판단 정리</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF8F3; --paper-2:#F1EDE3; --panel:#FFFFFFcc;
+    --ink:#1C2733; --ink-soft:#46535F; --muted:#8A93A0;
+    --line:#E4DFD3; --line-2:#D6D0C2;
+    --teal:#0E7C6B; --teal-deep:#0A5447;
+    --amber:#F4CF6A; --amber-soft:#FBEFC7;
+    --red:#BE5440; --red-soft:#F4DED7;
+    --code-bg:#14202B; --code-text:#DCE4EC; --code-dim:#7C8FA1; --code-key:#7FD3C2; --code-num:#E6B873; --code-com:#5E7081;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --sans:'Pretendard','Pretendard Variable',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--sans);background:var(--paper);color:var(--ink);
+    line-height:1.7;font-size:16px;letter-spacing:-0.01em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:840px;margin:0 auto;padding:0 28px}
+
+  /* ---------- header ---------- */
+  header.top{padding:72px 0 38px;border-bottom:2px solid var(--ink)}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:0.18em;text-transform:uppercase;color:var(--teal-deep);font-weight:500;display:flex;gap:10px;align-items:center}
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--teal)}
+  h1{font-size:clamp(34px,6vw,52px);line-height:1.1;font-weight:800;margin:20px 0 16px;letter-spacing:-0.03em}
+  h1 .hl{background:linear-gradient(transparent 62%,var(--amber) 62%);padding:0 2px}
+  .lede{font-size:17px;color:var(--ink-soft);max-width:62ch}
+  .meta{margin-top:26px;font-family:var(--mono);font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px 22px}
+  .meta b{color:var(--ink-soft);font-weight:500}
+
+  /* ---------- section ---------- */
+  section{padding:52px 0;border-bottom:1px solid var(--line)}
+  .sec-no{font-family:var(--mono);font-size:13px;color:var(--teal);font-weight:700}
+  h2{font-size:27px;font-weight:800;margin:8px 0 6px;letter-spacing:-0.025em}
+  .sec-sub{color:var(--muted);font-size:14.5px;margin-bottom:26px}
+  h3{font-size:18px;font-weight:700;margin:30px 0 10px;letter-spacing:-0.02em}
+  p{margin:12px 0;color:var(--ink-soft)}
+  p strong, li strong{color:var(--ink);font-weight:700}
+  .ink{color:var(--ink)}
+  ul{margin:12px 0 12px 4px;list-style:none}
+  ul li{position:relative;padding-left:22px;margin:9px 0;color:var(--ink-soft)}
+  ul li::before{content:"";position:absolute;left:2px;top:11px;width:7px;height:7px;background:var(--teal);border-radius:50%}
+  .hl{background:linear-gradient(transparent 60%,var(--amber-soft) 60%);padding:0 1px}
+
+  /* ---------- formula ---------- */
+  .formula{font-family:var(--mono);background:var(--paper-2);border:1px solid var(--line-2);border-radius:10px;padding:20px 22px;margin:20px 0;font-size:15px;text-align:center;color:var(--ink);overflow-x:auto}
+  .formula .small{display:block;font-size:12.5px;color:var(--muted);margin-top:10px;text-align:left;line-height:1.9}
+
+  /* ---------- code ---------- */
+  pre{background:var(--code-bg);border-radius:10px;padding:18px 20px;margin:18px 0;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.65;color:var(--code-text)}
+  pre .k{color:var(--code-key)} pre .n{color:var(--code-num)} pre .c{color:var(--code-com)}
+  code.inl{font-family:var(--mono);font-size:0.88em;background:var(--paper-2);border:1px solid var(--line);padding:1px 6px;border-radius:5px;color:var(--teal-deep)}
+
+  /* ---------- decision cards ---------- */
+  .dr{border:1px solid var(--line-2);border-left:4px solid var(--teal);border-radius:10px;padding:22px 24px;margin:18px 0;background:var(--panel)}
+  .dr .dr-id{font-family:var(--mono);font-size:11.5px;letter-spacing:0.1em;color:var(--teal);text-transform:uppercase;font-weight:700}
+  .dr h3{margin:6px 0 12px;font-size:18px}
+  .dr .row{display:grid;grid-template-columns:78px 1fr;gap:6px 16px;margin:9px 0;align-items:start}
+  .dr .lbl{font-family:var(--mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding-top:3px}
+  .dr .val{color:var(--ink-soft);font-size:15px}
+  .dr .val.decide{color:var(--ink);font-weight:700}
+
+  /* ---------- callout ---------- */
+  .note{border-radius:10px;padding:15px 18px;margin:18px 0;font-size:14.5px;display:flex;gap:13px;align-items:flex-start}
+  .note .tag{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;padding:3px 8px;border-radius:5px;margin-top:1px}
+  .note.warn{background:var(--red-soft);color:#7a3526}
+  .note.warn .tag{background:var(--red);color:#fff}
+  .note.tip{background:var(--amber-soft);color:#6f5a1c}
+  .note.tip .tag{background:var(--amber);color:#5a4710}
+
+  /* ---------- checklist ---------- */
+  .check{margin:16px 0;list-style:none}
+  .check li{position:relative;padding:11px 0 11px 34px;border-bottom:1px solid var(--line);color:var(--ink-soft)}
+  .check li::before{content:"";position:absolute;left:4px;top:14px;width:16px;height:16px;border-radius:4px;background:var(--teal);box-shadow:inset 0 0 0 2px var(--paper),inset 0 0 0 3px var(--teal)}
+  .check li.todo::before{background:transparent;box-shadow:inset 0 0 0 2px var(--line-2)}
+  .check li b{color:var(--ink)}
+  .check .micro{font-family:var(--mono);font-size:11.5px;color:var(--muted);display:block;margin-top:2px}
+
+  /* ---------- interview quotes ---------- */
+  .iq{border-top:1px solid var(--line);padding:18px 0}
+  .iq .q-topic{font-family:var(--mono);font-size:12px;color:var(--teal-deep);font-weight:500;letter-spacing:0.04em;margin-bottom:7px}
+  .iq blockquote{font-size:16px;color:var(--ink);line-height:1.65;padding-left:16px;border-left:3px solid var(--amber);font-weight:500}
+
+  /* ---------- haves grid ---------- */
+  .haves{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+  .have{border:1px solid var(--line-2);border-radius:9px;padding:16px 18px;background:var(--panel)}
+  .have .ht{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px}
+  .have .hd{font-size:13px;color:var(--muted)}
+  .have .tests{font-family:var(--mono);font-size:11.5px;color:var(--teal-deep);margin-top:8px}
+
+  footer{padding:40px 0 64px;color:var(--muted);font-family:var(--mono);font-size:12.5px;text-align:center}
+
+  @media(max-width:600px){
+    .haves{grid-template-columns:1fr}
+    .dr .row{grid-template-columns:1fr}
+    .dr .lbl{padding-top:0}
+    body{font-size:15.5px}
+  }
+  @media(prefers-reduced-motion:no-preference){
+    section,header.top{animation:fade .6s ease both}
+    @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">BookTalker · 결정 기록</div>
+  <h1>가중 평점 랭킹<br><span class="hl">개념과 판단</span> 정리</h1>
+  <p class="lede">랭킹 산정 로직을 단순 평균에서 가중 평점으로 바꾸면서 내린 설계 판단과, 그 과정에서 다시 잡은 테스트 개념을 한 곳에 모았다. 코드를 어떻게 짰는지가 아니라 <span class="ink">왜 그렇게 정했는지</span>를 복습하기 위한 문서.</p>
+  <div class="meta">
+    <span><b>대상</b> BookTalker · RankService / WeightedScoreCalculator</span>
+    <span><b>용도</b> 면접 대비 · 판단 근거 복습</span>
+  </div>
+</header>
+
+<!-- 1 -->
+<section>
+  <div class="sec-no">01</div>
+  <h2>핵심 개념 · 가중 평점</h2>
+  <p class="sec-sub">표본이 적은 평균을 왜 못 믿는가, 그리고 어떻게 보정하는가</p>
+
+  <p>리뷰 3개짜리 책이 우연히 5.0을 받았다고, 리뷰 50개에 평균 4.5인 책을 제치는 건 직관적으로 이상하다. <strong>표본이 적으면 평균의 분산이 커서 그 값을 믿기 어렵기 때문</strong>이다. 3명이 5점을 준 건 운일 수 있지만 50명이 4.5를 준 건 거의 확실하다.</p>
+
+  <p>해결의 핵심 아이디어: <span class="hl">리뷰가 적은 책의 평점은 전체 평균 쪽으로 끌어당긴다.</span> 리뷰가 쌓일수록 그 책 자신의 평균을 점점 더 신뢰하고, 적으면 "아직 못 믿으니 일단 평타(전체 평균) 취급"한다. 이 보정을 <strong>shrinkage(축소)</strong>라고 부른다.</p>
+
+  <div class="formula">
+    WR = ( v / (v + m) ) × R&nbsp;&nbsp;+&nbsp;&nbsp;( m / (v + m) ) × C
+    <span class="small">
+      R — 그 책의 평균 별점 &nbsp;·&nbsp; v — 그 책의 리뷰 수<br>
+      m — 신뢰를 인정하는 기준 리뷰 수 (BookTalker는 3) &nbsp;·&nbsp; C — 전체 평균 별점
+    </span>
+  </div>
+
+  <p><strong>직관만 잡으면 된다.</strong> v가 크면 <code class="inl">v/(v+m)</code>이 1에 가까워져 자기 평균 R을 거의 그대로 쓰고, v가 작으면 C(전체 평균) 비중이 커져 평타로 끌려온다. m이 그 무게추다.</p>
+
+  <div class="note tip"><span class="tag">한계 인지</span><div>초기엔 책·리뷰가 적어 C가 흔들릴 수 있다. 이 한계까지 알고 있다는 것 자체가 면접에선 오히려 좋은 이야깃거리다. (이진 평가였다면 Wilson score가 더 맞지만, 별점이라 위 가중 평점이 자연스럽다.)</div></div>
+</section>
+
+<!-- 2 -->
+<section>
+  <div class="sec-no">02</div>
+  <h2>C(전체 평균) 정책</h2>
+  <p class="sec-sub">기술 문제가 아니라 "기준선이 무엇을 대표하는가"라는 도메인 결정</p>
+
+  <h3>리뷰 단위 vs 책 단위</h3>
+  <p>같은 데이터라도 C를 구하는 방식에 따라 값이 갈린다. 차이의 본질은 <strong>리뷰 많은 책의 영향력</strong>이다.</p>
+  <ul>
+    <li><strong>책 단위</strong> — 각 책의 평균을 또 평균낸다. 리뷰가 100개든 5개든 <span class="hl">책 한 권당 한 표.</span></li>
+    <li><strong>리뷰 단위</strong> — 전체 리뷰를 합쳐 평균낸다. <span class="hl">리뷰 한 개당 한 표.</span> 많이 읽힌 책이 기준선을 자기 쪽으로 끌어당긴다.</li>
+  </ul>
+  <p>예: A(리뷰 100·평균 3.0), B(리뷰 5·평균 5.0), C책(리뷰 5·평균 5.0) → 책 단위는 4.33, 리뷰 단위는 3.18. 리뷰 수가 책마다 들쭉날쭉할 때 둘이 확 벌어진다.</p>
+
+  <div class="dr">
+    <div class="dr-id">Decision · C 산정 방식</div>
+    <h3>리뷰 단위 가중평균을 쓴다</h3>
+    <div class="row"><div class="lbl">근거</div><div class="val">지표는 본질적으로 여론의 반영이다. 100명이 읽고 매긴 평이 5명이 매긴 평보다 서비스 분위기를 더 잘 대표한다. IMDb도 투표 단위를 쓴다.</div></div>
+    <div class="row"><div class="lbl">구현</div><div class="val">이미 가진 집계 데이터(책별 AVG·COUNT)로 바로 계산. 쿼리 추가·DB 왕복 없음.</div></div>
+  </div>
+
+  <h3>전체 C 하나 vs 장르별 C</h3>
+  <div class="dr">
+    <div class="dr-id">Decision · C 범위</div>
+    <h3>전체 하나로 둔다</h3>
+    <div class="row"><div class="lbl">근거</div><div class="val">현재 표본이 적다. 장르별로 쪼개면 장르당 책이 몇 권 안 돼 각 C가 불안정해진다. 이론적 정교함보다 현재 규모에 맞는 선택.</div></div>
+    <div class="row"><div class="lbl">유보</div><div class="val">데이터가 쌓이고 장르별 평점 분포가 뚜렷이 갈리면 그때 장르별 C로 재검토.</div></div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section>
+  <div class="sec-no">03</div>
+  <h2>설계 판단 기록</h2>
+  <p class="sec-sub">오늘 내린 결정들 — 각각이 면접에서 "왜?"에 답할 재료다</p>
+
+  <div class="dr">
+    <div class="dr-id">DR-01 · 계산 시점</div>
+    <h3>Top10 계산을 조회 시점 → 집계 시점으로</h3>
+    <div class="row"><div class="lbl">문제</div><div class="val">Rank 테이블은 실시간 계산을 피하려는 캐시인데, 정작 Top10을 조회(getRank) 때 계산하고 있었다. 테이블을 만든 취지와 모순.</div></div>
+    <div class="row"><div class="lbl">결정</div><div class="val decide">계산은 전부 새벽 배치에서 끝내고 조회는 순수하게 읽기만.</div></div>
+  </div>
+
+  <div class="dr">
+    <div class="dr-id">DR-02 · 책임 분배</div>
+    <h3>집계는 DB, 가중 평점 계산은 애플리케이션</h3>
+    <div class="row"><div class="lbl">근거</div><div class="val">집계(AVG·COUNT·필터)는 데이터가 많아 DB 옆에서 하는 게 빠르다. 가중 평점은 입력이 이미 작고(집계 끝난 수백 row) 도메인 정책이라 자바에 둔다.</div></div>
+    <div class="row"><div class="lbl">핵심</div><div class="val">JPA가 약해서가 아니다 — native면 윈도우 함수로 가능. <span class="hl">성격상 비즈니스 로직이고 입력이 작아서</span> 앱에 두는 것.</div></div>
+  </div>
+
+  <div class="dr">
+    <div class="dr-id">DR-03 · 배치 후보 객체</div>
+    <h3>집계 결과는 Object[] 대신 BookRatingStats로 받는다</h3>
+    <div class="row"><div class="lbl">근거</div><div class="val"><code class="inl">Object[]</code>는 타입 안정성 없고(row[4] 캐스팅), 의미 없고, SELECT 순서에 묶인다. JPQL 생성자 표현식으로 의미 있는 객체에 담는다.</div></div>
+    <div class="row"><div class="lbl">구분</div><div class="val"><strong>집계 재료(BookRatingStats)</strong> ≠ <strong>완제품(Rank 엔티티)</strong>. 가중 평점·정렬 끝난 게 Rank. 둘을 섞으면 반쯤 빈 객체가 돌아다닌다.</div></div>
+  </div>
+
+  <div class="dr">
+    <div class="dr-id">DR-04 · 객체 형태</div>
+    <h3>계산기는 static, 후보 객체는 record(불변)</h3>
+    <div class="row"><div class="lbl">static</div><div class="val">WeightedScoreCalculator는 상태가 없는 순수 계산이라 인스턴스를 만들 이유가 없다. 빈으로 둘 적극적 이유(주입·무거운 생성)도 없음.</div></div>
+    <div class="row"><div class="lbl">record</div><div class="val">집계된 사실은 바뀌면 안 되는 불변 데이터. @Setter 빼고 record로.</div></div>
+  </div>
+
+  <div class="dr">
+    <div class="dr-id">DR-05 · 예외 설계</div>
+    <h3>빈 리스트: 배치는 종료, 계산기는 예외</h3>
+    <div class="row"><div class="lbl">배치</div><div class="val">집계 결과가 비면 = "아직 데이터 없음" = 정상. 로그 남기고 일찍 return.</div></div>
+    <div class="row"><div class="lbl">계산기</div><div class="val decide">그런데도 빈 게 오면 = 배치가 막았어야 할 사전조건 위반 = 비정상 → IllegalArgumentException.</div></div>
+    <div class="row"><div class="lbl">통찰</div><div class="val"><span class="hl">같은 빈 리스트라도 받는 쪽에 따라 정상/비정상이 갈린다.</span> 예외는 데이터로 정하는 게 아니라 그 메서드 입장의 정상 여부로 정한다.</div></div>
+  </div>
+
+  <div class="note warn"><span class="tag">double 함정</span><div><strong>double의 0 나누기는 예외가 아니라 NaN이다.</strong> 정수 0 나누기는 ArithmeticException으로 즉시 터지지만, <code class="inl">0.0/0.0</code>은 조용히 NaN이 나와 그 뒤 계산·정렬·저장까지 오염시킨다. "터지지 않고 망가지는" 케이스라 가드(fail fast)로 막는다.</div></div>
+
+  <div class="dr">
+    <div class="dr-id">DR-06 · 안 한 결정</div>
+    <h3>전략 패턴은 도입하지 않는다 (YAGNI)</h3>
+    <div class="row"><div class="lbl">근거</div><div class="val">점수 방식이 가중 평점 하나뿐이고, 런타임에 바뀔 축도 없고, if-else 지옥도 없다. 계층(추상화)을 두는 세 기준 중 어느 것도 충족 못 함.</div></div>
+    <div class="row"><div class="lbl">격언</div><div class="val">Rule of three — 비슷한 게 세 번째 나타날 때 추출한다. 미리 만든 추상화는 대개 잘못된 모양이 된다. <span class="hl">패턴을 안 쓸 줄 아는 게 더 드문 능력.</span></div></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section>
+  <div class="sec-no">04</div>
+  <h2>테스트 개념 정리</h2>
+  <p class="sec-sub">SI에서 몸에 밴 "전부 @SpringBootTest" 습관을 교정하는 핵심들</p>
+
+  <h3>테스트는 3층</h3>
+  <ul>
+    <li><strong>단위</strong> — 컨텍스트 없이 순수 객체. 의존성은 Mockito로 가짜 주입. 밀리초. 가장 많아야 함.</li>
+    <li><strong>슬라이스</strong> — 필요한 레이어만. <code class="inl">@DataJpaTest</code>(쿼리·매핑), <code class="inl">@WebMvcTest</code>(컨트롤러·직렬화).</li>
+    <li><strong>통합</strong> — <code class="inl">@SpringBootTest</code> 전체 컨텍스트. 느림. 진짜 중요한 시나리오만.</li>
+  </ul>
+  <p class="ink"><strong>테스트 종류는 "로직이 어디 사는지"로 결정된다.</strong> 가중 평점은 자바 순수 계산이라 단위 테스트. 회독수·리뷰3개 필터는 쿼리에 있으니 <code class="inl">@DataJpaTest</code>로 실제 쿼리를 돌려야 검증된다.</p>
+
+  <div class="note warn"><span class="tag">교정</span><div>순수 계산에 <code class="inl">@SpringBootTest</code> + <code class="inl">@Autowired</code>를 쓰면 — 계산기 하나 두드리는데 사무실 전체에 불 켜는 격. 의존성 없는 객체는 <code class="inl">new</code>로 만들어 바로 호출하면 된다.</div></div>
+
+  <h3>given · when · then</h3>
+  <p>테스트 하나는 세 토막. <strong>given</strong>(상황 = 입력값 정하기) → <strong>when</strong>(검증할 동작 실행) → <strong>then</strong>(기대 결과 단언). 행동 목록을 먼저 글로 뽑아두면 그 문장 하나가 테스트 하나로 변환된다 — 생각과 코딩을 분리.</p>
+
+  <h3>값 고르는 감각 — 대칭값 함정</h3>
+  <p>v=3, m=3이면 비율이 정확히 0.5/0.5라 <span class="hl">비율을 반대로 짠 버그도 4.5로 똑같이 통과한다.</span> 좋은 테스트 값은 틀렸을 때 결과가 확 달라지는 비대칭 값(v=1, m=3 → 4.25). 경계값은 항상 딱 되는 값·딱 안 되는 값 양쪽을 찌른다(리뷰 3개 포함 / 2개 제외).</p>
+
+  <h3>소수 비교 · 예외 검증</h3>
+  <pre><span class="c">// 소수는 정확히 같은지(==, isEqualTo, Double.compare) 묻지 않는다</span>
+assertThat(score).isCloseTo(<span class="n">4.5</span>, within(<span class="n">0.0001</span>));
+
+<span class="c">// 예외는 실행을 람다로 미뤄서 잡는다</span>
+assertThatThrownBy(() -> calc.calculateGlobalAverage(empty))
+    .isInstanceOf(IllegalArgumentException.class);</pre>
+  <p><code class="inl">assertTrue(조건)</code>보다 <code class="inl">assertThat(값)</code> 계열이 낫다 — 터졌을 때 "expected 4.5 but was 0.0"처럼 실제값을 찍어줘 디버깅이 빠르다. 기대값은 반올림(3.18)하지 말고 식 그대로(<code class="inl">350.0/110.0</code>) 두는 게 안전하고 의도가 보인다.</p>
+</section>
+
+<!-- 5 -->
+<section>
+  <div class="sec-no">05</div>
+  <h2>행동 목록 (테스트 체크리스트)</h2>
+  <p class="sec-sub">랭킹 산정이 지켜야 할 규칙들 — 머릿속이 아니라 글로 뽑아 누락을 막는다</p>
+  <ul class="check">
+    <li class="todo"><b>장르별로 집계된다</b> / 한 장르 책은 다른 장르 랭킹에 섞이지 않는다 <span class="micro">@DataJpaTest 또는 배치 테스트 · 두 규칙 한 시나리오로 묶기 가능</span></li>
+    <li class="todo"><b>장르가 없는 책은 집계에서 제외된다</b><span class="micro">쿼리 조건</span></li>
+    <li class="todo"><b>리뷰가 3개인 책은 포함 / 2개인 책은 제외</b><span class="micro">@DataJpaTest · HAVING COUNT>=3 경계 양쪽</span></li>
+    <li class="todo"><b>1회독 리뷰만 집계, 2회독 이상 제외</b><span class="micro">@DataJpaTest · WHERE readingCount=1</span></li>
+    <li><b>리뷰 적고 평점 높은 책 &lt; 리뷰 많고 평점 약간 낮은 책</b><span class="micro">단위 테스트 · 가중 평점 작동 = shrinkage 검증</span></li>
+    <li class="todo"><b>한 장르에 후보 11개여도 상위 10개만</b><span class="micro">배치 테스트</span></li>
+    <li class="todo"><b>결과는 가중 평점 내림차순 정렬</b><span class="micro">배치 테스트 · "10개 뽑기"와 "순서 세우기"는 다른 동작</span></li>
+  </ul>
+  <div class="note tip"><span class="tag">체크 = 완료</span><div>칠해진 항목은 오늘 단위 테스트로 검증한 것(가중 평점 계산·C 계산). 빈 칸은 쿼리/배치 테스트로 남은 것 — 로드맵 문서 참고.</div></div>
+</section>
+
+<!-- 6 -->
+<section>
+  <div class="sec-no">06</div>
+  <h2>지금 손에 있는 것</h2>
+  <p class="sec-sub">완성·검증된 코드 — 모두 순수 함수, static</p>
+  <div class="haves">
+    <div class="have">
+      <div class="ht">calculateWeightedScore</div>
+      <div class="hd">책 한 권의 가중 평점 (v, R, m, C → 점수)</div>
+      <div class="tests">✓ 정상 계산  ✓ 리뷰 적으면 전체평균쪽으로</div>
+    </div>
+    <div class="have">
+      <div class="ht">calculateGlobalAverage</div>
+      <div class="hd">C, 리뷰 단위 전체 가중평균 (List → C)</div>
+      <div class="tests">✓ 정상 계산  ✓ 빈 리스트면 예외</div>
+    </div>
+    <div class="have">
+      <div class="ht">BookRatingStats</div>
+      <div class="hd">집계 재료 record (avgRating, reviewCount)</div>
+      <div class="tests">불변 · 생성 시점에만 값 주입</div>
+    </div>
+    <div class="have">
+      <div class="ht">WeightedScoreCalculator</div>
+      <div class="hd">위 두 계산을 담은 static 유틸</div>
+      <div class="tests">Rank 도메인 소속 · utils 아님</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section style="border-bottom:none">
+  <div class="sec-no">07</div>
+  <h2>면접 한 줄 답변</h2>
+  <p class="sec-sub">각 결정을 "왜?"에 한 문장으로 — 이게 코드보다 중요하다</p>
+
+  <div class="iq"><div class="q-topic">왜 가중 평점인가</div><blockquote>단순 평균은 표본이 적은 책이 과대평가되는 문제가 있어, 리뷰 수를 반영한 가중 평점으로 정렬했습니다.</blockquote></div>
+  <div class="iq"><div class="q-topic">계산을 왜 배치로 옮겼나</div><blockquote>Rank 테이블은 실시간 계산을 피하려는 캐시인데 Top10을 조회 시점에 계산하면 취지에 어긋나서, 계산을 전부 배치로 옮겼습니다.</blockquote></div>
+  <div class="iq"><div class="q-topic">DB와 앱의 역할 분배</div><blockquote>집계는 데이터가 많아 DB에 맡기고, 가중 평점은 입력이 이미 작고 도메인 정책이라 애플리케이션으로 분리했습니다.</blockquote></div>
+  <div class="iq"><div class="q-topic">C 정책</div><blockquote>지표는 본질적으로 여론의 반영이라 리뷰 단위 가중평균을 택했고, 표본이 적은 현재 규모에선 장르별 C가 불안정해 전체 하나로 뒀습니다.</blockquote></div>
+  <div class="iq"><div class="q-topic">예외 설계</div><blockquote>빈 리스트는 배치 입장에선 정상이지만 계산기 입장에선 사전조건 위반이라, 배치는 일찍 종료하고 계산기는 fail fast로 예외를 던지게 했습니다.</blockquote></div>
+  <div class="iq"><div class="q-topic">double 0 나누기</div><blockquote>double의 0 나누기는 예외가 아니라 NaN이라 조용히 전파되는 게 더 위험해서, 명시적으로 가드를 넣었습니다.</blockquote></div>
+  <div class="iq"><div class="q-topic">전략 패턴을 안 쓴 이유</div><blockquote>점수 방식이 하나뿐이고 런타임에 바뀔 축도 없어서, 전략 패턴은 YAGNI로 판단해 도입하지 않았습니다.</blockquote></div>
+  <div class="iq"><div class="q-topic">테스트 타입 구분</div><blockquote>순수 계산은 컨텍스트 없이 단위 테스트로, 쿼리 검증이 필요한 부분은 @DataJpaTest로 나눴습니다.</blockquote></div>
+  <div class="iq"><div class="q-topic">AI 도구 활용</div><blockquote>테스트는 일부 AI 도구로 빠르게 작성하되, 무엇을 검증할지 고르고 짜인 테스트가 진짜 맞는 검증인지 리뷰하는 건 직접 합니다.</blockquote></div>
+</section>
+
+<footer>
+  BookTalker · 결정 기록 01 / 02 &nbsp;·&nbsp; 가중 평점 랭킹 · 개념과 판단
+</footer>
+
+</div>
+</body>
+</html>

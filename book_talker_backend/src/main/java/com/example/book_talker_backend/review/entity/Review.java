@@ -3,7 +3,9 @@ package com.example.book_talker_backend.review.entity;
 import com.example.book_talker_backend.book.entity.Book;
 import jakarta.persistence.*;
 import lombok.Setter;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -17,6 +19,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 )
 @Setter
 @Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
