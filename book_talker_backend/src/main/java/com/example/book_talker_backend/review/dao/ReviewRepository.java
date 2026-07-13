@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
@@ -35,4 +36,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
            "GROUP BY r.book.isbn13, r.book.genre, r.book.title, r.book.cover " +
            "HAVING COUNT(r) >= 3 ")
     List<BookRatingStats> aggregateRankData();
+
+    List<Review> findAllByWriterInAndRegDateBetween(List<String> writers, LocalDateTime start, LocalDateTime end);
 }

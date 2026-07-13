@@ -15,7 +15,7 @@ public class OAuth2UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
     String provider; // 'google', 'kakao', 'naver'
-    @Column(name = "provider_id")
+    @Column(name = "provider_id", unique = true)
     String providerId;
     @Column(name = "created_at")
     LocalDateTime createdAt;
