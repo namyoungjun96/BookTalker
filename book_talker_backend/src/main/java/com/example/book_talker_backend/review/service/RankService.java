@@ -26,6 +26,7 @@ public class RankService {
     private final RankRepository rankRepository;
     private final ReviewRepository reviewRepository;
     private static final int CONFIDENCE_THRESHOLD = 3;
+    private static final int TOP_N_PER_GENRE = 10;
 
     @Transactional
     @Scheduled(cron = "0 0 4 * * ?")
@@ -37,6 +38,14 @@ public class RankService {
             return ;
         }
 
+        List<Rank> ranks = calculateTopRanksByGenre(rawData);
+
+        rankRepository.deleteAllInBatch();
+        rankRepository.saveAll(ranks);
+        log.info("Rank aggregation completed. Total: {}", ranks.size());
+    }
+
+    public List<Rank> calculateTopRanksByGenre(List<BookRatingStats> rawData) {
         double globalAverage = WeightedScoreCalculator.calculateGlobalAverage(rawData);
 
         Map<String, List<Rank>> grouped = rawData.stream().map(row -> {
@@ -45,26 +54,20 @@ public class RankService {
             rank.setGenre(row.genre());
             rank.setTitle(row.title());
             rank.setCover(row.cover());
-            rank.setWeightedScore(WeightedScoreCalculator.calculateWeightedScore(row.reviewCount(), 
-                row.avgRating(), CONFIDENCE_THRESHOLD, globalAverage));
+            rank.setWeightedScore(WeightedScoreCalculator.calculateWeightedScore(row.reviewCount(),
+                    row.avgRating(), CONFIDENCE_THRESHOLD, globalAverage));
             rank.setAvgRating(row.avgRating());
             rank.setReviewCount(row.reviewCount());
             rank.setUpdatedAt(LocalDateTime.now());
             return rank;
         })
-        .sorted(Comparator.comparing(Rank::getWeightedScore).reversed())
-        .collect(Collectors.groupingBy(Rank::getGenre))
-        ;
+                .sorted(Comparator.comparing(Rank::getWeightedScore).reversed())
+                .collect(Collectors.groupingBy(Rank::getGenre))
+                ;
 
-        List<Rank> ranks = grouped.values().stream()
-            .flatMap(item -> item.stream().limit(10))
-            .toList()
-        ;
-
-        rankRepository.deleteAll();
-
-        rankRepository.saveAll(ranks);
-        log.info("Rank aggregation completed. Total: {}", ranks.size());
+        return grouped.values().stream()
+                .flatMap(item -> item.stream().limit(TOP_N_PER_GENRE))
+                .toList();
     }
 
     public List<Rank> getRank(String genre) {
