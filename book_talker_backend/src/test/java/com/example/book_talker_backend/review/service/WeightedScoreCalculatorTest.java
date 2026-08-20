@@ -57,6 +57,6 @@ public class WeightedScoreCalculatorTest {
     }
 
     private BookRatingStats stats(double avg, int count) {
-        return new BookRatingStats("dummy", "dummy", "dummy", "dummy", avg, count);
+        return new BookRatingStats("dummy", avg, count);
     }
 }

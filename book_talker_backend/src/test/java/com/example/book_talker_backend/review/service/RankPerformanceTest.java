@@ -1,8 +1,12 @@
 package com.example.book_talker_backend.review.service;
 
-import java.util.List;
-
-import jakarta.persistence.EntityManager;
+import com.example.book_talker_backend.book.entity.Book;
+import com.example.book_talker_backend.review.dao.RankRepository;
+import com.example.book_talker_backend.review.dao.ReviewRepository;
+import com.example.book_talker_backend.review.entity.Rank;
+import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
+import jakarta.persistence.EntityManagerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,13 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.StopWatch;
 
-import com.example.book_talker_backend.review.dao.RankRepository;
-import com.example.book_talker_backend.review.dao.ReviewRepository;
-import com.example.book_talker_backend.review.entity.Rank;
-import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
-
-import jakarta.persistence.EntityManagerFactory;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Map;
 
 @SpringBootTest
 @TestPropertySource(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
@@ -28,9 +27,9 @@ public class RankPerformanceTest {
     @Autowired ReviewRepository reviewRepository;
     @Autowired RankRepository rankRepository;
     @Autowired EntityManagerFactory emf;
-    @Autowired EntityManager em;
 
     private static final int CONFIDENCE_THRESHOLD = 3;
+    private static final int TOP_N_PER_GENRE = 10;
     StopWatch stopWatch;
 
     @BeforeEach
@@ -43,7 +42,12 @@ public class RankPerformanceTest {
         stopWatch.start("aggregateTask1");
         rankService.aggregateRank();
         stopWatch.stop();
-        log.info("aggregateTask1: {}", stopWatch.prettyPrint());
+
+        stopWatch.start("aggregateTask2");
+        rankService.aggregateRank();
+        stopWatch.stop();
+
+        log.info("aggregateTask: {}", stopWatch.prettyPrint());
     }
 
     @Test
@@ -55,11 +59,15 @@ public class RankPerformanceTest {
         List<BookRatingStats> rawData = reviewRepository.aggregateRankData();
         stopWatch.stop();
 
-        stopWatch.start("aggregate");
-        List<Rank> ranks = rankService.calculateTopRanksByGenre(rawData);
+        stopWatch.start("mapBooksByIsbn13");
+        Map<String, Book> isbn13Maps = rankService.mapBooksByIsbn13(rawData);
         stopWatch.stop();
 
-        stopWatch.start("deleteAll SaveAll");
+        stopWatch.start("mapBooksByIsbn13");
+        List<Rank> ranks = rankService.calculateTopRanksByGenre(rawData, isbn13Maps);
+        stopWatch.stop();
+
+        stopWatch.start("deleteAllInBatch");
         rankRepository.deleteAllInBatch();
         stopWatch.stop();
 
