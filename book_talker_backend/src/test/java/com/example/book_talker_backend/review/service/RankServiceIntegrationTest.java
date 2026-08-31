@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.example.book_talker_backend.book.dao.BookRepository;
@@ -17,8 +18,14 @@ import com.example.book_talker_backend.review.dao.RankRepository;
 import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Rank;
 import com.example.book_talker_backend.review.entity.Review;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
+@Testcontainers
 @SpringBootTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class RankServiceIntegrationTest {
     @Autowired
     RankRepository rankRepository;
@@ -28,6 +35,10 @@ public class RankServiceIntegrationTest {
     ReviewRepository reviewRepository;
     @Autowired
     RankService rankService;
+
+    @ServiceConnection
+    static PostgreSQLContainer postgreSQLContainer =
+            new PostgreSQLContainer(DockerImageName.parse("postgres:13.10-alpine"));
 
     @Test
     void 배치_집계_데이터가_없으면_종료() {
