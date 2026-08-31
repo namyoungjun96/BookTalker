@@ -19,4 +19,10 @@ public class OAuth2UserEntity {
     String providerId;
     @Column(name = "created_at")
     LocalDateTime createdAt;
+
+    public OAuth2UserEntity (String provider, String providerId) {
+        this.provider = provider;
+        this.providerId = providerId;
+        this.createdAt = LocalDateTime.now();
+    }
 }

@@ -1,6 +1,7 @@
 package com.example.book_talker_backend.exception;
 
 import com.example.book_talker_backend.book.exception.UnknownEnumValueException;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -35,6 +36,14 @@ public class GlobalExceptionHandler {
         log.warn("Access denied: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(e.getMessage()));
     }
+
+    /** 404 - 요청받은 리소스를 찾을 수 없음 */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFoundResource(ResourceNotFoundException e) {
+        log.warn("Not found resources: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(e.getMessage()));
+    }
+
 
     /** 409 — 중복 리소스 (1회독 이미 존재 등) */
     @ExceptionHandler(DataIntegrityViolationException.class)
