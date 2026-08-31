@@ -1,10 +1,9 @@
 package com.example.book_talker_backend.review;
 
-import java.util.List;
-
+import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
 import org.springframework.stereotype.Component;
 
-import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
+import java.util.List;
 
 @Component
 public class WeightedScoreCalculator {
@@ -22,8 +21,8 @@ public class WeightedScoreCalculator {
         double totalReviews = 0.0;
 
         for (BookRatingStats bookRating: bookRatingStats) {
-            weightedSum += bookRating.avgRating() * bookRating.reviewCount();
-            totalReviews += bookRating.reviewCount();
+            weightedSum += bookRating.getAvgRating() * bookRating.getReviewCount();
+            totalReviews += bookRating.getReviewCount();
         }
 
         return weightedSum / totalReviews;

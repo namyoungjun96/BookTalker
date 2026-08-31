@@ -1,28 +1,36 @@
 package com.example.book_talker_backend.review.dao;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
+import com.example.book_talker_backend.book.dao.BookRepository;
+import com.example.book_talker_backend.book.entity.Book;
+import com.example.book_talker_backend.review.entity.Review;
+import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
-import com.example.book_talker_backend.book.dao.BookRepository;
-import com.example.book_talker_backend.book.entity.Book;
-import com.example.book_talker_backend.review.entity.Review;
-import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
+import java.time.LocalDateTime;
+import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+
+@Testcontainers
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class ReviewRepositoryTest {
     @Autowired ReviewRepository reviewRepository;
     @Autowired BookRepository bookRepository;
     @Autowired TestEntityManager em;
+
+    @ServiceConnection
+    static PostgreSQLContainer postgreSQLContainer =
+            new PostgreSQLContainer(DockerImageName.parse("postgres:13.10-alpine"));
 
     @Test
     void 리뷰_3개는_집계되고_2개는_제외된다 () {
@@ -48,9 +56,9 @@ public class ReviewRepositoryTest {
         List<BookRatingStats> result = reviewRepository.aggregateRankData();
         assertThat(result).hasSize(1);
         BookRatingStats stats = result.get(0);
-        assertThat(stats.isbn13()).isEqualTo("1234567891011");
-        assertThat(stats.reviewCount()).isEqualTo(3);
-        assertThat(stats.avgRating()).isCloseTo(4.0, within(0.0001));
+        assertThat(stats.getIsbn13()).isEqualTo("1234567891011");
+        assertThat(stats.getReviewCount()).isEqualTo(3);
+        assertThat(stats.getAvgRating()).isCloseTo(4.0, within(0.0001));
     }
 
     @Test
@@ -73,9 +81,9 @@ public class ReviewRepositoryTest {
         List<BookRatingStats> result = reviewRepository.aggregateRankData();
         assertThat(result).hasSize(1);
         BookRatingStats stats = result.get(0);
-        assertThat(stats.isbn13()).isEqualTo("1234567891011");
-        assertThat(stats.reviewCount()).isEqualTo(3);
-        assertThat(stats.avgRating()).isCloseTo(4.0, within(0.0001));
+        assertThat(stats.getIsbn13()).isEqualTo("1234567891011");
+        assertThat(stats.getReviewCount()).isEqualTo(3);
+        assertThat(stats.getAvgRating()).isCloseTo(4.0, within(0.0001));
     }
 
     private Book book(String isbn13) {

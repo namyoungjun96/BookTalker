@@ -5,6 +5,13 @@ spring:
   application:
     name: book_talker_backend
 
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 30
+        order_inserts: true
+
 server:
   port: 8010
   forward-headers-strategy: native

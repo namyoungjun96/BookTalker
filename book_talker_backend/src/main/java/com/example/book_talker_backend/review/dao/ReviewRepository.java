@@ -3,7 +3,6 @@ package com.example.book_talker_backend.review.dao;
 
 import com.example.book_talker_backend.review.entity.Review;
 import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,11 +27,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // 집계: 1회독 리뷰만 대상, 3개 이상인 책
     @Query("SELECT new com.example.book_talker_backend.review.entity.dto.BookRatingStats(" +
-           "r.book.isbn13, r.book.genre, r.book.title, r.book.cover, " +
-           "AVG(r.rating), CAST(COUNT(r) AS Integer)) " +
-           "FROM Review r " +
-           "WHERE r.readingCount = 1 " +
-           "GROUP BY r.book.isbn13, r.book.genre, r.book.title, r.book.cover " +
-           "HAVING COUNT(r) >= 3 ")
+                  "r.book.isbn13, AVG(r.rating), CAST(COUNT(r) AS Integer)) " +
+                  "FROM Review r " +
+                  "WHERE r.readingCount = 1 " +
+                  "GROUP BY r.book.isbn13 " +
+                  "HAVING COUNT(r) >= 3")
     List<BookRatingStats> aggregateRankData();
 }
