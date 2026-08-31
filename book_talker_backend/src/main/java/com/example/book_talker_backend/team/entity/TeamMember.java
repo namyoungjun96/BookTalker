@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,6 +36,7 @@ public class TeamMember {
     @ManyToOne
     @JoinColumn(name = "provider_id", referencedColumnName = "provider_id")
     private OAuth2UserEntity oAuth2User;
+    @Enumerated(EnumType.STRING)
     RoleEnum role;
     String displayName;
     LocalDateTime joinedAt;
