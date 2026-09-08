@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -15,6 +16,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
@@ -26,6 +28,7 @@ import lombok.Setter;
 )
 @Getter
 @Setter
+@NoArgsConstructor
 public class TeamMember {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,8 +39,21 @@ public class TeamMember {
     @ManyToOne
     @JoinColumn(name = "provider_id", referencedColumnName = "provider_id")
     private OAuth2UserEntity oAuth2User;
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    RoleEnum role;
+    MemberRoleEnum role;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    MemberStatusEnum status;
     String displayName;
     LocalDateTime joinedAt;
+
+    public TeamMember(Team team, OAuth2UserEntity oAuth2User, MemberRoleEnum role, MemberStatusEnum status, String displayName) {
+        this.team = team;
+        this.oAuth2User = oAuth2User;
+        this.role = role;
+        this.status = status;
+        this.displayName = displayName;
+        this.joinedAt = LocalDateTime.now();
+    }
 }

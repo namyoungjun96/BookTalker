@@ -18,15 +18,33 @@ import com.example.book_talker_backend.team.entity.TeamMember;
 import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
 import com.example.book_talker_backend.user.exception.NotFoundUserException;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 @DataJpaTest
 @Import(TeamService.class)
+@Testcontainers
 public class TeamServiceTest {
     @Autowired TeamService teamService;
     @Autowired TeamRepository teamRepository;
     @Autowired TeamMemberRepository teamMemberRepository;
     @Autowired OAuth2UserRepository oAuth2UserRepository;
     @Autowired TestEntityManager em;
+
+    @ServiceConnection
+    static PostgreSQLContainer postgreSQLContainer =
+            new PostgreSQLContainer(DockerImageName.parse("postgres:13.10-alpine"));
+
+    @BeforeEach
+    void setUp() {
+        oAuth2UserRepository.save(new OAuth2UserEntity("naver", "userA"));
+        oAuth2UserRepository.save(new OAuth2UserEntity("naver", "userB"));
+
+        em.flush();
+        em.clear();
+    }
 
     @Test
     void 팀_생성_정상적() {

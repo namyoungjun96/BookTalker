@@ -1,6 +1,7 @@
 package com.example.book_talker_backend.exception;
 
 import com.example.book_talker_backend.book.exception.UnknownEnumValueException;
+import com.example.book_talker_backend.team.exception.TeamAccessDeniedException;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
