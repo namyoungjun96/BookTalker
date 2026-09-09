@@ -1,5 +1,6 @@
 package com.example.book_talker_backend.book.service;
 
+import com.example.book_talker_backend.book.cache.SearchCacheKey;
 import com.example.book_talker_backend.book.dao.BookRepository;
 import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.entity.dto.AladinBook;
@@ -7,6 +8,7 @@ import com.example.book_talker_backend.book.entity.dto.AladinResponse;
 import com.example.book_talker_backend.book.entity.dto.ListRequest;
 import com.example.book_talker_backend.book.entity.dto.SearchRequest;
 import com.example.book_talker_backend.book.infrastructure.AladinBookMapper;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +25,7 @@ import java.util.Map;
 @Slf4j
 public class BookService {
     private final RestTemplate restTemplate;
+    private final Cache<SearchCacheKey, AladinResponse> searchCache;
     private final BookRepository bookRepository;
 
     @Value("${aladin.api.key}")
@@ -46,6 +49,11 @@ public class BookService {
     }
 
     public AladinResponse search(SearchRequest request) {
+        SearchCacheKey queryKey = new SearchCacheKey(request.query(), Integer.parseInt(request.start()));
+        return searchCache.get(queryKey, key -> fetchFromAladin(request));
+    }
+
+    private AladinResponse fetchFromAladin(SearchRequest request) {
         String urlTemplate = ALADIN_BASE_URL + "/ItemSearch.aspx?TTBKey={ttbKey}&Query={query}&QueryType=Title&SearchTarget=Book"
                 + "&Start={start}&MaxResults={maxResults}&Cover={cover}&Output=js&InputEncoding=utf-8&Version=20131101";
         Map<String, Object> params = Map.of(
