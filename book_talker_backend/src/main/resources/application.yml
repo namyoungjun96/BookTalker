@@ -20,4 +20,9 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health, metrics, prometheus
+  metrics:
+    distribution:
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+        http.client.requests: 0.5, 0.95, 0.99
