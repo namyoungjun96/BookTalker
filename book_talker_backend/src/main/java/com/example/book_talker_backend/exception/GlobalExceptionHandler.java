@@ -1,6 +1,7 @@
 package com.example.book_talker_backend.exception;
 
 import com.example.book_talker_backend.book.exception.UnknownEnumValueException;
+import com.example.book_talker_backend.team.exception.DuplicateTeamMemberException;
 import com.example.book_talker_backend.team.exception.TeamAccessDeniedException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -32,8 +33,8 @@ public class GlobalExceptionHandler {
     }
 
     /** 403 — 리소스 소유자 불일치 */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException e) {
+    @ExceptionHandler({AccessDeniedException.class, TeamAccessDeniedException.class})
+    public ResponseEntity<ErrorResponse> handleAccessDenied(RuntimeException e) {
         log.warn("Access denied: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(e.getMessage()));
     }
@@ -47,8 +48,8 @@ public class GlobalExceptionHandler {
 
 
     /** 409 — 중복 리소스 (1회독 이미 존재 등) */
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException e) {
+    @ExceptionHandler({DataIntegrityViolationException.class, DuplicateTeamMemberException.class})
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(RuntimeException e) {
         log.warn("Conflict: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
     }
