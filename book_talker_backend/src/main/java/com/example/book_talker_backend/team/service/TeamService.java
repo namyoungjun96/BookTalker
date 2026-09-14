@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.example.book_talker_backend.team.dao.TeamMemberRepository;
@@ -13,11 +12,9 @@ import com.example.book_talker_backend.team.entity.MemberRoleEnum;
 import com.example.book_talker_backend.team.entity.MemberStatusEnum;
 import com.example.book_talker_backend.team.entity.Team;
 import com.example.book_talker_backend.team.entity.TeamMember;
-import com.example.book_talker_backend.team.exception.NotFoundTeamException;
 import com.example.book_talker_backend.team.exception.TeamAccessDeniedException;
 import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
-import com.example.book_talker_backend.user.exception.NotFoundUserException;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,15 +26,11 @@ import lombok.extern.slf4j.Slf4j;
 public class TeamService {
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
-    private final TeamMemberRepository teamMemberRepository;
     private final OAuth2UserRepository oAuth2UserRepository;
 
     @Transactional
     public void createTeam(String teamName, String teamDescription, String providerId, String displayName) {
         OAuth2UserEntity providerUser = oAuth2UserRepository.findByProviderId(providerId);
-        if (providerUser == null) {
-            throw new NotFoundUserException("[createTeam] 해당 유저는 존재하지 않습니다: " + providerId);
-        }
 
         Team team = new Team();
         team.setTeamName(teamName);
@@ -94,14 +87,11 @@ public class TeamService {
 
         Team team = teamRepository
                 .findById(teamId)
-                .orElseThrow(() ->  NotFoundTeamException("[deleteTeam] 권한이 맞지 않습니다: " + providerId));
+                .orElseThrow(() -> new IllegalStateException("[deleteTeam] 불변조건 위반 — OWNER 체크 통과했는데 팀이 없음: teamId=" + teamId));
 
         teamRepository.delete(team);
     } 
 
-    public void getMyTeams(String providerId) {}
-    public void updateTeam(Long teamId, String teamName, String teamDescription, String providerId) {}
-    public void deleteTeam(Long teamId, String providerId) {} 
     public void addMember(Long teamId, String actorProviderId, String requestProviderId) {}
 
     public void removeMember(Long teamId, Long teamMemberId, String providerId) {}
