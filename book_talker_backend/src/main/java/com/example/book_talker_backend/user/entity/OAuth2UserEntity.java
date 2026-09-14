@@ -2,6 +2,7 @@ package com.example.book_talker_backend.user.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 @Table(name = "OAUTH2_USER")
 @Setter
 @Getter
+@NoArgsConstructor
 public class OAuth2UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

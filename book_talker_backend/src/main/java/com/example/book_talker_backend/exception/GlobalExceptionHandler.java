@@ -1,6 +1,7 @@
 package com.example.book_talker_backend.exception;
 
 import com.example.book_talker_backend.book.exception.UnknownEnumValueException;
+import com.example.book_talker_backend.team.exception.BannedTeamMemberException;
 import com.example.book_talker_backend.team.exception.DuplicateTeamMemberException;
 import com.example.book_talker_backend.team.exception.TeamAccessDeniedException;
 
@@ -48,7 +49,7 @@ public class GlobalExceptionHandler {
 
 
     /** 409 — 중복 리소스 (1회독 이미 존재 등) */
-    @ExceptionHandler({DataIntegrityViolationException.class, DuplicateTeamMemberException.class})
+    @ExceptionHandler({DataIntegrityViolationException.class, DuplicateTeamMemberException.class, BannedTeamMemberException.class})
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(RuntimeException e) {
         log.warn("Conflict: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
