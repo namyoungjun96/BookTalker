@@ -2,6 +2,9 @@ package com.example.book_talker_backend.team.entity;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
 
 import jakarta.persistence.Column;
@@ -18,6 +21,7 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "TeamMember",
@@ -29,6 +33,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString 
 public class TeamMember {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,9 +46,11 @@ public class TeamMember {
     private OAuth2UserEntity oAuth2User;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     MemberRoleEnum role;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     MemberStatusEnum status;
     String displayName;
     LocalDateTime joinedAt;

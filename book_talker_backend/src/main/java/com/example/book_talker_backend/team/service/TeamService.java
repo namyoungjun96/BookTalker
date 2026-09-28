@@ -15,6 +15,8 @@ import com.example.book_talker_backend.team.entity.MemberStatusEnum;
 import com.example.book_talker_backend.team.entity.Team;
 import com.example.book_talker_backend.team.entity.TeamInvite;
 import com.example.book_talker_backend.team.entity.TeamMember;
+import com.example.book_talker_backend.team.entity.dto.CreateTeamRequest;
+import com.example.book_talker_backend.team.entity.dto.JoinByInviteCodeRequest;
 import com.example.book_talker_backend.team.exception.BannedTeamMemberException;
 import com.example.book_talker_backend.team.exception.DuplicateTeamMemberException;
 import com.example.book_talker_backend.team.exception.NotFoundInviteCodeException;
@@ -37,19 +39,19 @@ public class TeamService {
     private final OAuth2UserRepository oAuth2UserRepository;
 
     @Transactional
-    public void createTeam(String teamName, String teamDescription, String providerId, String displayName) {
+    public void createTeam(CreateTeamRequest request, String providerId) {
         OAuth2UserEntity providerUser = oAuth2UserRepository.findByProviderId(providerId);
 
         Team team = new Team();
-        team.setTeamName(teamName);
-        team.setTeamDescription(teamDescription);
+        team.setTeamName(request.teamName());
+        team.setTeamDescription(request.teamDescription());
 
         TeamMember member = new TeamMember();
         member.setTeam(team);
         member.setRole(MemberRoleEnum.OWNER);
         member.setStatus(MemberStatusEnum.ACTIVE);
         member.setOAuth2User(providerUser);
-        member.setDisplayName(displayName);
+        member.setDisplayName(request.displayName());
         member.setJoinedAt(LocalDateTime.now());
 
         team.getTeamMembers().add(member);
@@ -173,13 +175,13 @@ public class TeamService {
     }
 
     @Transactional
-    public void joinTeamByInviteCode(String code, String providerId, String displayName) {
+    public void joinTeamByInviteCode(JoinByInviteCodeRequest request, String providerId) {
         TeamInvite inviteCode = teamInviteRepository
-                .findByCode(code)
-                .orElseThrow(() -> new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + code));
+                .findByCode(request.code())
+                .orElseThrow(() -> new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + request.code()));
 
         if (!inviteCode.isActive())
-            throw new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + code);
+            throw new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + request.code());
 
         Long teamId = inviteCode.getTeam().getTeamId();
         
@@ -193,10 +195,10 @@ public class TeamService {
             if (MemberStatusEnum.ACTIVE == checkedMember.getStatus())
                 throw new DuplicateTeamMemberException("[joinTeamByInviteCode] 해당 유저는 이미 존재 합니다: " + providerId);
             else if (MemberStatusEnum.BANNED == checkedMember.getStatus())
-                throw new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + code);
+                throw new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + request.code());
         }
         
-        saveMember(teamId, user, displayName, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE);
+        saveMember(teamId, user, request.displayName(), MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE);
     }
 
     void saveMember(Long teamId, OAuth2UserEntity user, String displayName, MemberRoleEnum role, MemberStatusEnum status) {
