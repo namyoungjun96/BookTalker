@@ -3,11 +3,14 @@ package com.example.book_talker_backend.config;
 import com.example.book_talker_backend.oauth2.CustomAuthenticationSuccessHandler;
 import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
 import com.example.book_talker_backend.user.dao.UserRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -23,12 +26,13 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepo
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -39,6 +43,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     private String BASE_URL;
     private final OAuth2UserRepository oAuth2UserRepository;
     private final UserRepository userRepository;
+    private final Environment env;
 
     @Value("${app.admin.id}")
     private String ADMIN_USER_ID;
@@ -81,9 +86,14 @@ public class SecurityConfig implements WebMvcConfigurer {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(authorizeRequests ->
-                authorizeRequests.requestMatchers("/login", "/logout", "/auth/session", "/rank/**").permitAll()
-                        .anyRequest().authenticated()
+            .authorizeHttpRequests(authorizeRequests -> {
+                        List<String> permitAllUris = new ArrayList<>(List.of("/login", "/logout", "/auth/session", "/rank/**"));
+                        if (env.acceptsProfiles(Profiles.of("local"))) {
+                            permitAllUris.add("/test/login");
+                        }
+                        authorizeRequests.requestMatchers(permitAllUris.toArray(new String[0])).permitAll()
+                                .anyRequest().authenticated();
+                    }
                 )
                 .oauth2Login(login -> login
                         .successHandler(customAuthenticationSuccessHandler())
