@@ -25,6 +25,9 @@ import com.example.book_talker_backend.team.entity.MemberStatusEnum;
 import com.example.book_talker_backend.team.entity.Team;
 import com.example.book_talker_backend.team.entity.TeamInvite;
 import com.example.book_talker_backend.team.entity.TeamMember;
+import com.example.book_talker_backend.team.entity.dto.CreateTeamRequest;
+import com.example.book_talker_backend.team.entity.dto.JoinByInviteCodeRequest;
+import com.example.book_talker_backend.team.entity.dto.UpdateTeamRequest;
 import com.example.book_talker_backend.team.exception.BannedTeamMemberException;
 import com.example.book_talker_backend.team.exception.DuplicateTeamMemberException;
 import com.example.book_talker_backend.team.exception.NotFoundInviteCodeException;
@@ -62,9 +65,13 @@ public class TeamServiceTest {
         em.clear();
     }
 
+    private CreateTeamRequest createTeamRequest(String teamName) {
+        return new CreateTeamRequest(teamName, teamName + " in book", "owner");
+    }
+
     @Test
     void 팀_생성_정상적() {
-        teamService.createTeam("mobigen", "mobigen in book", "userA", "owner");
+        teamService.createTeam(new CreateTeamRequest("mobigen", "mobigen in book", "owner"), "userA");
 
         em.flush();
         em.clear();
@@ -83,9 +90,9 @@ public class TeamServiceTest {
 
     @Test 
     void 팀_조회_ACTIVE만_뜨는지() {
-        teamService.createTeam("mobigen", "mobigen in book", "userA", "owner");
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
-        teamService.createTeam("line", "line in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("mobigen"), "userA");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
+        teamService.createTeam(createTeamRequest("line"), "userA");
 
         Team teamNaver = teamRepository.findByTeamName("naver");
         Team teamLine = teamRepository.findByTeamName("line");
@@ -116,14 +123,14 @@ public class TeamServiceTest {
 
     @Test 
     void 팀_수정_getReferenceById_검증() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
 
         em.flush();
         em.clear();
 
         Team teamNaver = teamRepository.findByTeamName("naver");
         
-        teamService.updateTeam(teamNaver.getTeamId(), "naver", "book in naver", "userA");
+        teamService.updateTeam(teamNaver.getTeamId(), new UpdateTeamRequest("naver", "book in naver"), "userA");
         
         em.flush();
         em.clear();
@@ -135,20 +142,20 @@ public class TeamServiceTest {
 
     @Test 
     void 팀_팀에_속하지_않은_유저가_수정할_때() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
 
         em.flush();
         em.clear();
 
         Team teamNaver = teamRepository.findByTeamName("naver");
 
-        assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), "ver", "book in ver", "userB"))
+        assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), new UpdateTeamRequest("ver", "book in ver"), "userB"))
                     .isInstanceOf(TeamAccessDeniedException.class);
     }
 
     @Test 
     void 팀_수정_허가된_롤만_가능() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
 
         Team teamNaver = teamRepository.findByTeamName("naver");
         
@@ -159,13 +166,13 @@ public class TeamServiceTest {
         em.flush();
         em.clear();
 
-        assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), "ver", "book in ver", "userB"))
+        assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), new UpdateTeamRequest("ver", "book in ver"), "userB"))
                     .isInstanceOf(TeamAccessDeniedException.class);
     }
 
     @Test 
     void 팀_삭제시_팀원도_삭제되는지_검증() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
         
         Team teamNaver = teamRepository.findByTeamName("naver");
         OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
@@ -187,7 +194,7 @@ public class TeamServiceTest {
 
     @Test 
     void 팀_팀에_속하지_않은_유저가_삭제할_때() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
 
         em.flush();
         em.clear();
@@ -200,7 +207,7 @@ public class TeamServiceTest {
 
     @Test 
     void 팀_삭제_허가된_롤만_가능() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
         
         Team teamNaver = teamRepository.findByTeamName("naver");
                     
@@ -217,13 +224,13 @@ public class TeamServiceTest {
 
     @Test
     void 롤백온리_실험() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
         em.flush();
         em.clear();
 
         Team teamNaver = teamRepository.findByTeamName("naver");
 
-        assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), "ver", "book in ver", "userB"))
+        assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), new UpdateTeamRequest("ver", "book in ver"), "userB"))
                 .isInstanceOf(TeamAccessDeniedException.class);
 
         TestTransaction.flagForCommit();
@@ -233,7 +240,7 @@ public class TeamServiceTest {
 
     @Test 
     void addMember_정상_동작() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
 
         Team teamNaver = teamRepository.findByTeamName("naver");
         
@@ -250,7 +257,7 @@ public class TeamServiceTest {
 
     @Test 
     void addMember_추가하려는_사용자가_없으면_에러() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
         em.flush();
         em.clear();
 
@@ -262,7 +269,7 @@ public class TeamServiceTest {
 
     @Test 
     void addMember_이미_등록된_사용자면_에러() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
 
         Team teamNaver = teamRepository.findByTeamName("naver");
         
@@ -276,7 +283,7 @@ public class TeamServiceTest {
 
     @Test 
     void addMember_차단된_사용자면_에러() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
 
         Team teamNaver = teamRepository.findByTeamName("naver");
         
@@ -294,7 +301,7 @@ public class TeamServiceTest {
 
     @Test 
     void createInviteCode_정상_동작() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
         Team teamNaver = teamRepository.findByTeamName("naver");
         String code = teamService.createInviteCode(teamNaver.getTeamId(), "userA");
         
@@ -308,7 +315,7 @@ public class TeamServiceTest {
 
     @Test 
     void createInviteCode_생성자가_owner가_아닐때() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
         Team teamNaver = teamRepository.findByTeamName("naver");
         teamService.addMember(teamNaver.getTeamId(), "userB", "userA", "userB");
         
@@ -321,7 +328,7 @@ public class TeamServiceTest {
 
     @Test 
     void revokeInviteCode_정상_동작() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
         Team teamNaver = teamRepository.findByTeamName("naver");
         String code = teamService.createInviteCode(teamNaver.getTeamId(), "userA");
         teamService.revokeInviteCode(code, "userA");
@@ -341,7 +348,7 @@ public class TeamServiceTest {
 
     @Test 
     void revokeInviteCode_이미_비활성화된_경우() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
         Team teamNaver = teamRepository.findByTeamName("naver");
         String code = teamService.createInviteCode(teamNaver.getTeamId(), "userA");
         TeamInvite inviteCode = teamInviteRepository.findByCode(code).get();
@@ -358,10 +365,10 @@ public class TeamServiceTest {
 
     @Test 
     void joinTeamByInviteCode_정상_동작() {
-        teamService.createTeam("naver", "naver in book", "userA", "owner");
+        teamService.createTeam(createTeamRequest("naver"), "userA");
         Team teamNaver = teamRepository.findByTeamName("naver");
         String code = teamService.createInviteCode(teamNaver.getTeamId(), "userA");
-        teamService.joinTeamByInviteCode(code, "userB", "userB");
+        teamService.joinTeamByInviteCode(new JoinByInviteCodeRequest(code, "userB"), "userB");
         
         em.flush();
         em.clear();

@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.book_talker_backend.team.entity.dto.UpdateTeamRequest;
 import org.springframework.stereotype.Service;
 
 import com.example.book_talker_backend.team.dao.TeamInviteRepository;
@@ -69,7 +70,7 @@ public class TeamService {
     }
 
     @Transactional
-    public void updateTeam(Long teamId, String teamName, String teamDescription, String providerId) {
+    public void updateTeam(Long teamId, UpdateTeamRequest request, String providerId) {
         if (teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, teamId)
                 .orElseThrow(() -> new TeamAccessDeniedException("[updateTeam] 권한이 맞지 않습니다: " + providerId))
                 .getRole() 
@@ -78,8 +79,8 @@ public class TeamService {
 
         Team team = teamRepository.getReferenceById(teamId);
 
-        team.setTeamName(teamName);
-        team.setTeamDescription(teamDescription);
+        team.setTeamName(request.teamName());
+        team.setTeamDescription(request.teamDesc());
     }
 
     @Transactional
