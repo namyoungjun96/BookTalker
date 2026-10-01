@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -376,5 +378,29 @@ public class TeamServiceTest {
         TeamMember member = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamNaver.getTeamId()).get();
         assertEquals(MemberRoleEnum.MEMBER, member.getRole());
         assertEquals(MemberStatusEnum.ACTIVE, member.getStatus());
+    }
+
+    @Test
+    void 팀_팀원_초대코드_cascade_삭제() {
+        teamService.createTeam(createTeamRequest("naver"), "userA");
+        Team teamNaver = teamRepository.findByTeamName("naver");
+        Long teamId = teamNaver.getTeamId();
+        String code = teamService.createInviteCode(teamNaver.getTeamId(), "userA");
+        
+        em.flush();
+        em.clear();
+
+        teamService.deleteTeam(teamNaver.getTeamId(), "userA");
+
+        em.flush();
+        em.clear();
+
+        teamNaver = teamRepository.findByTeamName("naver");
+        Optional<TeamMember> member = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userA", teamId);
+        Optional<TeamInvite> invite = teamInviteRepository.findByCode(code);
+
+        assertNull(teamNaver);
+        assertFalse(member.isPresent());
+        assertFalse(invite.isPresent());
     }
 }

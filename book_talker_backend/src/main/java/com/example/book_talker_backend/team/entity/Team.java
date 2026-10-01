@@ -36,4 +36,6 @@ public class Team {
     LocalDateTime updatedAt;
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     List<TeamMember> teamMembers = new ArrayList<>();
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<TeamInvite> teamInvites = new ArrayList<>();
 }
