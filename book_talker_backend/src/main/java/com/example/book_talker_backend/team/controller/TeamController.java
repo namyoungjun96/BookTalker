@@ -2,6 +2,7 @@ package com.example.book_talker_backend.team.controller;
 
 import com.example.book_talker_backend.team.entity.Team;
 import com.example.book_talker_backend.team.entity.dto.CreateTeamRequest;
+import com.example.book_talker_backend.team.entity.dto.TeamListResponse;
 import com.example.book_talker_backend.team.entity.dto.JoinByInviteCodeRequest;
 import com.example.book_talker_backend.team.entity.dto.UpdateTeamRequest;
 import com.example.book_talker_backend.team.service.TeamService;
@@ -19,7 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/team")
+@RequestMapping("/teams")
 @Slf4j
 public class TeamController {
     private final TeamService teamService;
@@ -60,11 +61,11 @@ public class TeamController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Team>> getMyTeams(@AuthenticationPrincipal OAuth2User oauth2User) {
+    public ResponseEntity<List<TeamListResponse>> getMyTeams(@AuthenticationPrincipal OAuth2User oauth2User) {
         Map<String, Object> response = oauth2User.getAttribute("response");
         String providerId = (String) response.get("id");
 
-        List<Team> teams = teamService.getMyTeams(providerId);
+        List<TeamListResponse> teams = teamService.getMyTeams(providerId);
 
         return new ResponseEntity<>(teams, HttpStatus.OK);
     }
