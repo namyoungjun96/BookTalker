@@ -46,11 +46,9 @@ public class TeamMember {
     private OAuth2UserEntity oAuth2User;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     MemberRoleEnum role;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     MemberStatusEnum status;
     String displayName;
     LocalDateTime joinedAt;
