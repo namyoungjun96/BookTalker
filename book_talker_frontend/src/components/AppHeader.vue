@@ -12,6 +12,9 @@
         <router-link v-if="isLoggedIn" to="/book-search" class="nav-link" :class="{ active: isActiveNav('/book-search') }">
           검색
         </router-link>
+        <router-link v-if="isLoggedIn" to="/teams" class="nav-link" :class="{ active: isActiveNav('/teams') }">
+          팀
+        </router-link>
         <button v-if="isLoggedIn" type="button" @click="onLogout" class="nav-link logout-btn">
           로그아웃
         </button>
