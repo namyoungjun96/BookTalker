@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.book_talker_backend.team.entity.dto.TeamListResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +63,7 @@ public class TeamServiceTest {
     void setUp() {
         oAuth2UserRepository.save(new OAuth2UserEntity("naver", "userA"));
         oAuth2UserRepository.save(new OAuth2UserEntity("naver", "userB"));
+        oAuth2UserRepository.save(new OAuth2UserEntity("naver", "userC"));
 
         em.flush();
         em.clear();
@@ -101,24 +103,27 @@ public class TeamServiceTest {
         Team teamMobigen = teamRepository.findByTeamName("mobigen");
         
         OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
+        OAuth2UserEntity userC = oAuth2UserRepository.findByProviderId("userC");
 
         teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, "naverUserB"));
+        teamMemberRepository.save(new TeamMember(teamNaver, userC, MemberRoleEnum.MEMBER, MemberStatusEnum.BANNED, "naverUserC"));
         teamMemberRepository.save(new TeamMember(teamLine, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.PENDING, "lineUserB"));
         teamMemberRepository.save(new TeamMember(teamMobigen, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.BANNED, "mobigenUserB"));
 
         em.flush();
         em.clear();
 
-        List<Team> teams = teamService.getMyTeams("userB");
+        List<TeamListResponse> teams = teamService.getMyTeams("userB");
 
         assertNotNull(teams);
         assertEquals(1, teams.size());
-        assertEquals("naver", teams.get(0).getTeamName());
+        assertEquals("naver", teams.get(0).teamName());
+        assertEquals(2, teams.get(0).memberCount());
     }
 
     @Test 
     void 팀_아무것도_없을때는_빈_리스트() {
-        List<Team> teams = teamService.getMyTeams("userB");
+        List<TeamListResponse> teams = teamService.getMyTeams("userB");
 
         assertTrue(teams.isEmpty());
     }

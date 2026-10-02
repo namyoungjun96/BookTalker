@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.book_talker_backend.team.entity.dto.TeamListResponse;
 import com.example.book_talker_backend.team.entity.dto.UpdateTeamRequest;
 import org.springframework.stereotype.Service;
 
@@ -26,9 +27,9 @@ import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
 import com.example.book_talker_backend.user.exception.NotFoundUserException;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -60,13 +61,9 @@ public class TeamService {
         teamRepository.save(team);
     }
 
-    public List<Team> getMyTeams(String providerId) {
-        List<TeamMember> activeMemberships = teamMemberRepository.findAllByoAuth2User_ProviderIdAndStatus(providerId, MemberStatusEnum.ACTIVE);
-
-        return activeMemberships
-                .stream()
-                .map(TeamMember::getTeam)
-                .toList();
+    @Transactional(readOnly = true)
+    public List<TeamListResponse> getMyTeams(String providerId) {
+        return teamMemberRepository.findByActiveTeamFromProviderId(providerId);
     }
 
     @Transactional
