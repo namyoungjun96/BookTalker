@@ -56,6 +56,11 @@ const routes = [
     component: BookReviewsView,
     meta: { activeNav: '/' },
   },
+  {
+    path: '/teams',
+    name: 'teams',
+    component: () => import('../views/TeamListView.vue'),
+  },
 ];
 
 const router = createRouter({
