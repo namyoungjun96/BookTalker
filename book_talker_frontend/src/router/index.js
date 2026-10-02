@@ -61,6 +61,12 @@ const routes = [
     name: 'teams',
     component: () => import('../views/TeamListView.vue'),
   },
+  {
+    path: '/teams/:teamId',
+    name: 'team-detail',
+    component: () => import('../views/TeamDetailView.vue'),
+    meta: { activeNav: '/teams' },
+  },
 ];
 
 const router = createRouter({
