@@ -28,10 +28,12 @@
         <template v-else>
           <div class="team-count">참여 중인 모임 <strong>{{ teams.length }}</strong></div>
           <section class="team-list">
-            <article
+            <button
               v-for="team in teams"
               :key="team.teamId"
+              type="button"
               class="team-card"
+              @click="onTeamClick(team)"
             >
               <div class="team-mark">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -58,7 +60,8 @@
                   </span>
                 </div>
               </div>
-            </article>
+              <span class="card-arrow">→</span>
+            </button>
           </section>
         </template>
       </div>
@@ -68,9 +71,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
 
+const router = useRouter();
 const toast = useToast();
 
 const teams = ref([]);
@@ -86,6 +91,10 @@ const fetchTeams = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const onTeamClick = (team) => {
+  router.push({ name: 'team-detail', params: { teamId: team.teamId } });
 };
 
 // 모임 생성 화면은 이번 범위에 포함되지 않음
@@ -120,7 +129,9 @@ onMounted(fetchTeams);
 .team-count strong { margin-left: 3px; color: #2563eb; }
 
 .team-list { display: flex; flex-direction: column; gap: 12px; }
-.team-card { display: flex; align-items: center; background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; }
+.team-card { width: 100%; display: flex; align-items: center; background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; font-weight: 400; text-align: left; color: #1f2937; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.team-card:hover { border-color: #bfdbfe; box-shadow: 0 5px 18px rgba(37, 99, 235, 0.07); }
+.card-arrow { flex-shrink: 0; font-size: 17px; color: #9ca3af; }
 
 .team-mark { width: 54px; height: 54px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #eff6ff; color: #2563eb; }
 .team-mark svg { width: 23px; height: 23px; }
