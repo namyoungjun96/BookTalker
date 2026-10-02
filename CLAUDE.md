@@ -202,6 +202,18 @@ com.example.book_talker_backend
 - OCI Free Tier (1GB RAM) 환경 고려 → 무거운 인프라 추가 지양
 - 포트폴리오 목적: 기술적 의사결정 근거가 중요
 
+## 커밋 메시지 규칙
+
+형식: `타입(영역): [도메인] 요약`
+
+| 영역 | 대상 |
+|------|------|
+| `FE` | 프론트엔드 (`book_talker_frontend`) |
+| `BE` | 백엔드 (`book_talker_backend`) |
+
+- 타입: `FEAT`, `FIX`, `REFACTOR`, `DOCS` 등
+- 예: `FEAT(FE): [팀] 내 독서 모임 목록 화면 추가`, `FIX(BE): [팀] 팀 조회 응답 DTO 변경`
+
 ## 작업 문서화 규칙
 
 작업 단위마다 HTML 문서를 `document/` 하위 폴더에 남긴다.
