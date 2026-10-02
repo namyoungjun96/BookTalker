@@ -9,7 +9,7 @@
             <h2 class="page-title">독서 모임</h2>
             <p class="page-subtitle">함께 읽고, 서로의 생각을 나눠보세요.</p>
           </div>
-          <button type="button" class="btn-primary invite-btn" @click="onNotReady">
+          <button type="button" class="btn-primary invite-btn" @click="inviteOpen = true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 5v14M5 12h14" />
             </svg>
@@ -122,12 +122,15 @@
         </section>
       </div>
     </main>
+
+    <TeamInviteModal v-if="inviteOpen" @close="inviteOpen = false" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { useToast } from 'vue-toastification';
+import TeamInviteModal from '../components/TeamInviteModal.vue';
 
 const toast = useToast();
 
@@ -173,6 +176,7 @@ const reviews = [
 
 const tabs = ['모임 홈', '멤버', '지난 책'];
 const tab = ref('모임 홈');
+const inviteOpen = ref(false);
 
 const visibleReviews = computed(() => reviews.filter((review) => review.visibility !== '비공개'));
 const writtenMemberCount = new Set(reviews.map((review) => review.author.name)).size;
