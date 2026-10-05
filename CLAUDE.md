@@ -78,18 +78,27 @@ com.example.book_talker_backend
 
 ### 회독 수 기반 리뷰 시스템
 - DB 유니크 제약: `(writer, isbn13, reading_count)`
-- `POST /review` → 1회독 리뷰 (공개 여부 선택 가능)
-- `POST /review/next-reading` → 2회독 이상 (isPublic 강제 false)
+- `POST /review` → 1회독 리뷰
+- `POST /review/next-reading` → 2회독 이상 (해당 책의 기존 회독이 있어야 작성 가능, 회차는 최대 회차 + 1)
+- 회차와 관계없이 공개 범위(`visibility`) 선택·변경 가능
 - 2-layer 방어: 서비스 사전 검증 + GlobalExceptionHandler의 DataIntegrityViolationException 처리
 
-### 공개/비공개 설계
+### 공개 범위 설계 (`visibility`)
+| 값 | 화면 표기 | 본문(`content`) 열람 범위 |
+|----|-----------|---------------------------|
+| `PUBLIC` | 전체공개 | 비로그인 포함 전체 |
+| `GROUP` | 모임공개 | 같은 모임원 (**미구현** — 모임 피드 API 개발 시 적용) |
+| `PRIVATE` | 비공개 | 작성자 본인만 |
+
 - `headline` (한 줄 요약): 필수 입력, 항상 공개
-- `content` (본문): `isPublic=true`일 때만 비로그인 노출
-- 2회독 이상은 `isPublic` 변경 불가 (강제 비공개 유지)
+- `visibility`: 필수 (null이면 400), 프론트 기본값은 `PRIVATE`
+- 책별 공개 리뷰(`GET /rank/reviews`): 회차와 관계없이 `PUBLIC`만 노출
+- 이전 정책(`is_public` Boolean, 2회독 이상 강제 비공개)은 폐기
 
 ### 랭킹 시스템
 - `@Scheduled(cron = "0 0 4 * * ?")` - 매일 새벽 4시 배치
 - 전체 삭제 후 재삽입 방식 (`deleteAll` → `saveAll`)
+- **1회독 리뷰만 집계** — 같은 사람이 회독마다 평점을 남겨 랭킹을 왜곡하는 것 방지 (공개 범위와 무관)
 - `HAVING COUNT(*) >= 3` 조건으로 리뷰 수 미달 책 제외
 - 전체 랭킹 + 장르별 그룹 랭킹 지원
 
@@ -107,7 +116,7 @@ com.example.book_talker_backend
 | headline | VARCHAR NOT NULL | 한 줄 요약 (항상 공개) |
 | content | TEXT | 본문 |
 | rating | INT | 평점 (1~5) |
-| is_public | BOOLEAN DEFAULT false | 공개 여부 |
+| visibility | VARCHAR NOT NULL | 공개 범위 (`PUBLIC` / `GROUP` / `PRIVATE`) |
 | reg_date | TIMESTAMP | 등록 일시 |
 | mod_date | TIMESTAMP | 수정 일시 |
 
@@ -187,7 +196,7 @@ com.example.book_talker_backend
 | Method | Path | 설명 |
 |--------|------|------|
 | POST | /review | 1회독 리뷰 작성 |
-| POST | /review/next-reading | 2회독 이상 리뷰 작성 |
+| POST | /review/next-reading | 다음 회독 리뷰 작성 (2회독 이상) |
 | PUT | /review | 리뷰 수정 |
 | DELETE | /review | 리뷰 삭제 |
 | GET | /review/list | 내 리뷰 목록 |
@@ -201,6 +210,12 @@ com.example.book_talker_backend
 - 코드보다 설계 의도와 트레이드오프 설명 우선
 - OCI Free Tier (1GB RAM) 환경 고려 → 무거운 인프라 추가 지양
 - 포트폴리오 목적: 기술적 의사결정 근거가 중요
+
+### 역할 분담
+| 영역 | 코드 작성 | 커밋 |
+|------|-----------|------|
+| 백엔드 (`book_talker_backend`) | **개발자가 직접 작성** — Claude는 조언·검토만 (라이브 코딩 대비) | 개발자 |
+| 프론트엔드 (`book_talker_frontend`) | Claude | 개발자 승인 후 Claude (새 파일 포함) |
 
 ## 커밋 메시지 규칙
 
@@ -250,9 +265,9 @@ PR 문서(`[commit]`)는 실제 PR 제목을 그대로 파일명으로 사용한
 1. **요청 접수** — 개발자가 변경/수정/추가 사항 전달
 2. **분석 및 설계** — Claude가 코드 분석 후 구현 방식을 `[design]` HTML 문서로 작성하여 개발자에게 전달
 3. **설계 승인** — 개발자가 설계 문서 검토 후 승인 (승인 전 구현 시작 금지)
-4. **구현** — 승인된 설계대로 Claude가 코드 작성
-5. **구현 검수** — 개발자가 구현 결과 검토
-6. **브랜치 생성 및 커밋** — 승인 시 작업 단위에 맞는 브랜치 생성 후 커밋 (검수 없이 커밋 금지)
+4. **구현** — 승인된 설계대로 구현 (프론트: Claude, 백엔드: 개발자 — [역할 분담](#역할-분담) 참고)
+5. **구현 검수** — 개발자가 구현 결과 검토 (백엔드는 Claude가 검토 의견 제시)
+6. **브랜치 생성 및 커밋** — 승인 시 작업 단위에 맞는 브랜치 생성 후 커밋 (검수 없이 커밋 금지, FE/BE 커밋 분리)
 7. **PR 문서 작성** — Claude가 PR 내용을 `[commit]` HTML 문서로 작성하여 개발자에게 전달
 8. **PR 진행** — 개발자가 PR 문서 검토 후 직접 PR 생성
 
@@ -276,3 +291,6 @@ PR 문서(`[commit]`)는 실제 PR 제목을 그대로 파일명으로 사용한
 - [ ] Spring Boot Actuator (헬스체크)
 - [ ] PostgreSQL 슬로우 쿼리 로그 + 인덱스 튜닝
 - [ ] 마이 페이지 완성 (독서 통계, 프로필 수정)
+- [ ] 운영 DB 마이그레이션: `review.is_public` → `visibility` (**visibility 전환 배포 전 필수**)
+- [ ] `GROUP` 리뷰 모임원 열람 권한 (모임 피드 API 개발 시)
+- [ ] 예외 처리 리팩토링 — 팀 기능 완료 후 `FIX`로 진행 (`document/unresolved/[design]_리뷰 예외 처리 방향 논의.md`)
