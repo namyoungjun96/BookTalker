@@ -52,17 +52,20 @@
           <div class="form-section">
             <div class="form-label-row">
               <label class="form-label">독후감 본문</label>
-              <template v-if="!isNextReading">
-                <label class="toggle-label">
-                  <input type="checkbox" v-model="isPublic" class="toggle-input" />
-                  <span class="visibility-badge" :class="isPublic ? 'public' : 'private'">
-                    {{ isPublic ? '공개' : '나만 보기' }}
-                  </span>
-                </label>
-              </template>
-              <template v-else>
-                <span class="visibility-badge private locked">나만 보기 (2회독+는 비공개)</span>
-              </template>
+              <div class="visibility-selector" role="radiogroup" aria-label="본문 공개 범위">
+                <button
+                  v-for="option in VISIBILITY_OPTIONS"
+                  :key="option.value"
+                  type="button"
+                  role="radio"
+                  :aria-checked="visibility === option.value"
+                  class="visibility-badge"
+                  :class="[option.className, { selected: visibility === option.value }]"
+                  @click="visibility = option.value"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
             </div>
             <textarea
               v-model="reviewContent"
@@ -120,6 +123,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
 import { useSelectionStore } from '../stores/selectionStore';
+import { VISIBILITY_OPTIONS, DEFAULT_VISIBILITY } from '../constants/reviewVisibility';
 
 const router = useRouter();
 const route = useRoute();
@@ -147,7 +151,7 @@ const activeBook = computed(() => {
 const reviewHeadline = ref('');
 const reviewContent = ref('');
 const rating = ref(5);
-const isPublic = ref(false);
+const visibility = ref(DEFAULT_VISIBILITY);
 const isCheckingBook = ref(false);
 const bookExists = ref(null);
 const bookAddError = ref(null);
@@ -204,13 +208,13 @@ const onSubmitReview = async () => {
 
   try {
     if (isNextReading.value) {
-      // 회독 독후감: next-reading 엔드포인트, isPublic 강제 false
+      // 회독 독후감: next-reading 엔드포인트
       const reviewData = {
         isbn13: activeBook.value.isbn13,
         headline: reviewHeadline.value.trim(),
         content: reviewContent.value.trim(),
         rating: rating.value,
-        isPublic: false,
+        visibility: visibility.value,
       };
       await apiClient.post('/review/next-reading', reviewData);
       toast.success('회독 독후감이 등록되었습니다!');
@@ -243,7 +247,7 @@ const onSubmitReview = async () => {
         headline: reviewHeadline.value.trim(),
         content: reviewContent.value.trim(),
         rating: rating.value,
-        isPublic: isPublic.value,
+        visibility: visibility.value,
       };
       await apiClient.post('/review', reviewData);
       toast.success('독후감이 성공적으로 등록되었습니다!');
@@ -381,25 +385,26 @@ onMounted(async () => {
   margin-bottom: 0;
 }
 
-.toggle-label {
+.visibility-selector {
   display: flex;
   align-items: center;
-  cursor: pointer;
+  gap: 6px;
 }
-
-.toggle-input { display: none; }
 
 .visibility-badge {
   font-size: 11px;
   font-weight: 500;
   padding: 3px 10px;
+  border: 1px solid transparent;
   border-radius: 10px;
+  background: transparent;
+  color: #9ca3af;
   cursor: pointer;
 }
 
-.visibility-badge.public { background: #dbeafe; color: #2563eb; }
-.visibility-badge.private { background: #f3f4f6; color: #6b7280; }
-.visibility-badge.locked { cursor: default; }
+.visibility-badge.selected.public { background: #dbeafe; color: #2563eb; border-color: #bfdbfe; }
+.visibility-badge.selected.group { background: #f3f0ff; color: #7658bd; border-color: #ddd6fe; }
+.visibility-badge.selected.private { background: #f3f4f6; color: #6b7280; border-color: #e5e7eb; }
 
 .form-label-desc {
   font-size: 12px;
