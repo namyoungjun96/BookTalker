@@ -51,8 +51,8 @@
             <div class="content-section">
               <div class="content-header">
                 <p class="section-label">독후감 본문</p>
-                <span class="visibility-badge" :class="review.isPublic ? 'public' : 'private'">
-                  {{ review.isPublic ? '공개' : '나만 보기' }}
+                <span class="visibility-badge" :class="getVisibilityOption(review.visibility).className">
+                  {{ getVisibilityOption(review.visibility).label }}
                 </span>
               </div>
               <p class="content-text">{{ review.content || '-' }}</p>
@@ -94,19 +94,22 @@
               <div class="content-header">
                 <label class="section-label">
                   독후감 본문
-                  <span class="label-desc">
-                    {{ review.readingCount > 1 ? '2회독+는 공개 불가' : '공개 여부를 설정하세요' }}
-                  </span>
+                  <span class="label-desc">공개 범위를 설정하세요</span>
                 </label>
-                <template v-if="review.readingCount > 1">
-                  <span class="visibility-badge private locked">나만 보기</span>
-                </template>
-                <label v-else class="toggle-label">
-                  <input type="checkbox" v-model="editForm.isPublic" class="toggle-input" />
-                  <span class="visibility-badge" :class="editForm.isPublic ? 'public' : 'private'">
-                    {{ editForm.isPublic ? '공개' : '나만 보기' }}
-                  </span>
-                </label>
+                <div class="visibility-selector" role="radiogroup" aria-label="본문 공개 범위">
+                  <button
+                    v-for="option in VISIBILITY_OPTIONS"
+                    :key="option.value"
+                    type="button"
+                    role="radio"
+                    :aria-checked="editForm.visibility === option.value"
+                    class="visibility-badge selectable"
+                    :class="[option.className, { selected: editForm.visibility === option.value }]"
+                    @click="editForm.visibility = option.value"
+                  >
+                    {{ option.label }}
+                  </button>
+                </div>
               </div>
               <textarea
                 v-model="editForm.content"
@@ -162,6 +165,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
+import { VISIBILITY_OPTIONS, DEFAULT_VISIBILITY, getVisibilityOption } from '../constants/reviewVisibility';
 
 const router = useRouter();
 const route = useRoute();
@@ -177,7 +181,7 @@ const editForm = ref({
   headline: '',
   content: '',
   rating: 5,
-  isPublic: false,
+  visibility: DEFAULT_VISIBILITY,
 });
 
 const fetchDetail = async () => {
@@ -202,7 +206,7 @@ const startEdit = () => {
     headline: review.value.headline || '',
     content: review.value.content || '',
     rating: review.value.rating ?? 5,
-    isPublic: review.value.isPublic ?? false,
+    visibility: review.value.visibility ?? DEFAULT_VISIBILITY,
   };
   isEditing.value = true;
 };
@@ -220,7 +224,7 @@ const onSubmitEdit = async () => {
       headline: editForm.value.headline.trim(),
       content: editForm.value.content.trim(),
       rating: editForm.value.rating,
-      isPublic: editForm.value.isPublic,
+      visibility: editForm.value.visibility,
     });
     // 저장 후 로컬 데이터 갱신
     review.value = {
@@ -228,7 +232,7 @@ const onSubmitEdit = async () => {
       headline: editForm.value.headline.trim(),
       content: editForm.value.content.trim(),
       rating: editForm.value.rating,
-      isPublic: editForm.value.isPublic,
+      visibility: editForm.value.visibility,
       modDate: new Date().toISOString(),
     };
     isEditing.value = false;
@@ -464,8 +468,8 @@ onMounted(fetchDetail);
 }
 
 .visibility-badge.public { background: #dbeafe; color: #2563eb; }
+.visibility-badge.group { background: #f3f0ff; color: #7658bd; }
 .visibility-badge.private { background: #f3f4f6; color: #6b7280; }
-.visibility-badge.locked { cursor: default; }
 
 .meta-section {
   display: flex;
@@ -532,17 +536,24 @@ onMounted(fetchDetail);
 
 .form-textarea:focus { outline: none; border-color: #2563eb; }
 
-.toggle-label {
+.visibility-selector {
   display: flex;
   align-items: center;
   gap: 6px;
-  cursor: pointer;
   margin-bottom: 12px;
 }
 
-.toggle-input { display: none; }
+/* 선택 UI: 미선택은 흐리게, 선택된 항목만 색상 표시 */
+.visibility-badge.selectable {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+}
 
-.toggle-label .visibility-badge { cursor: pointer; }
+.visibility-badge.selectable.selected.public { background: #dbeafe; color: #2563eb; border-color: #bfdbfe; }
+.visibility-badge.selectable.selected.group { background: #f3f0ff; color: #7658bd; border-color: #ddd6fe; }
+.visibility-badge.selectable.selected.private { background: #f3f4f6; color: #6b7280; border-color: #e5e7eb; }
 
 /* 평점 */
 .rating-control {

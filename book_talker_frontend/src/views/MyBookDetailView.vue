@@ -41,6 +41,13 @@
             >
               <div class="row-main">
                 <span class="reading-badge">{{ review.readingCount }}회독</span>
+                <span
+                  v-if="review.visibility"
+                  class="visibility-badge"
+                  :class="getVisibilityOption(review.visibility).className"
+                >
+                  {{ getVisibilityOption(review.visibility).label }}
+                </span>
                 <span class="date">{{ formatDate(review.regDate) }}</span>
                 <span class="rating">⭐ {{ review.rating || '-' }}</span>
                 <button
@@ -66,6 +73,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
+import { getVisibilityOption } from '../constants/reviewVisibility';
 
 const route = useRoute();
 const router = useRouter();
@@ -189,6 +197,10 @@ onMounted(fetchReviews);
 
 .row-main { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .reading-badge { font-size: 12px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 2px 10px; flex-shrink: 0; }
+.visibility-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+.visibility-badge.public { background: #dbeafe; color: #2563eb; }
+.visibility-badge.group { background: #f3f0ff; color: #7658bd; }
+.visibility-badge.private { background: #f3f4f6; color: #6b7280; }
 .date { font-size: 13px; color: #9ca3af; }
 .rating { font-size: 13px; color: #2563eb; font-weight: 500; }
 .delete-btn { margin-left: auto; font-size: 13px; color: #ef4444; background: none; border: 1px solid #fca5a5; border-radius: 6px; cursor: pointer; padding: 4px 10px; transition: all 0.15s ease; flex-shrink: 0; }

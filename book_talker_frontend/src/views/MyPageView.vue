@@ -37,7 +37,17 @@
               </div>
               <div class="book-details">
                 <div class="book-title-row">
-                  <h3 class="book-title">{{ group.title || '-' }}</h3>
+                  <div class="title-group">
+                    <h3 class="book-title">{{ group.title || '-' }}</h3>
+                    <!-- 1회독 책만 공개 범위 표시 (다회독은 회독 목록 화면에서 회독별 표시) -->
+                    <span
+                      v-if="group.reviews.length === 1 && group.reviews[0].visibility"
+                      class="visibility-badge"
+                      :class="getVisibilityOption(group.reviews[0].visibility).className"
+                    >
+                      {{ getVisibilityOption(group.reviews[0].visibility).label }}
+                    </span>
+                  </div>
                   <span class="date">{{ formatDate(group.latestDate) }}</span>
                 </div>
                 <span v-if="group.maxReadingCount >= 2" class="reading-badge">
@@ -84,6 +94,7 @@ import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient, { API_BASE_URL } from '../api/client';
 import axios from 'axios';
+import { getVisibilityOption } from '../constants/reviewVisibility';
 
 const router = useRouter();
 const toast = useToast();
@@ -240,7 +251,13 @@ onMounted(async () => {
 .book-details { flex: 1; min-width: 0; }
 .book-title-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
 .book-title { font-size: 18px; font-weight: 600; color: #1f2937; margin: 0; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title-group { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .date { font-size: 13px; color: #9ca3af; flex-shrink: 0; }
+
+.visibility-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+.visibility-badge.public { background: #dbeafe; color: #2563eb; }
+.visibility-badge.group { background: #f3f0ff; color: #7658bd; }
+.visibility-badge.private { background: #f3f4f6; color: #6b7280; }
 
 .reading-badge { display: inline-block; font-size: 12px; font-weight: 600; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 2px 10px; }
 .content-preview { font-size: 13px; color: #6b7280; margin: 4px 0 0 0; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
