@@ -1,7 +1,9 @@
 <template>
   <header class="app-header">
     <div class="header-content">
-      <h1 class="logo">BookTalker</h1>
+      <h1 class="logo">
+        <router-link to="/" class="logo-link">BookTalker</router-link>
+      </h1>
       <nav class="nav-links">
         <router-link to="/" class="nav-link" :class="{ active: isActiveNav('/') }">
           홈
@@ -64,6 +66,20 @@ watch(() => route.path, checkLoginStatus, { immediate: true });
   font-weight: 600;
   color: #1f2937;
   margin: 0;
+}
+
+/* 링크 상태(hover/클릭/방문)와 관계없이 로고 모양 유지 */
+.logo-link,
+.logo-link:hover,
+.logo-link:active,
+.logo-link:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 마우스 클릭 후 남는 포커스 표시 제거 (키보드 탐색 시 표시는 유지) */
+.logo-link:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .nav-links {
