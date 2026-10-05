@@ -61,8 +61,6 @@ public class ReviewService {
         review.setWriter(writer);
         review.setBook(book);
         review.setReadingCount(maxReadingCount + 1);
-        // 2회독 이상은 isPublic 강제 false
-        review.setIsPublic(false);
 
         reviewRepository.save(review);
     }
@@ -91,6 +89,9 @@ public class ReviewService {
         if (request.rating() == null || request.rating() < 1 || request.rating() > 5) {
             throw new IllegalArgumentException("평점은 1~5 사이여야 합니다.");
         }
+        if (request.visibility() == null) {
+            throw new IllegalArgumentException("공개 범위는 필수입니다.");
+        }
 
         Review review = reviewRepository.findById(request.reviewId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 독후감입니다: " + request.reviewId()));
@@ -102,14 +103,7 @@ public class ReviewService {
         review.setHeadline(request.headline());
         review.setContent(request.content());
         review.setRating(request.rating());
-
-        // 2회독 이상은 isPublic 변경 불가 (강제 false 유지)
-        if (review.getReadingCount() != null && review.getReadingCount() > 1) {
-            review.setIsPublic(false);
-        } else {
-            review.setIsPublic(request.isPublic() != null ? request.isPublic() : review.getIsPublic());
-        }
-
+        review.setVisibility(request.visibility());
         review.setModDate(LocalDateTime.now());
     }
 

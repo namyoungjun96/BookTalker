@@ -1,6 +1,7 @@
 package com.example.book_talker_backend.review.entity.dto;
 
 import com.example.book_talker_backend.review.entity.Review;
+import com.example.book_talker_backend.review.entity.ReviewVisibilityEnum;
 
 import java.time.LocalDateTime;
 
@@ -10,7 +11,7 @@ public record ReviewDetailResponse(
         String content,
         Integer rating,
         Integer readingCount,
-        Boolean isPublic,
+        ReviewVisibilityEnum visibility,
         LocalDateTime regDate,
         LocalDateTime modDate,
         String bookTitle,
@@ -24,7 +25,7 @@ public record ReviewDetailResponse(
                 review.getContent(),
                 review.getRating(),
                 review.getReadingCount(),
-                review.getIsPublic(),
+                review.getVisibility(),
                 review.getRegDate(),
                 review.getModDate(),
                 review.getBook() != null ? review.getBook().getTitle() : null,

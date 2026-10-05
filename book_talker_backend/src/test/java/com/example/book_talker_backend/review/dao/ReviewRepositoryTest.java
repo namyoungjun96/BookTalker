@@ -3,6 +3,7 @@ package com.example.book_talker_backend.review.dao;
 import com.example.book_talker_backend.book.dao.BookRepository;
 import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.review.entity.Review;
+import com.example.book_talker_backend.review.entity.ReviewVisibilityEnum;
 import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,9 +57,9 @@ public class ReviewRepositoryTest {
         List<BookRatingStats> result = reviewRepository.aggregateRankData();
         assertThat(result).hasSize(1);
         BookRatingStats stats = result.get(0);
-        assertThat(stats.getIsbn13()).isEqualTo("1234567891011");
-        assertThat(stats.getReviewCount()).isEqualTo(3);
-        assertThat(stats.getAvgRating()).isCloseTo(4.0, within(0.0001));
+        assertThat(stats.isbn13()).isEqualTo("1234567891011");
+        assertThat(stats.reviewCount()).isEqualTo(3);
+        assertThat(stats.avgRating()).isCloseTo(4.0, within(0.0001));
     }
 
     @Test
@@ -81,9 +82,9 @@ public class ReviewRepositoryTest {
         List<BookRatingStats> result = reviewRepository.aggregateRankData();
         assertThat(result).hasSize(1);
         BookRatingStats stats = result.get(0);
-        assertThat(stats.getIsbn13()).isEqualTo("1234567891011");
-        assertThat(stats.getReviewCount()).isEqualTo(3);
-        assertThat(stats.getAvgRating()).isCloseTo(4.0, within(0.0001));
+        assertThat(stats.isbn13()).isEqualTo("1234567891011");
+        assertThat(stats.reviewCount()).isEqualTo(3);
+        assertThat(stats.avgRating()).isCloseTo(4.0, within(0.0001));
     }
 
     private Book book(String isbn13) {
@@ -104,7 +105,7 @@ public class ReviewRepositoryTest {
         review.setRating(rating);
         review.setRegDate(LocalDateTime.now());
         review.setModDate(LocalDateTime.now());
-        review.setIsPublic(true);
+        review.setVisibility(ReviewVisibilityEnum.PUBLIC);
         review.setReadingCount(readingCount);
         
         return review;
