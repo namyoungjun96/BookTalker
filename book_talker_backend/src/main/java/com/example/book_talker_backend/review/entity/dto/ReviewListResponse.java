@@ -1,6 +1,7 @@
 package com.example.book_talker_backend.review.entity.dto;
 
 import com.example.book_talker_backend.review.entity.Review;
+import com.example.book_talker_backend.review.entity.ReviewVisibilityEnum;
 
 import java.time.LocalDateTime;
 
@@ -13,7 +14,8 @@ public record ReviewListResponse(
         LocalDateTime regDate,
         String bookTitle,
         String bookCover,
-        String bookIsbn13
+        String bookIsbn13,
+        ReviewVisibilityEnum visibility
 ) {
     public static ReviewListResponse from(Review review) {
         return new ReviewListResponse(
@@ -25,7 +27,8 @@ public record ReviewListResponse(
                 review.getRegDate(),
                 review.getBook() != null ? review.getBook().getTitle() : null,
                 review.getBook() != null ? review.getBook().getCover() : null,
-                review.getBook() != null ? review.getBook().getIsbn13() : null
+                review.getBook() != null ? review.getBook().getIsbn13() : null,
+                review.getVisibility()
         );
     }
 }

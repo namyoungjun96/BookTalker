@@ -4,6 +4,7 @@ import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.service.BookService;
 import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Review;
+import com.example.book_talker_backend.review.entity.ReviewVisibilityEnum;
 import com.example.book_talker_backend.review.entity.dto.ReviewRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -61,7 +62,7 @@ class ReviewServiceTest {
             assertThat(saved.getContent()).isEqualTo("재밌었음");
             assertThat(saved.getRating()).isEqualTo(3);
             assertThat(saved.getReadingCount()).isEqualTo(1);
-            assertThat(saved.getIsPublic()).isTrue();
+            assertThat(saved.getVisibility()).isEqualTo(ReviewVisibilityEnum.PUBLIC);
             assertThat(saved.getRegDate()).isNotNull();
 
             then(bookService).should(never()).getBookByIsbn13WithApi(anyString());
@@ -137,6 +138,7 @@ class ReviewServiceTest {
             then(reviewRepository).should().save(captor.capture());
             Review saved = captor.getValue();
             assertThat(saved.getReadingCount()).isEqualTo(2);
+            assertThat(saved.getVisibility()).isEqualTo(ReviewVisibilityEnum.PUBLIC);
         }
 
         @Test
@@ -150,22 +152,6 @@ class ReviewServiceTest {
 
             then(reviewRepository).should().save(captor.capture());
             assertThat(captor.getValue().getReadingCount()).isEqualTo(4);
-        }
-
-        @Test
-        @DisplayName("성공 - isPublic은 요청값에 관계없이 항상 false")
-        void 성공_isPublic_강제_false() {
-            given(reviewRepository.findMaxReadingCount(WRITER, ISBN13)).willReturn(1);
-            given(bookService.getBookByIsbn13(ISBN13)).willReturn(createBook());
-
-            // isPublic=true로 요청해도
-            ReviewRequest requestWithPublic = new ReviewRequest(null, ISBN13, WRITER, "꿀잼!", "재밌었음", 3, true);
-
-            ArgumentCaptor<Review> captor = ArgumentCaptor.forClass(Review.class);
-            reviewService.insertNextReading(requestWithPublic, WRITER);
-
-            then(reviewRepository).should().save(captor.capture());
-            assertThat(captor.getValue().getIsPublic()).isFalse();
         }
 
         @Test
@@ -189,34 +175,20 @@ class ReviewServiceTest {
     class UpdateReview {
 
         @Test
-        @DisplayName("성공 - 1회독은 isPublic 변경 가능")
-        void 성공_1회독_isPublic_변경() {
+        @DisplayName("성공 - 변경 가능")
+        void 성공_변경() {
             Review existing = createReviewInDb(1L, WRITER, 1);
 
             given(reviewRepository.findById(1L)).willReturn(Optional.of(existing));
 
-            ReviewRequest request = new ReviewRequest(1L, ISBN13, WRITER, "수정 요약", "수정 본문", 4, true);
+            ReviewRequest request = new ReviewRequest(1L, ISBN13, WRITER, "수정 요약", "수정 본문", 4, ReviewVisibilityEnum.PRIVATE);
             reviewService.updateReview(request, WRITER);
 
             assertThat(existing.getHeadline()).isEqualTo("수정 요약");
             assertThat(existing.getContent()).isEqualTo("수정 본문");
             assertThat(existing.getRating()).isEqualTo(4);
-            assertThat(existing.getIsPublic()).isTrue();
+            assertThat(existing.getVisibility()).isEqualTo(ReviewVisibilityEnum.PRIVATE);
             assertThat(existing.getModDate()).isNotNull();
-        }
-
-        @Test
-        @DisplayName("성공 - 2회독+ 수정 시 isPublic은 강제 false 유지")
-        void 성공_2회독_isPublic_강제_false() {
-            Review existing = createReviewInDb(2L, WRITER, 2);
-
-            given(reviewRepository.findById(2L)).willReturn(Optional.of(existing));
-
-            // isPublic=true로 요청해도
-            ReviewRequest request = new ReviewRequest(2L, ISBN13, WRITER, "수정 요약", "수정 본문", 4, true);
-            reviewService.updateReview(request, WRITER);
-
-            assertThat(existing.getIsPublic()).isFalse();
         }
 
         @Test
@@ -224,7 +196,7 @@ class ReviewServiceTest {
         void 실패_독후감_없음() {
             given(reviewRepository.findById(99L)).willReturn(Optional.empty());
 
-            ReviewRequest request = new ReviewRequest(99L, ISBN13, WRITER, "요약", "본문", 3, false);
+            ReviewRequest request = new ReviewRequest(99L, ISBN13, WRITER, "요약", "본문", 3, ReviewVisibilityEnum.PUBLIC);
             assertThatThrownBy(() -> reviewService.updateReview(request, WRITER))
                     .isInstanceOf(IllegalArgumentException.class);
         }
@@ -235,7 +207,7 @@ class ReviewServiceTest {
             Review existing = createReviewInDb(1L, WRITER, 1);
             given(reviewRepository.findById(1L)).willReturn(Optional.of(existing));
 
-            ReviewRequest request = new ReviewRequest(1L, ISBN13, OTHER_WRITER, "요약", "본문", 3, false);
+            ReviewRequest request = new ReviewRequest(1L, ISBN13, OTHER_WRITER, "요약", "본문", 3, ReviewVisibilityEnum.PUBLIC);
             assertThatThrownBy(() -> reviewService.updateReview(request, OTHER_WRITER))
                     .isInstanceOf(AccessDeniedException.class);
         }
@@ -243,7 +215,7 @@ class ReviewServiceTest {
         @Test
         @DisplayName("실패 - reviewId 없이 요청")
         void 실패_reviewId_없음() {
-            ReviewRequest request = new ReviewRequest(null, ISBN13, WRITER, "요약", "본문", 3, false);
+            ReviewRequest request = new ReviewRequest(null, ISBN13, WRITER, "요약", "본문", 3, ReviewVisibilityEnum.PUBLIC);
             assertThatThrownBy(() -> reviewService.updateReview(request, WRITER))
                     .isInstanceOf(IllegalArgumentException.class);
         }
@@ -293,7 +265,7 @@ class ReviewServiceTest {
     // 헬퍼
     // ─────────────────────────────────────────────
     private ReviewRequest createInsertRequest() {
-        return new ReviewRequest(null, ISBN13, WRITER, "꿀잼!", "재밌었음", 3, true);
+        return new ReviewRequest(null, ISBN13, WRITER, "꿀잼!", "재밌었음", 3, ReviewVisibilityEnum.PUBLIC);
     }
 
     private Book createBook() {
@@ -307,7 +279,7 @@ class ReviewServiceTest {
         review.setHeadline("원래 요약");
         review.setContent("원래 내용");
         review.setRating(3);
-        review.setIsPublic(false);
+        review.setVisibility(ReviewVisibilityEnum.PUBLIC);
         review.setReadingCount(readingCount);
         return review;
     }

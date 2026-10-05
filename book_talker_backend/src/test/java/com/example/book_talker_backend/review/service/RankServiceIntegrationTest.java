@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.book_talker_backend.review.entity.ReviewVisibilityEnum;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,7 +109,7 @@ public class RankServiceIntegrationTest {
         review.setRating(rating);
         review.setRegDate(LocalDateTime.now());
         review.setModDate(LocalDateTime.now());
-        review.setIsPublic(true);
+        review.setVisibility(ReviewVisibilityEnum.PUBLIC);
         review.setReadingCount(1);
         
         return review;

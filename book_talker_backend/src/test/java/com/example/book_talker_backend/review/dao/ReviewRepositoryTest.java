@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.within;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.book_talker_backend.review.entity.ReviewVisibilityEnum;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -96,7 +97,7 @@ public class ReviewRepositoryTest {
         review.setRating(rating);
         review.setRegDate(LocalDateTime.now());
         review.setModDate(LocalDateTime.now());
-        review.setIsPublic(true);
+        review.setVisibility(ReviewVisibilityEnum.PUBLIC);
         review.setReadingCount(readingCount);
         
         return review;
