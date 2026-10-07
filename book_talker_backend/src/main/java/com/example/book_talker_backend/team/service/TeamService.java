@@ -5,8 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import com.example.book_talker_backend.team.entity.dto.TeamListResponse;
-import com.example.book_talker_backend.team.entity.dto.UpdateTeamRequest;
+import com.example.book_talker_backend.team.entity.dto.*;
 import org.springframework.stereotype.Service;
 
 import com.example.book_talker_backend.team.dao.TeamInviteRepository;
@@ -17,8 +16,6 @@ import com.example.book_talker_backend.team.entity.MemberStatusEnum;
 import com.example.book_talker_backend.team.entity.Team;
 import com.example.book_talker_backend.team.entity.TeamInvite;
 import com.example.book_talker_backend.team.entity.TeamMember;
-import com.example.book_talker_backend.team.entity.dto.CreateTeamRequest;
-import com.example.book_talker_backend.team.entity.dto.JoinByInviteCodeRequest;
 import com.example.book_talker_backend.team.exception.BannedTeamMemberException;
 import com.example.book_talker_backend.team.exception.DuplicateTeamMemberException;
 import com.example.book_talker_backend.team.exception.NotFoundInviteCodeException;
@@ -41,12 +38,12 @@ public class TeamService {
     private final OAuth2UserRepository oAuth2UserRepository;
 
     @Transactional
-    public void createTeam(CreateTeamRequest request, String providerId) {
+    public CreateTeamResponse createTeam(CreateTeamRequest request, String providerId) {
         OAuth2UserEntity providerUser = oAuth2UserRepository.findByProviderId(providerId);
 
         Team team = new Team();
         team.setTeamName(request.teamName());
-        team.setTeamDescription(request.teamDescription());
+        team.setTeamDescription(request.teamDesc());
 
         TeamMember member = new TeamMember();
         member.setTeam(team);
@@ -58,7 +55,9 @@ public class TeamService {
 
         team.getTeamMembers().add(member);
         
-        teamRepository.save(team);
+        Long teamId = teamRepository.save(team).getTeamId();
+
+        return new CreateTeamResponse(teamId);
     }
 
     @Transactional(readOnly = true)

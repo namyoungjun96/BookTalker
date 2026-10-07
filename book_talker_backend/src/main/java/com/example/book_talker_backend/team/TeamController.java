@@ -1,11 +1,8 @@
-package com.example.book_talker_backend.team.controller;
+package com.example.book_talker_backend.team;
 
-import com.example.book_talker_backend.team.entity.Team;
-import com.example.book_talker_backend.team.entity.dto.CreateTeamRequest;
-import com.example.book_talker_backend.team.entity.dto.TeamListResponse;
-import com.example.book_talker_backend.team.entity.dto.JoinByInviteCodeRequest;
-import com.example.book_talker_backend.team.entity.dto.UpdateTeamRequest;
+import com.example.book_talker_backend.team.entity.dto.*;
 import com.example.book_talker_backend.team.service.TeamService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -26,15 +23,13 @@ public class TeamController {
     private final TeamService teamService;
 
     @PostMapping
-    public ResponseEntity<Void> createTeam(@RequestBody CreateTeamRequest request,
-        @AuthenticationPrincipal OAuth2User oauth2User
+    public ResponseEntity<CreateTeamResponse> createTeam(@RequestBody @Valid CreateTeamRequest request,
+                                                         @AuthenticationPrincipal OAuth2User oauth2User
     ) {
         Map<String, Object> response = oauth2User.getAttribute("response");
         String providerId = (String) response.get("id");
 
-        teamService.createTeam(request, providerId);
-
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(teamService.createTeam(request, providerId), HttpStatus.CREATED);
     }
 
     @PostMapping("/{teamId}/code")
