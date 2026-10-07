@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.example.book_talker_backend.team.entity.dto.*;
+import com.example.book_talker_backend.team.exception.*;
 import org.springframework.stereotype.Service;
 
 import com.example.book_talker_backend.team.dao.TeamInviteRepository;
@@ -16,10 +17,6 @@ import com.example.book_talker_backend.team.entity.MemberStatusEnum;
 import com.example.book_talker_backend.team.entity.Team;
 import com.example.book_talker_backend.team.entity.TeamInvite;
 import com.example.book_talker_backend.team.entity.TeamMember;
-import com.example.book_talker_backend.team.exception.BannedTeamMemberException;
-import com.example.book_talker_backend.team.exception.DuplicateTeamMemberException;
-import com.example.book_talker_backend.team.exception.NotFoundInviteCodeException;
-import com.example.book_talker_backend.team.exception.TeamAccessDeniedException;
 import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
 import com.example.book_talker_backend.user.exception.NotFoundUserException;
@@ -67,13 +64,15 @@ public class TeamService {
 
     @Transactional
     public void updateTeam(Long teamId, UpdateTeamRequest request, String providerId) {
-        if (teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, teamId)
-                .orElseThrow(() -> new TeamAccessDeniedException("[updateTeam] 권한이 맞지 않습니다: " + providerId))
-                .getRole() 
-            != MemberRoleEnum.OWNER)
-            throw new TeamAccessDeniedException("[updateTeam] 권한이 맞지 않습니다: " + providerId);
+        TeamMember member = teamMemberRepository
+                .findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, teamId)
+                .filter(m -> m.getStatus() == MemberStatusEnum.ACTIVE)
+                .orElseThrow(() -> new NotFoundTeamException("[updateTeam] 모임을 찾을 수 없습니다." + teamId + " / " + providerId));   // 404: 팀 없음 + 모임원 아님
 
-        Team team = teamRepository.getReferenceById(teamId);
+        if (member.getRole() != MemberRoleEnum.OWNER)
+            throw new TeamAccessDeniedException("[updateTeam] 모임장만 수정할 수 있습니다." + teamId + " / " + providerId);                // 403: 모임장 아님
+
+        Team team = member.getTeam();
 
         team.setTeamName(request.teamName());
         team.setTeamDescription(request.teamDesc());
@@ -81,15 +80,15 @@ public class TeamService {
 
     @Transactional
     public void deleteTeam(Long teamId, String providerId) {
-        if (teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, teamId)
-                .orElseThrow(() -> new TeamAccessDeniedException("[deleteTeam] 권한이 맞지 않습니다: " + providerId))
-                .getRole() 
-            != MemberRoleEnum.OWNER)
-            throw new TeamAccessDeniedException("[deleteTeam] 권한이 맞지 않습니다: " + providerId);
+        TeamMember member = teamMemberRepository
+                .findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, teamId)
+                .filter(m -> m.getStatus() == MemberStatusEnum.ACTIVE)
+                .orElseThrow(() -> new NotFoundTeamException("[deleteTeam] 모임을 찾을 수 없습니다." + teamId + " / " + providerId));   // 404: 팀 없음 + 모임원 아님
 
-        Team team = teamRepository
-                .findById(teamId)
-                .orElseThrow(() -> new IllegalStateException("[deleteTeam] 불변조건 위반 — OWNER 체크 통과했는데 팀이 없음: teamId=" + teamId));
+        if (member.getRole() != MemberRoleEnum.OWNER)
+            throw new TeamAccessDeniedException("[deleteTeam] 모임장만 삭제할 수 있습니다." + teamId + " / " + providerId);                // 403: 모임장 아님
+
+        Team team = member.getTeam();
 
         teamRepository.delete(team);
     } 

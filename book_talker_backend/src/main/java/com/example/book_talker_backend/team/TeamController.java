@@ -32,6 +32,41 @@ public class TeamController {
         return new ResponseEntity<>(teamService.createTeam(request, providerId), HttpStatus.CREATED);
     }
 
+    @GetMapping
+    public ResponseEntity<List<TeamListResponse>> getMyTeams(@AuthenticationPrincipal OAuth2User oauth2User) {
+        Map<String, Object> response = oauth2User.getAttribute("response");
+        String providerId = (String) response.get("id");
+
+        List<TeamListResponse> teams = teamService.getMyTeams(providerId);
+
+        return new ResponseEntity<>(teams, HttpStatus.OK);
+    }
+
+    @PutMapping("/{teamId}")
+    public ResponseEntity<Void> updateTeam(@PathVariable Long teamId,
+                                           @RequestBody @Valid UpdateTeamRequest request,
+                                           @AuthenticationPrincipal OAuth2User oauth2User
+    ) {
+        Map<String, Object> response = oauth2User.getAttribute("response");
+        String providerId = (String) response.get("id");
+
+        teamService.updateTeam(teamId, request, providerId);
+
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @DeleteMapping("/{teamId}")
+    public ResponseEntity<Void> deleteTeam(@PathVariable Long teamId,
+                                           @AuthenticationPrincipal OAuth2User oauth2User
+    ) {
+        Map<String, Object> response = oauth2User.getAttribute("response");
+        String providerId = (String) response.get("id");
+
+        teamService.deleteTeam(teamId, providerId);
+
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
     @PostMapping("/{teamId}/code")
     public ResponseEntity<String> createInviteCode(@PathVariable Long teamId,
         @AuthenticationPrincipal OAuth2User oauth2User
@@ -51,41 +86,6 @@ public class TeamController {
         String providerId = (String) response.get("id");
 
         teamService.joinTeamByInviteCode(request, providerId);
-
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<TeamListResponse>> getMyTeams(@AuthenticationPrincipal OAuth2User oauth2User) {
-        Map<String, Object> response = oauth2User.getAttribute("response");
-        String providerId = (String) response.get("id");
-
-        List<TeamListResponse> teams = teamService.getMyTeams(providerId);
-
-        return new ResponseEntity<>(teams, HttpStatus.OK);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Void> updateTeam(@PathVariable Long id,
-        @RequestBody UpdateTeamRequest request,
-        @AuthenticationPrincipal OAuth2User oauth2User
-    ) {
-        Map<String, Object> response = oauth2User.getAttribute("response");
-        String providerId = (String) response.get("id");
-
-        teamService.updateTeam(id, request, providerId);
-
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTeam(@PathVariable Long id,
-        @AuthenticationPrincipal OAuth2User oauth2User
-    ) {
-        Map<String, Object> response = oauth2User.getAttribute("response");
-        String providerId = (String) response.get("id");
-
-        teamService.deleteTeam(id, providerId);
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
