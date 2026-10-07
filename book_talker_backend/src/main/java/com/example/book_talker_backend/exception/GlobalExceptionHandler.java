@@ -14,6 +14,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.Comparator;
 
@@ -40,6 +41,13 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse("입력값이 올바르지 않습니다.");
         return ResponseEntity.badRequest().body(new ErrorResponse(message));
+    }
+
+    /** 400 — 경로 변수·쿼리 파라미터 타입 변환 실패 (예: 숫자 자리에 문자) */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.warn("Type mismatch: {}={}", e.getName(), e.getValue());
+        return ResponseEntity.badRequest().body(new ErrorResponse("요청 값의 형식이 올바르지 않습니다: " + e.getName()));
     }
 
     /** 400 — 알 수 없는 Enum 값 */
