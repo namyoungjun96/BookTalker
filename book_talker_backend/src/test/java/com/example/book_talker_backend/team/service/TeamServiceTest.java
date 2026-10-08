@@ -1,48 +1,37 @@
 package com.example.book_talker_backend.team.service;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.example.book_talker_backend.team.dao.TeamInviteRepository;
+import com.example.book_talker_backend.team.dao.TeamMemberRepository;
+import com.example.book_talker_backend.team.dao.TeamRepository;
+import com.example.book_talker_backend.team.entity.*;
+import com.example.book_talker_backend.team.entity.dto.*;
+import com.example.book_talker_backend.team.exception.*;
+import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
+import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
+import com.example.book_talker_backend.user.exception.NotFoundUserException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.transaction.TestTransaction;
+import org.springframework.transaction.UnexpectedRollbackException;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.List;
 import java.util.Optional;
 
-import com.example.book_talker_backend.team.entity.dto.TeamListResponse;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.transaction.TestTransaction;
-import org.springframework.transaction.UnexpectedRollbackException;
-
-import com.example.book_talker_backend.team.dao.TeamInviteRepository;
-import com.example.book_talker_backend.team.dao.TeamMemberRepository;
-import com.example.book_talker_backend.team.dao.TeamRepository;
-import com.example.book_talker_backend.team.entity.MemberRoleEnum;
-import com.example.book_talker_backend.team.entity.MemberStatusEnum;
-import com.example.book_talker_backend.team.entity.Team;
-import com.example.book_talker_backend.team.entity.TeamInvite;
-import com.example.book_talker_backend.team.entity.TeamMember;
-import com.example.book_talker_backend.team.entity.dto.CreateTeamRequest;
-import com.example.book_talker_backend.team.entity.dto.JoinByInviteCodeRequest;
-import com.example.book_talker_backend.team.entity.dto.UpdateTeamRequest;
-import com.example.book_talker_backend.team.exception.BannedTeamMemberException;
-import com.example.book_talker_backend.team.exception.DuplicateTeamMemberException;
-import com.example.book_talker_backend.team.exception.NotFoundInviteCodeException;
-import com.example.book_talker_backend.team.exception.TeamAccessDeniedException;
-import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
-import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
-import com.example.book_talker_backend.user.exception.NotFoundUserException;
-
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @Import(TeamService.class)
@@ -73,160 +62,216 @@ public class TeamServiceTest {
         return new CreateTeamRequest(teamName, teamName + " in book", "owner");
     }
 
-    @Test
-    void 팀_생성_정상적() {
-        teamService.createTeam(new CreateTeamRequest("mobigen", "mobigen in book", "owner"), "userA");
+    @Nested
+    @DisplayName("팀 crud")
+    class TeamCRUD {
+        @Test
+        void 팀_생성_정상적() {
+            CreateTeamResponse response = teamService.createTeam(new CreateTeamRequest("mobigen", "mobigen in book", "owner"), "userA");
 
-        em.flush();
-        em.clear();
+            em.flush();
+            em.clear();
 
-        Team team = teamRepository.findByTeamName("mobigen");
+            Team team = teamRepository.findById(response.teamId()).orElse(null);
 
-        assertNotNull(team);
-        assertEquals("mobigen", team.getTeamName());
+            assertNotNull(team);
+            assertEquals("mobigen", team.getTeamName());
 
-        TeamMember owner = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userA", team.getTeamId()).get();
-        
-        assertEquals(MemberRoleEnum.OWNER, owner.getRole());
-        assertEquals(MemberStatusEnum.ACTIVE, owner.getStatus());
-        assertEquals("owner", owner.getDisplayName());
-    }
+            TeamMember owner = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userA", team.getTeamId()).get();
 
-    @Test 
-    void 팀_조회_ACTIVE만_뜨는지() {
-        teamService.createTeam(createTeamRequest("mobigen"), "userA");
-        teamService.createTeam(createTeamRequest("naver"), "userA");
-        teamService.createTeam(createTeamRequest("line"), "userA");
+            assertEquals(MemberRoleEnum.OWNER, owner.getRole());
+            assertEquals(MemberStatusEnum.ACTIVE, owner.getStatus());
+            assertEquals("owner", owner.getDisplayName());
+        }
 
-        Team teamNaver = teamRepository.findByTeamName("naver");
-        Team teamLine = teamRepository.findByTeamName("line");
-        Team teamMobigen = teamRepository.findByTeamName("mobigen");
-        
-        OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
-        OAuth2UserEntity userC = oAuth2UserRepository.findByProviderId("userC");
+        @Test
+        void 팀_조회_ACTIVE만_뜨는지() {
+            CreateTeamResponse mobigen = teamService.createTeam(createTeamRequest("mobigen"), "userA");
+            CreateTeamResponse naver = teamService.createTeam(createTeamRequest("naver"), "userA");
+            CreateTeamResponse line = teamService.createTeam(createTeamRequest("line"), "userA");
 
-        teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, "naverUserB"));
-        teamMemberRepository.save(new TeamMember(teamNaver, userC, MemberRoleEnum.MEMBER, MemberStatusEnum.BANNED, "naverUserC"));
-        teamMemberRepository.save(new TeamMember(teamLine, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.PENDING, "lineUserB"));
-        teamMemberRepository.save(new TeamMember(teamMobigen, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.BANNED, "mobigenUserB"));
+            Team teamNaver = teamRepository.findById(naver.teamId()).orElse(null);
+            Team teamLine = teamRepository.findById(line.teamId()).orElse(null);
+            Team teamMobigen = teamRepository.findById(mobigen.teamId()).orElse(null);
 
-        em.flush();
-        em.clear();
+            OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
+            OAuth2UserEntity userC = oAuth2UserRepository.findByProviderId("userC");
 
-        List<TeamListResponse> teams = teamService.getMyTeams("userB");
+            teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, "naverUserB"));
+            teamMemberRepository.save(new TeamMember(teamNaver, userC, MemberRoleEnum.MEMBER, MemberStatusEnum.BANNED, "naverUserC"));
+            teamMemberRepository.save(new TeamMember(teamLine, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.PENDING, "lineUserB"));
+            teamMemberRepository.save(new TeamMember(teamMobigen, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.BANNED, "mobigenUserB"));
 
-        assertNotNull(teams);
-        assertEquals(1, teams.size());
-        assertEquals("naver", teams.get(0).teamName());
-        assertEquals(2, teams.get(0).memberCount());
-    }
+            em.flush();
+            em.clear();
 
-    @Test 
-    void 팀_아무것도_없을때는_빈_리스트() {
-        List<TeamListResponse> teams = teamService.getMyTeams("userB");
+            List<TeamListResponse> teams = teamService.getMyTeams("userB");
 
-        assertTrue(teams.isEmpty());
-    }
+            assertNotNull(teams);
+            assertEquals(1, teams.size());
+            assertEquals("naver", teams.get(0).teamName());
+            assertEquals(2, teams.get(0).memberCount());
+        }
 
-    @Test 
-    void 팀_수정_getReferenceById_검증() {
-        teamService.createTeam(createTeamRequest("naver"), "userA");
+        @Test
+        void 팀_아무것도_없을때는_빈_리스트() {
+            List<TeamListResponse> teams = teamService.getMyTeams("userB");
 
-        em.flush();
-        em.clear();
+            assertTrue(teams.isEmpty());
+        }
 
-        Team teamNaver = teamRepository.findByTeamName("naver");
-        
-        teamService.updateTeam(teamNaver.getTeamId(), new UpdateTeamRequest("naver", "book in naver"), "userA");
-        
-        em.flush();
-        em.clear();
+        @Test
+        void 팀_수정_성공() {
+            CreateTeamResponse response = teamService.createTeam(createTeamRequest("naver"), "userA");
 
-        teamNaver = teamRepository.findByTeamName("naver");
-        
-        assertEquals("book in naver", teamNaver.getTeamDescription());
-    }
+            em.flush();
+            em.clear();
 
-    @Test 
-    void 팀_팀에_속하지_않은_유저가_수정할_때() {
-        teamService.createTeam(createTeamRequest("naver"), "userA");
+            teamService.updateTeam(response.teamId(), new UpdateTeamRequest("ver", "book in naver"), "userA");
 
-        em.flush();
-        em.clear();
+            em.flush();
+            em.clear();
 
-        Team teamNaver = teamRepository.findByTeamName("naver");
+            Team team = teamRepository.findById(response.teamId()).orElseThrow();
 
-        assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), new UpdateTeamRequest("ver", "book in ver"), "userB"))
+            assertThat(team.getTeamName()).isEqualTo("ver");
+            assertEquals("book in naver", team.getTeamDescription());
+        }
+
+        @Test
+        void 팀_팀에_속하지_않은_유저가_수정할_때() {
+            CreateTeamResponse response = teamService.createTeam(createTeamRequest("naver"), "userA");
+
+            em.flush();
+            em.clear();
+
+            Team teamNaver = teamRepository.findById(response.teamId()).orElseThrow();
+
+            assertThatThrownBy(() -> teamService.updateTeam(
+                    teamNaver.getTeamId(),
+                    new UpdateTeamRequest("ver", "book in ver"), "userB"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
+
+        @Test
+        void 팀_수정_허가된_롤만_가능() {
+            CreateTeamResponse response = teamService.createTeam(createTeamRequest("naver"), "userA");
+
+            em.flush();
+            em.clear();
+
+            Team teamNaver = teamRepository.findById(response.teamId()).orElseThrow();
+
+            OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
+
+            teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, "naverUserB"));
+
+            em.flush();
+            em.clear();
+
+            assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), new UpdateTeamRequest("ver", "book in ver"), "userB"))
                     .isInstanceOf(TeamAccessDeniedException.class);
-    }
+        }
 
-    @Test 
-    void 팀_수정_허가된_롤만_가능() {
-        teamService.createTeam(createTeamRequest("naver"), "userA");
+        @Test
+        void 팀_수정_존재하지_않는_teamId일_경우() {
+            assertThatThrownBy(() -> teamService.updateTeam(999L, new UpdateTeamRequest("a", "b"), "userA"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
 
-        Team teamNaver = teamRepository.findByTeamName("naver");
-        
-        OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
+        @ParameterizedTest
+        @EnumSource(value = MemberStatusEnum.class, names = {"INACTIVE", "BANNED"})
+        void 팀_수정_상태별_체크(MemberStatusEnum status) {
+            CreateTeamResponse response = teamService.createTeam(createTeamRequest("naver"), "userA");
 
-        teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, "naverUserB"));
+            Team teamNaver = teamRepository.findById(response.teamId()).orElseThrow();
 
-        em.flush();
-        em.clear();
+            OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
 
-        assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), new UpdateTeamRequest("ver", "book in ver"), "userB"))
+            teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, status, "naverUserB"));
+
+            em.flush();
+            em.clear();
+
+            assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), new UpdateTeamRequest("ver", "book in ver"), "userB"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
+
+        @Test
+        void 팀_삭제시_팀원도_삭제되는지_검증() {
+            CreateTeamResponse response = teamService.createTeam(createTeamRequest("naver"), "userA");
+
+            Team teamNaver = teamRepository.findById(response.teamId()).orElseThrow();
+            OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
+
+            teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, "naverUserB"));
+
+            em.flush();
+            em.clear();
+
+            teamService.deleteTeam(teamNaver.getTeamId(), "userA");
+
+            em.flush();
+            em.clear();
+
+            assertTrue(teamRepository.findById(teamNaver.getTeamId()).isEmpty());
+            assertTrue(teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userA", teamNaver.getTeamId()).isEmpty());
+            assertTrue(teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamNaver.getTeamId()).isEmpty());
+        }
+
+        @Test
+        void 팀_팀에_속하지_않은_유저가_삭제할_때() {
+            CreateTeamResponse response = teamService.createTeam(createTeamRequest("naver"), "userA");
+
+            em.flush();
+            em.clear();
+
+            Team teamNaver = teamRepository.findById(response.teamId()).orElseThrow();
+
+            assertThatThrownBy(() -> teamService.deleteTeam(teamNaver.getTeamId(), "userB"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
+
+        @Test
+        void 팀_삭제_허가된_롤만_가능() {
+            CreateTeamResponse response = teamService.createTeam(createTeamRequest("naver"), "userA");
+
+            Team teamNaver = teamRepository.findById(response.teamId()).orElseThrow();
+
+            OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
+
+            teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, "naverUserB"));
+
+            em.flush();
+            em.clear();
+
+            assertThatThrownBy(() -> teamService.deleteTeam(teamNaver.getTeamId(), "userB"))
                     .isInstanceOf(TeamAccessDeniedException.class);
-    }
+        }
 
-    @Test 
-    void 팀_삭제시_팀원도_삭제되는지_검증() {
-        teamService.createTeam(createTeamRequest("naver"), "userA");
-        
-        Team teamNaver = teamRepository.findByTeamName("naver");
-        OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
+        @Test
+        void 팀_삭제_존재하지_않는_teamId일_경우() {
+            assertThatThrownBy(() -> teamService.deleteTeam(999L, "userA"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
 
-        teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, "naverUserB"));
+        @ParameterizedTest
+        @EnumSource(value = MemberStatusEnum.class, names = {"INACTIVE", "BANNED"})
+        void 팀_삭제_상태별_체크(MemberStatusEnum status) {
+            CreateTeamResponse response = teamService.createTeam(createTeamRequest("naver"), "userA");
 
-        em.flush();
-        em.clear();
+            Team teamNaver = teamRepository.findById(response.teamId()).orElseThrow();
 
-        teamService.deleteTeam(teamNaver.getTeamId(), "userA");
+            OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
 
-        em.flush();
-        em.clear();
+            teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, status, "naverUserB"));
 
-        assertTrue(teamRepository.findById(teamNaver.getTeamId()).isEmpty());
-        assertTrue(teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userA", teamNaver.getTeamId()).isEmpty());
-        assertTrue(teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamNaver.getTeamId()).isEmpty());
-    }
+            em.flush();
+            em.clear();
 
-    @Test 
-    void 팀_팀에_속하지_않은_유저가_삭제할_때() {
-        teamService.createTeam(createTeamRequest("naver"), "userA");
-
-        em.flush();
-        em.clear();
-        
-        Team teamNaver = teamRepository.findByTeamName("naver");
-        
-        assertThatThrownBy(() -> teamService.deleteTeam(teamNaver.getTeamId(), "userB"))
-                    .isInstanceOf(TeamAccessDeniedException.class);
-    }
-
-    @Test 
-    void 팀_삭제_허가된_롤만_가능() {
-        teamService.createTeam(createTeamRequest("naver"), "userA");
-        
-        Team teamNaver = teamRepository.findByTeamName("naver");
-                    
-        OAuth2UserEntity userB = oAuth2UserRepository.findByProviderId("userB");
-
-        teamMemberRepository.save(new TeamMember(teamNaver, userB, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, "naverUserB"));
-
-        em.flush();
-        em.clear();
-
-        assertThatThrownBy(() -> teamService.deleteTeam(teamNaver.getTeamId(), "userB"))
-                    .isInstanceOf(TeamAccessDeniedException.class);
+            assertThatThrownBy(() -> teamService.deleteTeam(teamNaver.getTeamId(), "userB"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
     }
 
     @Test
@@ -238,7 +283,7 @@ public class TeamServiceTest {
         Team teamNaver = teamRepository.findByTeamName("naver");
 
         assertThatThrownBy(() -> teamService.updateTeam(teamNaver.getTeamId(), new UpdateTeamRequest("ver", "book in ver"), "userB"))
-                .isInstanceOf(TeamAccessDeniedException.class);
+                .isInstanceOf(NotFoundTeamException.class);
 
         TestTransaction.flagForCommit();
         assertThatThrownBy(() -> TestTransaction.end())
@@ -270,7 +315,7 @@ public class TeamServiceTest {
 
         Team teamNaver = teamRepository.findByTeamName("naver");
         
-        assertThatThrownBy(() -> teamService.addMember(teamNaver.getTeamId(), "userC", "userA", "displayName"))
+        assertThatThrownBy(() -> teamService.addMember(teamNaver.getTeamId(), "X", "userA", "displayName"))
                 .isInstanceOf(NotFoundUserException.class); 
     }
 
