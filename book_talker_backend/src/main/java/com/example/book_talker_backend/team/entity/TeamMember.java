@@ -1,27 +1,13 @@
 package com.example.book_talker_backend.team.entity;
 
-import java.time.LocalDateTime;
-
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "TeamMember",
@@ -42,7 +28,7 @@ public class TeamMember {
     @JoinColumn(name = "team_id")
     private Team team;
     @ManyToOne
-    @JoinColumn(name = "provider_id", referencedColumnName = "provider_id")
+    @JoinColumn(name = "provider_id", referencedColumnName = "provider_id", nullable = false)
     private OAuth2UserEntity oAuth2User;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

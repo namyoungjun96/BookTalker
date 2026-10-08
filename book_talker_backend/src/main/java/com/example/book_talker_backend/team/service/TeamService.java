@@ -1,29 +1,25 @@
 package com.example.book_talker_backend.team.service;
 
-import java.security.SecureRandom;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import com.example.book_talker_backend.team.entity.dto.*;
-import com.example.book_talker_backend.team.exception.*;
-import org.springframework.stereotype.Service;
-
-import com.example.book_talker_backend.team.dao.TeamInviteRepository;
 import com.example.book_talker_backend.team.dao.TeamMemberRepository;
 import com.example.book_talker_backend.team.dao.TeamRepository;
 import com.example.book_talker_backend.team.entity.MemberRoleEnum;
 import com.example.book_talker_backend.team.entity.MemberStatusEnum;
 import com.example.book_talker_backend.team.entity.Team;
-import com.example.book_talker_backend.team.entity.TeamInvite;
 import com.example.book_talker_backend.team.entity.TeamMember;
+import com.example.book_talker_backend.team.entity.dto.*;
+import com.example.book_talker_backend.team.exception.*;
 import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
 import com.example.book_talker_backend.user.exception.NotFoundUserException;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,16 +27,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeamService {
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
-    private final TeamInviteRepository teamInviteRepository;
     private final OAuth2UserRepository oAuth2UserRepository;
+
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final int MAX_ATTEMPTS = 3;
 
     @Transactional
     public CreateTeamResponse createTeam(CreateTeamRequest request, String providerId) {
         OAuth2UserEntity providerUser = oAuth2UserRepository.findByProviderId(providerId);
 
+        if (providerUser == null)
+            throw new NotFoundUserException("[createTeam] 존재하지 않는 사용자 입니다: " + providerId);
+
         Team team = new Team();
         team.setTeamName(request.teamName());
         team.setTeamDescription(request.teamDesc());
+        team.setCode(issueUniqueCode());
 
         TeamMember member = new TeamMember();
         member.setTeam(team);
@@ -55,6 +58,19 @@ public class TeamService {
         Long teamId = teamRepository.save(team).getTeamId();
 
         return new CreateTeamResponse(teamId);
+    }
+
+    String issueUniqueCode() {
+        String code;
+
+        for (int i = 0; i < MAX_ATTEMPTS; i++) {
+            code = generateRandomCode();
+
+            if (!teamRepository.existsByCode(code))
+                return code;
+        }
+
+        throw new InviteCodeGenerationFailedException("[createTeam] 모임 초대 코드 생성 문제가 생겼습니다.");
     }
 
     @Transactional(readOnly = true)
@@ -96,10 +112,11 @@ public class TeamService {
     public void addMember(Long teamId, String newMemberProviderId, String ownerProviderId, String displayName) {
         TeamMember owner = teamMemberRepository
                 .findByoAuth2User_ProviderIdAndTeam_TeamId(ownerProviderId, teamId)
-                .orElseThrow(() -> new TeamAccessDeniedException("[addMember] 해당 팀, 유저는 존재하지 않습니다: " + ownerProviderId + " / " + teamId));
+                .filter(m -> m.getStatus() == MemberStatusEnum.ACTIVE)
+                .orElseThrow(() -> new TeamAccessDeniedException("[addMember] 해당 모임, 유저는 존재하지 않습니다: " + ownerProviderId + " / " + teamId));
 
         if (owner.getRole() != MemberRoleEnum.OWNER) {
-            throw new TeamAccessDeniedException("[addMember] 해당 팀, 유저는 존재하지 않습니다: " + ownerProviderId + " / " + teamId);
+            throw new TeamAccessDeniedException("[addMember] 해당 모임, 유저는 존재하지 않습니다: " + ownerProviderId + " / " + teamId);
         }
 
         OAuth2UserEntity newUser = oAuth2UserRepository.findByProviderId(newMemberProviderId);
@@ -119,71 +136,38 @@ public class TeamService {
                 throw new BannedTeamMemberException("[addMember] 차단된 사용자 입니다: " + newMemberProviderId);
         }
         
-        saveMember(teamId, newUser, displayName, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE);
+        saveMember(owner.getTeam(), newUser, displayName);
     }
 
     public void removeMember(Long teamId, Long teamMemberId, String providerId) {}
     private void leaveTeam(Long teamId, Long teamMemberId) {}
     private void kickMember(Long teamId, Long teamMemberId, String requestProviderId) {}
 
-    @Transactional
-    public String createInviteCode(Long teamId, String providerId) {
+    @Transactional(readOnly = true)
+    public InviteCodeResponse getTeamInviteCode(Long teamId, String providerId) {
         TeamMember owner = teamMemberRepository
                 .findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, teamId)
-                .orElseThrow(() -> new TeamAccessDeniedException("[createInviteCode] 해당 팀, 유저는 존재하지 않습니다: " + providerId + " / " + teamId));
+                .filter(m -> m.getStatus() == MemberStatusEnum.ACTIVE)
+                .orElseThrow(() -> new NotFoundTeamException("[getTeamInviteCode] 해당 모임, 유저는 존재하지 않습니다: " + providerId + " / " + teamId));
 
         if (owner.getRole() != MemberRoleEnum.OWNER) {
-            throw new TeamAccessDeniedException("[createInviteCode] 해당 팀, 유저는 존재하지 않습니다: " + providerId + " / " + teamId);
+            throw new TeamAccessDeniedException("[getTeamInviteCode] 모임장만 조회할 수 있습니다: " + providerId);
         }
 
-        TeamInvite invite = new TeamInvite();
-        invite.setActive(true);
-        invite.setTeam(teamRepository.getReferenceById(teamId));
-
-        String code = generateRandomCode();
-        invite.setCode(code);
-
-        teamInviteRepository.save(invite);
-
-        return code;
+        return new InviteCodeResponse(owner.getTeam().getCode());
     }
 
     @Transactional
-    public void revokeInviteCode(String code, String providerId) {
-        TeamInvite inviteCode = teamInviteRepository
-                .findByCode(code)
-                .orElseThrow(() -> new NotFoundInviteCodeException("[revokeInviteCode] 유효하지 않은 코드입니다: " + code));
-        Long teamId = inviteCode.getTeam().getTeamId();
-
-        TeamMember owner = teamMemberRepository
-                .findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, teamId)
-                .orElseThrow(() -> new TeamAccessDeniedException("[revokeInviteCode] 해당 팀, 유저는 존재하지 않습니다: " + providerId + " / " + teamId));
-
-        if (owner.getRole() != MemberRoleEnum.OWNER) {
-            throw new TeamAccessDeniedException("[revokeInviteCode] 해당 팀, 유저는 존재하지 않습니다: " + providerId + " / " + teamId);
-        }
-
-        if (!inviteCode.isActive()) {
-            return ;
-        }
-
-        inviteCode.setActive(false);
-    }
-
-    @Transactional
-    public void joinTeamByInviteCode(JoinByInviteCodeRequest request, String providerId) {
-        TeamInvite inviteCode = teamInviteRepository
-                .findByCode(request.code())
-                .orElseThrow(() -> new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + request.code()));
-
-        if (!inviteCode.isActive())
-            throw new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + request.code());
-
-        Long teamId = inviteCode.getTeam().getTeamId();
+    public JoinTeamResponse joinTeamByInviteCode(JoinByInviteCodeRequest request, String providerId) {
+        Team team = teamRepository.findByCode(request.code()).orElseThrow(
+                () -> new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + request.code()));
         
-        OAuth2UserEntity user = oAuth2UserRepository.findByProviderId(providerId);
+        OAuth2UserEntity providerUser = oAuth2UserRepository.findByProviderId(providerId);
 
-        Optional<TeamMember> uncheckedMember = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, teamId);
+        if (providerUser == null)
+            throw new NotFoundUserException("[joinTeamByInviteCode] 존재하지 않는 사용자 입니다: " + providerId);
+
+        Optional<TeamMember> uncheckedMember = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, team.getTeamId());
 
         if (uncheckedMember.isPresent()) {
             TeamMember checkedMember = uncheckedMember.get();
@@ -194,14 +178,16 @@ public class TeamService {
                 throw new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + request.code());
         }
         
-        saveMember(teamId, user, request.displayName(), MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE);
+        saveMember(team, providerUser, request.displayName());
+
+        return new JoinTeamResponse(team.getTeamId());
     }
 
-    void saveMember(Long teamId, OAuth2UserEntity user, String displayName, MemberRoleEnum role, MemberStatusEnum status) {
+    void saveMember(Team team, OAuth2UserEntity user, String displayName) {
         TeamMember member = new TeamMember();
-        member.setTeam(teamRepository.getReferenceById(teamId));
-        member.setRole(role);
-        member.setStatus(status);
+        member.setTeam(team);
+        member.setRole(MemberRoleEnum.MEMBER);
+        member.setStatus(MemberStatusEnum.ACTIVE);
         member.setOAuth2User(user);
         member.setDisplayName(displayName);
         member.setJoinedAt(LocalDateTime.now());
@@ -209,14 +195,13 @@ public class TeamService {
         teamMemberRepository.save(member);
     }
 
-    public String generateRandomCode() {
+    String generateRandomCode() {
         int length = 13;
         String characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         StringBuilder sb = new StringBuilder();
-        SecureRandom random = new SecureRandom();
 
         for(int i=0; i<length; i++) {
-            sb.append(characters.charAt(random.nextInt(characters.length())));
+            sb.append(characters.charAt(RANDOM.nextInt(characters.length())));
         }
 
         return sb.toString();

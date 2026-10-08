@@ -1,9 +1,14 @@
 package com.example.book_talker_backend.team.dao;
 
+import com.example.book_talker_backend.team.entity.Team;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.example.book_talker_backend.team.entity.Team;
+import java.util.Optional;
 
 public interface TeamRepository extends JpaRepository<Team, Long> {
-    public Team findByTeamName(String teamName);
+    Team findByTeamName(String teamName);
+
+    boolean existsByCode(String code);
+
+    Optional<Team> findByCode(String code);
 }

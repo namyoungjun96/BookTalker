@@ -23,8 +23,9 @@ public class TeamController {
     private final TeamService teamService;
 
     @PostMapping
-    public ResponseEntity<CreateTeamResponse> createTeam(@RequestBody @Valid CreateTeamRequest request,
-                                                         @AuthenticationPrincipal OAuth2User oauth2User
+    public ResponseEntity<CreateTeamResponse> createTeam(
+            @RequestBody @Valid CreateTeamRequest request,
+            @AuthenticationPrincipal OAuth2User oauth2User
     ) {
         Map<String, Object> response = oauth2User.getAttribute("response");
         String providerId = (String) response.get("id");
@@ -43,9 +44,10 @@ public class TeamController {
     }
 
     @PutMapping("/{teamId}")
-    public ResponseEntity<Void> updateTeam(@PathVariable Long teamId,
-                                           @RequestBody @Valid UpdateTeamRequest request,
-                                           @AuthenticationPrincipal OAuth2User oauth2User
+    public ResponseEntity<Void> updateTeam(
+            @PathVariable Long teamId,
+            @RequestBody @Valid UpdateTeamRequest request,
+            @AuthenticationPrincipal OAuth2User oauth2User
     ) {
         Map<String, Object> response = oauth2User.getAttribute("response");
         String providerId = (String) response.get("id");
@@ -56,8 +58,9 @@ public class TeamController {
     }
 
     @DeleteMapping("/{teamId}")
-    public ResponseEntity<Void> deleteTeam(@PathVariable Long teamId,
-                                           @AuthenticationPrincipal OAuth2User oauth2User
+    public ResponseEntity<Void> deleteTeam(
+            @PathVariable Long teamId,
+            @AuthenticationPrincipal OAuth2User oauth2User
     ) {
         Map<String, Object> response = oauth2User.getAttribute("response");
         String providerId = (String) response.get("id");
@@ -67,27 +70,25 @@ public class TeamController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PostMapping("/{teamId}/code")
-    public ResponseEntity<String> createInviteCode(@PathVariable Long teamId,
-        @AuthenticationPrincipal OAuth2User oauth2User
+    @GetMapping("/{teamId}/code")
+    public ResponseEntity<InviteCodeResponse> getInviteCode(
+            @PathVariable Long teamId,
+            @AuthenticationPrincipal OAuth2User oauth2User
     ) {
         Map<String, Object> response = oauth2User.getAttribute("response");
         String providerId = (String) response.get("id");
 
-        String code = teamService.createInviteCode(teamId, providerId);
-
-        return new ResponseEntity<>(code, HttpStatus.OK);
+        return new ResponseEntity<>(teamService.getTeamInviteCode(teamId, providerId), HttpStatus.OK);
     }
 
-    @PostMapping("/code")
-    public ResponseEntity<Void> joinTeamByInviteCode(@RequestBody JoinByInviteCodeRequest request,
-        @AuthenticationPrincipal OAuth2User oauth2User) {
+    @PostMapping("/join")
+    public ResponseEntity<JoinTeamResponse> joinTeamByInviteCode(
+            @RequestBody @Valid JoinByInviteCodeRequest request,
+            @AuthenticationPrincipal OAuth2User oauth2User) {
         Map<String, Object> response = oauth2User.getAttribute("response");
         String providerId = (String) response.get("id");
 
-        teamService.joinTeamByInviteCode(request, providerId);
-
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(teamService.joinTeamByInviteCode(request, providerId), HttpStatus.CREATED);
     }
 
 }

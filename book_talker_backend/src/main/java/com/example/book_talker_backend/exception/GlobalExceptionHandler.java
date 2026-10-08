@@ -3,8 +3,8 @@ package com.example.book_talker_backend.exception;
 import com.example.book_talker_backend.book.exception.UnknownEnumValueException;
 import com.example.book_talker_backend.team.exception.BannedTeamMemberException;
 import com.example.book_talker_backend.team.exception.DuplicateTeamMemberException;
+import com.example.book_talker_backend.team.exception.InviteCodeGenerationFailedException;
 import com.example.book_talker_backend.team.exception.TeamAccessDeniedException;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -84,5 +84,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
         log.error("Unhandled exception", e);
         return ResponseEntity.internalServerError().body(new ErrorResponse("서버 오류가 발생했습니다."));
+    }
+
+    /** 500 — 팀 초대코드 생성 실패했을 경우 */
+    @ExceptionHandler(InviteCodeGenerationFailedException.class)
+    public ResponseEntity<ErrorResponse> handleInviteCodeGenerationFailed(InviteCodeGenerationFailedException e) {
+        log.error("Invite Code Generation Failed: {}", e.getMessage());
+        return ResponseEntity.internalServerError().body(new ErrorResponse("모임 생성에 실패했습니다. 잠시 뒤 다시 시도해주세요."));
     }
 }
