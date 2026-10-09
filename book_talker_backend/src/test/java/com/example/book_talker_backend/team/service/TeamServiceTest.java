@@ -299,6 +299,24 @@ public class TeamServiceTest {
     }
 
     @Test
+    void addMember_멤버가_INACTIVE면_재가입() {
+        Long teamId = createTeamWithMemberB(MemberStatusEnum.INACTIVE);
+        TeamMember originalMemberB = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).orElseThrow();
+
+        teamService.addMember(teamId, "userB","userA", "activeUser");
+
+        em.flush();
+        em.clear();
+
+        TeamMember memberB = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).orElseThrow();
+
+        assertThat(memberB.getTeamMemberId()).isEqualTo(originalMemberB.getTeamMemberId());
+        assertThat(memberB.getDisplayName()).isEqualTo("activeUser");
+        assertThat(memberB.getStatus()).isEqualTo(MemberStatusEnum.ACTIVE);
+        assertThat(memberB.getRole()).isEqualTo(MemberRoleEnum.MEMBER);
+    }
+
+    @Test
     void addMember_차단된_사용자면_에러() {
         Long teamId = createTeamWithMemberB(MemberStatusEnum.BANNED);
 
@@ -385,6 +403,25 @@ public class TeamServiceTest {
 
             assertThatThrownBy(() -> teamService.joinTeamByInviteCode(new JoinByInviteCodeRequest(inviteCodeOf(teamId), "userB"), "userB"))
                     .isInstanceOf(DuplicateTeamMemberException.class);
+        }
+
+        @Test
+        void 초대코드_INACTIVE가_재가입_성공() {
+            Long teamId = createTeamWithMemberB(MemberStatusEnum.INACTIVE);
+            TeamMember originalMemberB = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).orElseThrow();
+            String code = inviteCodeOf(teamId);
+
+            teamService.joinTeamByInviteCode(new JoinByInviteCodeRequest(code, "activeUser"), "userB");
+
+            em.flush();
+            em.clear();
+
+            TeamMember memberB = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).orElseThrow();
+
+            assertThat(memberB.getTeamMemberId()).isEqualTo(originalMemberB.getTeamMemberId());
+            assertThat(memberB.getDisplayName()).isEqualTo("activeUser");
+            assertThat(memberB.getStatus()).isEqualTo(MemberStatusEnum.ACTIVE);
+            assertThat(memberB.getRole()).isEqualTo(MemberRoleEnum.MEMBER);
         }
 
         @Test

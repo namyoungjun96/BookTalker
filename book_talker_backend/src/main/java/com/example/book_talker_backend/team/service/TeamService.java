@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,13 +44,7 @@ public class TeamService {
         team.setTeamDescription(request.teamDesc());
         team.setCode(issueUniqueCode());
 
-        TeamMember member = new TeamMember();
-        member.setTeam(team);
-        member.setRole(MemberRoleEnum.OWNER);
-        member.setStatus(MemberStatusEnum.ACTIVE);
-        member.setOAuth2User(providerUser);
-        member.setDisplayName(request.displayName());
-        member.setJoinedAt(LocalDateTime.now());
+        TeamMember member = new TeamMember(team, providerUser, MemberRoleEnum.OWNER, MemberStatusEnum.ACTIVE, request.displayName());
 
         team.getTeamMembers().add(member);
         
@@ -109,6 +102,7 @@ public class TeamService {
         teamRepository.delete(team);
     } 
 
+    @Transactional
     public void addMember(Long teamId, String newMemberProviderId, String ownerProviderId, String displayName) {
         TeamMember owner = teamMemberRepository
                 .findByoAuth2User_ProviderIdAndTeam_TeamId(ownerProviderId, teamId)
@@ -132,6 +126,11 @@ public class TeamService {
             
             if (MemberStatusEnum.ACTIVE == checkedMember.getStatus())
                 throw new DuplicateTeamMemberException("[addMember] 해당 유저는 이미 존재 합니다: " + newMemberProviderId);
+            else if (MemberStatusEnum.INACTIVE == checkedMember.getStatus()) {
+                checkedMember.rejoin(displayName);
+
+                return ;
+            }
             else if (MemberStatusEnum.BANNED == checkedMember.getStatus())
                 throw new BannedTeamMemberException("[addMember] 차단된 사용자 입니다: " + newMemberProviderId);
         }
@@ -174,6 +173,11 @@ public class TeamService {
             
             if (MemberStatusEnum.ACTIVE == checkedMember.getStatus())
                 throw new DuplicateTeamMemberException("[joinTeamByInviteCode] 해당 유저는 이미 존재 합니다: " + providerId);
+            else if (MemberStatusEnum.INACTIVE == checkedMember.getStatus()) {
+                checkedMember.rejoin(request.displayName());
+
+                return new JoinTeamResponse(team.getTeamId());
+            }
             else if (MemberStatusEnum.BANNED == checkedMember.getStatus())
                 throw new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + request.code());
         }
@@ -183,14 +187,8 @@ public class TeamService {
         return new JoinTeamResponse(team.getTeamId());
     }
 
-    void saveMember(Team team, OAuth2UserEntity user, String displayName) {
-        TeamMember member = new TeamMember();
-        member.setTeam(team);
-        member.setRole(MemberRoleEnum.MEMBER);
-        member.setStatus(MemberStatusEnum.ACTIVE);
-        member.setOAuth2User(user);
-        member.setDisplayName(displayName);
-        member.setJoinedAt(LocalDateTime.now());
+    void saveMember(Team team, OAuth2UserEntity providerUser, String displayName) {
+        TeamMember member = new TeamMember(team, providerUser, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, displayName);
 
         teamMemberRepository.save(member);
     }

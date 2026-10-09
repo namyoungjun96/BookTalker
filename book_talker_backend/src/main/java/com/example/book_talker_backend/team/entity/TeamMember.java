@@ -4,7 +4,6 @@ import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
@@ -17,7 +16,6 @@ import java.time.LocalDateTime;
     )
 )
 @Getter
-@Setter
 @NoArgsConstructor
 @ToString 
 public class TeamMember {
@@ -44,6 +42,16 @@ public class TeamMember {
         this.oAuth2User = oAuth2User;
         this.role = role;
         this.status = status;
+        this.displayName = displayName;
+        this.joinedAt = LocalDateTime.now();
+    }
+
+    public void rejoin(String displayName) {
+        if (this.status != MemberStatusEnum.INACTIVE)
+            throw new IllegalStateException("INACTIVE 상태에서만 재가입할 수 있습니다: " + status);
+
+        role = MemberRoleEnum.MEMBER;
+        status = MemberStatusEnum.ACTIVE;
         this.displayName = displayName;
         this.joinedAt = LocalDateTime.now();
     }
