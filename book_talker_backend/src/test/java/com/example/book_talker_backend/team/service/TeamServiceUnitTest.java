@@ -20,7 +20,7 @@ public class TeamServiceUnitTest {
     @Mock OAuth2UserRepository oAuth2UserRepository;
 
     @Test
-    void 초대코드_3회_모두_충돌하면_500() {
+    void 모임_생성_초대코드_3회_모두_충돌하면_500() {
         TeamService service = spy(new TeamService(teamRepository, teamMemberRepository, oAuth2UserRepository));
         doReturn("DUPLICATECODE").when(service).generateRandomCode();
         given(teamRepository.existsByCode("DUPLICATECODE")).willReturn(true);

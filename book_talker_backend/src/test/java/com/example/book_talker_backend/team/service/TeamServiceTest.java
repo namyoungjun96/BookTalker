@@ -99,7 +99,7 @@ public class TeamServiceTest {
     @DisplayName("팀 crud")
     class TeamCRUD {
         @Test
-        void 팀_생성_정상적() {
+        void 모임_생성_성공() {
             CreateTeamResponse response = teamService.createTeam(new CreateTeamRequest("mobigen", "mobigen in book", "owner"), "userA");
 
             em.flush();
@@ -118,7 +118,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 모임_생성시_초대코드_발급_성공_확인() {
+        void 모임_생성_초대코드_함께_발급() {
             Long teamId = createTeamOwnedByA();
             String code = inviteCodeOf(teamId);
 
@@ -126,14 +126,14 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 모임_생성시_DB에_없는_사용자면_404() {
+        void 모임_생성_DB에_없는_사용자면_404() {
             assertThatThrownBy(() -> teamService
                     .createTeam(new CreateTeamRequest("mobigen", "mobigen in book", "owner"), "userX")
             ).isInstanceOf(NotFoundUserException.class);
         }
 
         @Test
-        void 팀_조회_ACTIVE만_뜨는지() {
+        void 모임_목록_ACTIVE인_모임만_조회() {
             CreateTeamResponse mobigen = teamService.createTeam(createTeamRequest("mobigen"), "userA");
             CreateTeamResponse naver = teamService.createTeam(createTeamRequest("naver"), "userA");
             CreateTeamResponse line = teamService.createTeam(createTeamRequest("line"), "userA");
@@ -155,14 +155,14 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 팀_아무것도_없을때는_빈_리스트() {
+        void 모임_목록_가입한_모임이_없으면_빈_리스트() {
             List<TeamListResponse> teams = teamService.getMyTeams("userB");
 
             assertThat(teams).isEmpty();
         }
 
         @Test
-        void 팀_수정_성공() {
+        void 모임_수정_성공() {
             Long teamId = createTeamOwnedByA();
 
             teamService.updateTeam(teamId, new UpdateTeamRequest("ver", "book in naver"), "userA");
@@ -177,7 +177,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 팀_팀에_속하지_않은_유저가_수정할_때() {
+        void 모임_수정_비모임원이면_404() {
             Long teamId = createTeamOwnedByA();
 
             assertThatThrownBy(() -> teamService.updateTeam(
@@ -187,7 +187,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 팀_수정_허가된_롤만_가능() {
+        void 모임_수정_모임장이_아니면_403() {
             Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
 
             assertThatThrownBy(() -> teamService.updateTeam(teamId, new UpdateTeamRequest("ver", "book in ver"), "userB"))
@@ -195,14 +195,14 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 팀_수정_존재하지_않는_teamId일_경우() {
+        void 모임_수정_없는_teamId면_404() {
             assertThatThrownBy(() -> teamService.updateTeam(999L, new UpdateTeamRequest("a", "b"), "userA"))
                     .isInstanceOf(NotFoundTeamException.class);
         }
 
         @ParameterizedTest
         @EnumSource(value = MemberStatusEnum.class, names = {"INACTIVE", "BANNED"})
-        void 팀_수정_상태별_체크(MemberStatusEnum status) {
+        void 모임_수정_ACTIVE가_아니면_404(MemberStatusEnum status) {
             Long teamId = createTeamWithMemberB(status);
 
             assertThatThrownBy(() -> teamService.updateTeam(teamId, new UpdateTeamRequest("ver", "book in ver"), "userB"))
@@ -210,7 +210,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 팀_삭제시_팀원도_삭제되는지_검증() {
+        void 모임_삭제_모임원도_함께_삭제() {
             Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
 
             teamService.deleteTeam(teamId, "userA");
@@ -224,7 +224,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 팀_팀에_속하지_않은_유저가_삭제할_때() {
+        void 모임_삭제_비모임원이면_404() {
             Long teamId = createTeamOwnedByA();
 
             assertThatThrownBy(() -> teamService.deleteTeam(teamId, "userB"))
@@ -232,7 +232,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 팀_삭제_허가된_롤만_가능() {
+        void 모임_삭제_모임장이_아니면_403() {
             Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
 
             assertThatThrownBy(() -> teamService.deleteTeam(teamId, "userB"))
@@ -240,14 +240,14 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 팀_삭제_존재하지_않는_teamId일_경우() {
+        void 모임_삭제_없는_teamId면_404() {
             assertThatThrownBy(() -> teamService.deleteTeam(999L, "userA"))
                     .isInstanceOf(NotFoundTeamException.class);
         }
 
         @ParameterizedTest
         @EnumSource(value = MemberStatusEnum.class, names = {"INACTIVE", "BANNED"})
-        void 팀_삭제_상태별_체크(MemberStatusEnum status) {
+        void 모임_삭제_ACTIVE가_아니면_404(MemberStatusEnum status) {
             Long teamId = createTeamWithMemberB(status);
 
             assertThatThrownBy(() -> teamService.deleteTeam(teamId, "userB"))
@@ -268,7 +268,7 @@ public class TeamServiceTest {
     }
 
     @Test
-    void addMember_정상_동작() {
+    void 모임원_등록_성공() {
         Long teamId = createTeamOwnedByA();
 
         teamService.addMember(teamId, "userB", "userA", "displayName");
@@ -283,7 +283,7 @@ public class TeamServiceTest {
     }
 
     @Test
-    void addMember_추가하려는_사용자가_없으면_에러() {
+    void 모임원_등록_DB에_없는_사용자면_404() {
         Long teamId = createTeamOwnedByA();
 
         assertThatThrownBy(() -> teamService.addMember(teamId, "X", "userA", "displayName"))
@@ -291,7 +291,7 @@ public class TeamServiceTest {
     }
 
     @Test
-    void addMember_이미_등록된_사용자면_에러() {
+    void 모임원_등록_이미_ACTIVE면_409() {
         Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
 
         assertThatThrownBy(() -> teamService.addMember(teamId, "userB", "userA", "displayName"))
@@ -299,7 +299,7 @@ public class TeamServiceTest {
     }
 
     @Test
-    void addMember_멤버가_INACTIVE면_재가입() {
+    void 모임원_등록_INACTIVE면_재가입() {
         Long teamId = createTeamWithMemberB(MemberStatusEnum.INACTIVE);
         TeamMember originalMemberB = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).orElseThrow();
 
@@ -317,7 +317,7 @@ public class TeamServiceTest {
     }
 
     @Test
-    void addMember_차단된_사용자면_에러() {
+    void 모임원_등록_BANNED면_409() {
         Long teamId = createTeamWithMemberB(MemberStatusEnum.BANNED);
 
         assertThatThrownBy(() -> teamService.addMember(teamId, "userB", "userA", "displayName"))
@@ -338,7 +338,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 초대코드_조회는_owner가_아니면_403() {
+        void 초대코드_조회_모임장이_아니면_403() {
             Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
 
             assertThatThrownBy(() -> teamService.getTeamInviteCode(teamId, "userB"))
@@ -346,7 +346,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 초대코드_조회를_없는_teamId와_providerId가_하면_404() {
+        void 초대코드_조회_없는_teamId거나_비모임원이면_404() {
             assertThatThrownBy(() -> teamService.getTeamInviteCode(9999L, "userA"))
                     .isInstanceOf(NotFoundTeamException.class);
 
@@ -358,7 +358,7 @@ public class TeamServiceTest {
 
         @ParameterizedTest
         @EnumSource(value = MemberStatusEnum.class, names = {"INACTIVE", "BANNED"})
-        void 초대코드_조회는_ACTIVE_상태가_아니면_404(MemberStatusEnum status) {
+        void 초대코드_조회_ACTIVE가_아니면_404(MemberStatusEnum status) {
             Long teamId = createTeamWithMemberB(status);
 
             assertThatThrownBy(() -> teamService.getTeamInviteCode(teamId, "userB"))
@@ -366,7 +366,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 초대코드_가입_정상_동작() {
+        void 초대코드_가입_성공() {
             Long teamId = createTeamOwnedByA();
             Team teamNaver = teamRepository.findById(teamId).orElseThrow();
             JoinTeamResponse response = teamService.joinTeamByInviteCode(new JoinByInviteCodeRequest(teamNaver.getCode(), "userB"), "userB");
@@ -383,7 +383,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 초대코드_가입_유효하지_않은_코드는_404() {
+        void 초대코드_가입_없는_코드면_404() {
             assertThatThrownBy(() -> teamService.joinTeamByInviteCode(
                     new JoinByInviteCodeRequest("dsafmlkasmfvlasdmlkfc",
                             "hello"), "userA"))
@@ -391,14 +391,14 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 초대코드_가입_존재하지_않는_사용자는_404() {
+        void 초대코드_가입_DB에_없는_사용자면_404() {
             Long teamId = createTeamOwnedByA();
             assertThatThrownBy(() -> teamService.joinTeamByInviteCode(new JoinByInviteCodeRequest(inviteCodeOf(teamId), "userX"), "userX"))
                     .isInstanceOf(NotFoundUserException.class);
         }
 
         @Test
-        void 초대코드_가입_이미_존재하는_사용자는_409() {
+        void 초대코드_가입_이미_ACTIVE면_409() {
             Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
 
             assertThatThrownBy(() -> teamService.joinTeamByInviteCode(new JoinByInviteCodeRequest(inviteCodeOf(teamId), "userB"), "userB"))
@@ -406,7 +406,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 초대코드_INACTIVE가_재가입_성공() {
+        void 초대코드_가입_INACTIVE면_재가입() {
             Long teamId = createTeamWithMemberB(MemberStatusEnum.INACTIVE);
             TeamMember originalMemberB = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).orElseThrow();
             String code = inviteCodeOf(teamId);
@@ -425,7 +425,7 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 초대코드_가입_추방된_사용자는_404() {
+        void 초대코드_가입_BANNED면_404() {
             Long teamId = createTeamWithMemberB(MemberStatusEnum.BANNED);
 
             assertThatThrownBy(() -> teamService.joinTeamByInviteCode(new JoinByInviteCodeRequest(inviteCodeOf(teamId), "userB"), "userB"))
