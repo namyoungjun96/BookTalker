@@ -22,8 +22,8 @@
 
         <label for="invite-link">초대 링크</label>
         <div class="copy-field">
-          <input id="invite-link" type="text" readonly :value="inviteUrl" />
-          <button type="button" class="btn-primary copy-btn" @click="copyInviteLink">
+          <input id="invite-link" type="text" readonly :value="isLoading ? '불러오는 중...' : inviteUrl" />
+          <button type="button" class="btn-primary copy-btn" :disabled="!inviteUrl" @click="copyInviteLink">
             <svg v-if="copied" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="m5 12 4 4L19 6" />
             </svg>
@@ -42,17 +42,35 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useToast } from 'vue-toastification';
+import apiClient from '../api/client';
 
+const props = defineProps({
+  teamId: { type: [String, Number], required: true },
+});
 const emit = defineEmits(['close']);
 const toast = useToast();
 
-// 스켈레톤: 초대 링크 발급 API 설계 전이므로 목업 링크를 사용한다
-const inviteUrl = 'booktalker.co.kr/team/join/BK24';
+const inviteUrl = ref('');
+const isLoading = ref(false);
 const copied = ref(false);
+
+// 초대코드 조회는 모임장 전용 API (모임원은 상세 화면에서 버튼 자체가 보이지 않음)
+// 실패 시 안내 토스트는 공통 인터셉터가 띄운다
+const fetchInviteCode = async () => {
+  isLoading.value = true;
+  try {
+    const response = await apiClient.get(`/teams/${props.teamId}/code`);
+    inviteUrl.value = `${window.location.origin}/team/join/${response.data.code}`;
+  } catch {
+    inviteUrl.value = '';
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 const copyInviteLink = async () => {
   try {
-    await navigator.clipboard.writeText(inviteUrl);
+    await navigator.clipboard.writeText(inviteUrl.value);
     copied.value = true;
   } catch {
     toast.error('링크를 복사하지 못했습니다. 직접 선택해서 복사해주세요.');
@@ -63,7 +81,10 @@ const onKeydown = (event) => {
   if (event.key === 'Escape') emit('close');
 };
 
-onMounted(() => window.addEventListener('keydown', onKeydown));
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown);
+  fetchInviteCode();
+});
 onUnmounted(() => window.removeEventListener('keydown', onKeydown));
 </script>
 
