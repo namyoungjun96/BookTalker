@@ -46,7 +46,7 @@
                 <div class="team-title">
                   <h3>{{ team.teamName }}</h3>
                   <span v-if="team.role === 'OWNER'" class="role-badge owner">모임장</span>
-                  <span v-else-if="team.role === 'MEMBER'" class="role-badge member">활동 중</span>
+                  <span v-else-if="team.role === 'MEMBER'" class="role-badge member">모임원</span>
                 </div>
                 <p v-if="team.teamDesc" class="team-desc">{{ team.teamDesc }}</p>
                 <div class="team-meta">
