@@ -54,6 +54,17 @@ public class TeamController {
         return new ResponseEntity<>(teamService.getMyTeam(teamId, providerId), HttpStatus.OK);
     }
 
+    @GetMapping("/{teamId}/members")
+    public ResponseEntity<List<TeamMemberListResponse>> getMyTeamMembers(
+            @PathVariable Long teamId,
+            @AuthenticationPrincipal OAuth2User oauth2User
+    ) {
+        Map<String, Object> response = oauth2User.getAttribute("response");
+        String providerId = (String) response.get("id");
+
+        return new ResponseEntity<>(teamService.getMyTeamMembers(teamId, providerId), HttpStatus.OK);
+    }
+
     @PutMapping("/{teamId}")
     public ResponseEntity<Void> updateTeam(
             @PathVariable Long teamId,

@@ -312,61 +312,111 @@ public class TeamServiceTest {
                 .isInstanceOf(UnexpectedRollbackException.class);
     }
 
-    @Test
-    void 모임원_등록_성공() {
-        Long teamId = createTeamOwnedByA();
+    @Nested
+    @DisplayName("모임원 CRUD")
+    class TeamMembers {
+        @Test
+        void 모임원_조회_성공() {
+            Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
 
-        teamService.addMember(teamId, "userB", "userA", "displayName");
-        em.flush();
-        em.clear();
+            List<TeamMemberListResponse> memberListResponses = teamService.getMyTeamMembers(teamId, "userB");
 
-        TeamMember member = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).get();
+            assertThat(memberListResponses).hasSize(2);
 
-        assertThat(member.getDisplayName()).isEqualTo("displayName");
-        assertThat(member.getRole()).isEqualTo(MemberRoleEnum.MEMBER);
-        assertThat(member.getStatus()).isEqualTo(MemberStatusEnum.ACTIVE);
-    }
+            TeamMemberListResponse memberA = memberListResponses.get(0);
+            TeamMemberListResponse memberB = memberListResponses.get(1);
 
-    @Test
-    void 모임원_등록_DB에_없는_사용자면_404() {
-        Long teamId = createTeamOwnedByA();
+            assertThat(memberB.displayName()).isEqualTo("userB");
+            assertThat(memberB.role()).isEqualTo(MemberRoleEnum.MEMBER);
+            assertThat(memberB.me()).isTrue();
+            assertThat(memberA.me()).isFalse();
+            assertThat(memberA.role()).isEqualTo(MemberRoleEnum.OWNER);
+        }
 
-        assertThatThrownBy(() -> teamService.addMember(teamId, "X", "userA", "displayName"))
-                .isInstanceOf(NotFoundUserException.class);
-    }
+        @ParameterizedTest
+        @EnumSource(value = MemberStatusEnum.class, names = {"INACTIVE", "BANNED"})
+        void 모임원_조회_ACTIVE가_아닌_사용자면_404(MemberStatusEnum status) {
+            Long teamId = createTeamWithMemberB(status);
 
-    @Test
-    void 모임원_등록_이미_ACTIVE면_409() {
-        Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
+            assertThatThrownBy(() -> teamService.getMyTeamMembers(teamId, "userB"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
 
-        assertThatThrownBy(() -> teamService.addMember(teamId, "userB", "userA", "displayName"))
-                .isInstanceOf(DuplicateTeamMemberException.class);
-    }
+        @ParameterizedTest
+        @EnumSource(value = MemberStatusEnum.class, names = {"INACTIVE", "BANNED"})
+        void 모임원_조회_ACTIVE가_아닌_모임원은_목록에서_제외(MemberStatusEnum status) {
+            Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
+            insertMember(teamId, "userC", status);
 
-    @Test
-    void 모임원_등록_INACTIVE면_재가입() {
-        Long teamId = createTeamWithMemberB(MemberStatusEnum.INACTIVE);
-        TeamMember originalMemberB = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).orElseThrow();
+            List<TeamMemberListResponse> memberListResponses = teamService.getMyTeamMembers(teamId, "userB");
 
-        teamService.addMember(teamId, "userB","userA", "activeUser");
+            assertThat(memberListResponses).hasSize(2);
+        }
 
-        em.flush();
-        em.clear();
+        @Test
+        void 모임원_조회_모임원이_아니면_404() {
+            Long teamId = createTeamOwnedByA();
 
-        TeamMember memberB = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).orElseThrow();
+            assertThatThrownBy(() -> teamService.getMyTeamMembers(teamId, "userB"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
 
-        assertThat(memberB.getTeamMemberId()).isEqualTo(originalMemberB.getTeamMemberId());
-        assertThat(memberB.getDisplayName()).isEqualTo("activeUser");
-        assertThat(memberB.getStatus()).isEqualTo(MemberStatusEnum.ACTIVE);
-        assertThat(memberB.getRole()).isEqualTo(MemberRoleEnum.MEMBER);
-    }
+        @Test
+        void 모임원_등록_성공() {
+            Long teamId = createTeamOwnedByA();
 
-    @Test
-    void 모임원_등록_BANNED면_409() {
-        Long teamId = createTeamWithMemberB(MemberStatusEnum.BANNED);
+            teamService.addMember(teamId, "userB", "userA", "displayName");
+            em.flush();
+            em.clear();
 
-        assertThatThrownBy(() -> teamService.addMember(teamId, "userB", "userA", "displayName"))
-                .isInstanceOf(BannedTeamMemberException.class);
+            TeamMember member = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).get();
+
+            assertThat(member.getDisplayName()).isEqualTo("displayName");
+            assertThat(member.getRole()).isEqualTo(MemberRoleEnum.MEMBER);
+            assertThat(member.getStatus()).isEqualTo(MemberStatusEnum.ACTIVE);
+        }
+
+        @Test
+        void 모임원_등록_DB에_없는_사용자면_404() {
+            Long teamId = createTeamOwnedByA();
+
+            assertThatThrownBy(() -> teamService.addMember(teamId, "X", "userA", "displayName"))
+                    .isInstanceOf(NotFoundUserException.class);
+        }
+
+        @Test
+        void 모임원_등록_이미_ACTIVE면_409() {
+            Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
+
+            assertThatThrownBy(() -> teamService.addMember(teamId, "userB", "userA", "displayName"))
+                    .isInstanceOf(DuplicateTeamMemberException.class);
+        }
+
+        @Test
+        void 모임원_등록_INACTIVE면_재가입() {
+            Long teamId = createTeamWithMemberB(MemberStatusEnum.INACTIVE);
+            TeamMember originalMemberB = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).orElseThrow();
+
+            teamService.addMember(teamId, "userB", "userA", "activeUser");
+
+            em.flush();
+            em.clear();
+
+            TeamMember memberB = teamMemberRepository.findByoAuth2User_ProviderIdAndTeam_TeamId("userB", teamId).orElseThrow();
+
+            assertThat(memberB.getTeamMemberId()).isEqualTo(originalMemberB.getTeamMemberId());
+            assertThat(memberB.getDisplayName()).isEqualTo("activeUser");
+            assertThat(memberB.getStatus()).isEqualTo(MemberStatusEnum.ACTIVE);
+            assertThat(memberB.getRole()).isEqualTo(MemberRoleEnum.MEMBER);
+        }
+
+        @Test
+        void 모임원_등록_BANNED면_409() {
+            Long teamId = createTeamWithMemberB(MemberStatusEnum.BANNED);
+
+            assertThatThrownBy(() -> teamService.addMember(teamId, "userB", "userA", "displayName"))
+                    .isInstanceOf(BannedTeamMemberException.class);
+        }
     }
 
     @Nested

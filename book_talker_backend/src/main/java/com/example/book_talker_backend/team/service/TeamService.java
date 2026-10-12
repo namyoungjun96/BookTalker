@@ -76,6 +76,19 @@ public class TeamService {
         return teamMemberRepository.findActiveTeamDetail(providerId, teamId).orElseThrow(() -> new NotFoundTeamException("[getMyTeam] 모임을 찾을 수 없습니다. " + teamId + " / " + providerId));
     }
 
+    @Transactional(readOnly = true)
+    public List<TeamMemberListResponse> getMyTeamMembers(Long teamId, String providerId) {
+        if (!teamMemberRepository.existsByoAuth2User_ProviderIdAndTeam_TeamIdAndStatus(providerId, teamId, MemberStatusEnum.ACTIVE))
+            throw new NotFoundTeamException("[getMyTeamMembers] 모임을 찾을 수 없습니다. " + teamId + " / " + providerId);
+
+        List<TeamMemberListResponse> memberListResponses = teamMemberRepository.findActiveMembersByTeamId(providerId, teamId);
+
+        if (memberListResponses.isEmpty())
+            throw new NotFoundTeamException("[getMyTeamMembers] 모임을 찾을 수 없습니다. " + teamId + " / " + providerId);
+
+        return memberListResponses;
+    }
+
     @Transactional
     public void updateTeam(Long teamId, UpdateTeamRequest request, String providerId) {
         TeamMember member = teamMemberRepository
