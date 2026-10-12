@@ -162,6 +162,51 @@ public class TeamServiceTest {
         }
 
         @Test
+        void 모임_상세조회_ACTIVE_모임원이면_모임정보와_역할_반환() {
+            Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
+
+            TeamResponse team = teamService.getMyTeam(teamId, "userB");
+
+            assertThat(team.teamName()).isEqualTo("naver");
+            assertThat(team.teamDesc()).isEqualTo("naver in book");
+            assertThat(team.role()).isEqualTo(MemberRoleEnum.MEMBER);
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = MemberStatusEnum.class, names = {"INACTIVE", "BANNED"})
+        void 모임_상세조회_인원수는_ACTIVE_모임원만_집계(MemberStatusEnum status) {
+            Long teamId = createTeamWithMemberB(MemberStatusEnum.ACTIVE);
+            insertMember(teamId, "userC", status);
+
+            TeamResponse team = teamService.getMyTeam(teamId, "userB");
+
+            assertThat(team.memberCount()).isEqualTo(2);
+        }
+
+        @Test
+        void 모임_상세조회_모임원이_아니면_404() {
+            Long teamId = createTeamOwnedByA();
+
+            assertThatThrownBy(() -> teamService.getMyTeam(teamId, "userB"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
+
+        @Test
+        void 모임_상세조회_존재하지않는_teamId면_404() {
+            assertThatThrownBy(() -> teamService.getMyTeam(9999L, "userA"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = MemberStatusEnum.class, names = {"INACTIVE", "BANNED"})
+        void 모임_상세조회_ACTIVE가_아닌_사용자면_404(MemberStatusEnum status) {
+            Long teamId = createTeamWithMemberB(status);
+
+            assertThatThrownBy(() -> teamService.getMyTeam(teamId, "userB"))
+                    .isInstanceOf(NotFoundTeamException.class);
+        }
+
+        @Test
         void 모임_수정_성공() {
             Long teamId = createTeamOwnedByA();
 

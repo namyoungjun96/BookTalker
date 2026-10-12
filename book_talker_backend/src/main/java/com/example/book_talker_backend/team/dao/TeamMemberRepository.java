@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.example.book_talker_backend.team.entity.dto.TeamListResponse;
+import com.example.book_talker_backend.team.entity.dto.TeamResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.book_talker_backend.team.entity.MemberStatusEnum;
@@ -32,4 +33,17 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
         WHERE m.oAuth2User.providerId = :providerId and m.status = 'ACTIVE'
     """)
     List<TeamListResponse> findByActiveTeamFromProviderId(String providerId);
+
+    @Query("""
+        SELECT new com.example.book_talker_backend.team.entity.dto.TeamResponse(
+            tm.teamId, tm.teamName, tm.teamDescription,
+            (SELECT COUNT(tm2) FROM TeamMember tm2
+              WHERE tm2.team.teamId = tm.teamId AND tm2.status = 'ACTIVE'),
+            m.role)
+        FROM TeamMember m JOIN m.team tm
+        WHERE m.oAuth2User.providerId = :providerId
+          AND m.status = 'ACTIVE'
+          AND tm.teamId = :teamId
+    """)
+    Optional<TeamResponse> findActiveTeamDetail(String providerId, Long teamId);
 }

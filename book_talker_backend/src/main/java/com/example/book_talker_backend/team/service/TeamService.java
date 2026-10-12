@@ -71,6 +71,11 @@ public class TeamService {
         return teamMemberRepository.findByActiveTeamFromProviderId(providerId);
     }
 
+    @Transactional(readOnly = true)
+    public TeamResponse getMyTeam(Long teamId, String providerId) {
+        return teamMemberRepository.findActiveTeamDetail(providerId, teamId).orElseThrow(() -> new NotFoundTeamException("[getMyTeam] 모임을 찾을 수 없습니다. " + teamId + " / " + providerId));
+    }
+
     @Transactional
     public void updateTeam(Long teamId, UpdateTeamRequest request, String providerId) {
         TeamMember member = teamMemberRepository
