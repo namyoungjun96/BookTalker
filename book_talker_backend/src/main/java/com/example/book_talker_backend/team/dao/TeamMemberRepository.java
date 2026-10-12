@@ -31,6 +31,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
         FROM TeamMember m
         JOIN m.team tm
         WHERE m.oAuth2User.providerId = :providerId and m.status = 'ACTIVE'
+        ORDER BY m.joinedAt DESC
     """)
     List<TeamListResponse> findByActiveTeamFromProviderId(String providerId);
 
