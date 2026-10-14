@@ -72,11 +72,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
 
 const router = useRouter();
-const toast = useToast();
 
 const teams = ref([]);
 const isLoading = ref(false);
@@ -97,9 +95,8 @@ const onTeamClick = (team) => {
   router.push({ name: 'team-detail', params: { teamId: team.teamId } });
 };
 
-// 모임 생성 화면은 이번 범위에 포함되지 않음
 const onCreateTeam = () => {
-  toast.info('모임 만들기는 준비 중입니다.');
+  router.push({ name: 'team-create' });
 };
 
 onMounted(fetchTeams);

@@ -62,6 +62,12 @@ const routes = [
     component: () => import('../views/TeamListView.vue'),
   },
   {
+    path: '/teams/new',
+    name: 'team-create',
+    component: () => import('../views/TeamCreateView.vue'),
+    meta: { activeNav: '/teams' },
+  },
+  {
     path: '/teams/:teamId',
     name: 'team-detail',
     component: () => import('../views/TeamDetailView.vue'),
