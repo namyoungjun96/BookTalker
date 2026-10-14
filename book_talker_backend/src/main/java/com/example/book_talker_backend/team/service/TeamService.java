@@ -161,6 +161,13 @@ public class TeamService {
     private void kickMember(Long teamId, Long teamMemberId, String requestProviderId) {}
 
     @Transactional(readOnly = true)
+    public TeamPreviewResponse getTeamPreview(String code) {
+        Team team = teamRepository.findByCode(code).orElseThrow(() -> new NotFoundInviteCodeException("[getTeamPreview] 유효한 코드가 아닙니다: " + code));
+
+        return new TeamPreviewResponse(team.getTeamName(), team.getTeamDescription());
+    }
+
+    @Transactional(readOnly = true)
     public InviteCodeResponse getTeamInviteCode(Long teamId, String providerId) {
         TeamMember owner = teamMemberRepository
                 .findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, teamId)
@@ -197,7 +204,7 @@ public class TeamService {
                 return new JoinTeamResponse(team.getTeamId());
             }
             else if (MemberStatusEnum.BANNED == checkedMember.getStatus())
-                throw new NotFoundInviteCodeException("[joinTeamByInviteCode] 유효하지 않은 코드입니다: " + request.code());
+                throw new BannedTeamMemberException("[joinTeamByInviteCode] 추방된 사용자입니다: " + request.code());
         }
         
         saveMember(team, providerUser, request.displayName());

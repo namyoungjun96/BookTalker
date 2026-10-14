@@ -113,4 +113,9 @@ public class TeamController {
         return new ResponseEntity<>(teamService.joinTeamByInviteCode(request, providerId), HttpStatus.CREATED);
     }
 
+    @GetMapping("/join/{code}")
+    public ResponseEntity<TeamPreviewResponse> getTeamPreviewByInviteCode(@PathVariable String code) {
+        return new ResponseEntity<>(teamService.getTeamPreview(code), HttpStatus.OK);
+    }
+
 }
