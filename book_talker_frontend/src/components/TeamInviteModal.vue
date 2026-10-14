@@ -60,7 +60,7 @@ const fetchInviteCode = async () => {
   isLoading.value = true;
   try {
     const response = await apiClient.get(`/teams/${props.teamId}/code`);
-    inviteUrl.value = `${window.location.origin}/team/join/${response.data.code}`;
+    inviteUrl.value = `${window.location.origin}/teams/join/${response.data.code}`;
   } catch {
     inviteUrl.value = '';
   } finally {

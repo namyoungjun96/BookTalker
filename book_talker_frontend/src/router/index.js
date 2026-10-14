@@ -9,6 +9,7 @@ import ReviewCreateView from '../views/ReviewCreateView.vue';
 import ReviewDetailView from '../views/ReviewDetailView.vue';
 import BookReviewsView from '../views/BookReviewsView.vue';
 import { useSelectionStore } from '../stores/selectionStore';
+import { consumePendingRedirect } from '../composables/usePendingRedirect';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -68,6 +69,12 @@ const routes = [
     meta: { activeNav: '/teams' },
   },
   {
+    path: '/teams/join/:code',
+    name: 'team-join',
+    component: () => import('../views/TeamJoinView.vue'),
+    meta: { activeNav: '/teams' },
+  },
+  {
     path: '/teams/:teamId',
     name: 'team-detail',
     component: () => import('../views/TeamDetailView.vue'),
@@ -121,6 +128,14 @@ async function ensureCurrentUserLoaded() {
 
 router.beforeEach(async (to, from, next) => {
   const isAuthenticated = await checkSession();
+
+  // 로그인 성공 후 백엔드는 항상 홈으로 보내므로, 로그인 전에 남겨 둔 경로(예: 초대 링크)가 있으면 그리로 보낸다
+  if (isAuthenticated) {
+    const pendingPath = consumePendingRedirect();
+    if (pendingPath && pendingPath !== to.fullPath) {
+      return next(pendingPath);
+    }
+  }
   const store = useSelectionStore();
 
   // 이미 로그인된 사용자가 /login 으로 가려 하면 홈으로 보냄
@@ -129,7 +144,8 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // 로그인이 필요 없는 페이지 목록 (홈, 로그인 페이지)
-  const publicPages = ['login', 'home', 'book-reviews'];
+  // team-join: 초대 링크 미리보기는 비로그인도 볼 수 있어야 함 (가입은 화면에서 로그인 유도)
+  const publicPages = ['login', 'home', 'book-reviews', 'team-join'];
   
   // 로그인 안 된 사용자가 보호된 페이지를 가려 하면 /login 으로
   if (!publicPages.includes(to.name) && !isAuthenticated) {
