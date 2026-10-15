@@ -37,7 +37,9 @@ public class Review {
     private LocalDateTime regDate;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime modDate;
-    private Boolean isPublic; // content 공개 여부, 기본 false
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ReviewVisibilityEnum visibility; // content 공개 범위, 전체공개/모임공개/비공개(PUBLIC/GROUP/PRIVATE)
     @Column(name = "reading_count", nullable = false, columnDefinition = "integer default 1")
     private Integer readingCount; // 회독 수, 1부터 시작
 }

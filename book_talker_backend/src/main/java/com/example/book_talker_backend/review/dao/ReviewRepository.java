@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
@@ -21,8 +22,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT MAX(r.readingCount) FROM Review r WHERE r.writer = :writer AND r.book.isbn13 = :isbn13")
     Integer findMaxReadingCount(@Param("writer") String writer, @Param("isbn13") String isbn13);
 
-    // 공개 리뷰: isPublic=true AND 1회독만
-    @Query("SELECT r FROM Review r WHERE r.book.isbn13 = :isbn13 AND r.isPublic = true AND r.readingCount = 1 ORDER BY r.regDate DESC")
+    // 공개 리뷰: visibility=PUBLIC 만
+    @Query("SELECT r FROM Review r WHERE r.book.isbn13 = :isbn13 AND r.visibility = com.example.book_talker_backend.review.entity.ReviewVisibilityEnum.PUBLIC " +
+            "ORDER BY r.regDate DESC")
     Page<Review> findPublicReviews(@Param("isbn13") String isbn13, Pageable pageable);
 
     // 집계: 1회독 리뷰만 대상, 3개 이상인 책
@@ -33,4 +35,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
                   "GROUP BY r.book.isbn13 " +
                   "HAVING COUNT(r) >= 3")
     List<BookRatingStats> aggregateRankData();
+
+    List<Review> findAllByWriterInAndRegDateBetween(List<String> writers, LocalDateTime start, LocalDateTime end);
 }

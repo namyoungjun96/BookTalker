@@ -1,13 +1,22 @@
 package com.example.book_talker_backend.exception;
 
 import com.example.book_talker_backend.book.exception.UnknownEnumValueException;
+import com.example.book_talker_backend.team.exception.BannedTeamMemberException;
+import com.example.book_talker_backend.team.exception.DuplicateTeamMemberException;
+import com.example.book_talker_backend.team.exception.InviteCodeGenerationFailedException;
+import com.example.book_talker_backend.team.exception.TeamAccessDeniedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.util.Comparator;
 
 @Slf4j
 @RestControllerAdvice
@@ -22,6 +31,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
     }
 
+    /** 400 — @Valid 검증 실패. 필드명 순으로 정렬한 첫 번째 오류의 message만 응답 (내부 정보·입력값 노출 방지) */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+        log.warn("Validation failed: {}", e.getMessage());
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .sorted(Comparator.comparing(FieldError::getField))
+                .map(FieldError::getDefaultMessage)
+                .findFirst()
+                .orElse("입력값이 올바르지 않습니다.");
+        return ResponseEntity.badRequest().body(new ErrorResponse(message));
+    }
+
+    /** 400 — 경로 변수·쿼리 파라미터 타입 변환 실패 (예: 숫자 자리에 문자) */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        log.warn("Type mismatch: {}={}", e.getName(), e.getValue());
+        return ResponseEntity.badRequest().body(new ErrorResponse("요청 값의 형식이 올바르지 않습니다: " + e.getName()));
+    }
+
     /** 400 — 알 수 없는 Enum 값 */
     @ExceptionHandler(UnknownEnumValueException.class)
     public ResponseEntity<ErrorResponse> handleUnknownEnum(UnknownEnumValueException e) {
@@ -30,15 +58,23 @@ public class GlobalExceptionHandler {
     }
 
     /** 403 — 리소스 소유자 불일치 */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException e) {
+    @ExceptionHandler({AccessDeniedException.class, TeamAccessDeniedException.class})
+    public ResponseEntity<ErrorResponse> handleAccessDenied(RuntimeException e) {
         log.warn("Access denied: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(e.getMessage()));
     }
 
+    /** 404 - 요청받은 리소스를 찾을 수 없음 */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFoundResource(ResourceNotFoundException e) {
+        log.warn("Not found resources: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(e.getMessage()));
+    }
+
+
     /** 409 — 중복 리소스 (1회독 이미 존재 등) */
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException e) {
+    @ExceptionHandler({DataIntegrityViolationException.class, DuplicateTeamMemberException.class, BannedTeamMemberException.class})
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(RuntimeException e) {
         log.warn("Conflict: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(e.getMessage()));
     }
@@ -48,5 +84,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
         log.error("Unhandled exception", e);
         return ResponseEntity.internalServerError().body(new ErrorResponse("서버 오류가 발생했습니다."));
+    }
+
+    /** 500 — 팀 초대코드 생성 실패했을 경우 */
+    @ExceptionHandler(InviteCodeGenerationFailedException.class)
+    public ResponseEntity<ErrorResponse> handleInviteCodeGenerationFailed(InviteCodeGenerationFailedException e) {
+        log.error("Invite Code Generation Failed: {}", e.getMessage());
+        return ResponseEntity.internalServerError().body(new ErrorResponse("모임 생성에 실패했습니다. 잠시 뒤 다시 시도해주세요."));
     }
 }

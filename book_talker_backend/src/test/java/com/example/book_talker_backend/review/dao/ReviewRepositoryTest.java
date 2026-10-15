@@ -3,6 +3,7 @@ package com.example.book_talker_backend.review.dao;
 import com.example.book_talker_backend.book.dao.BookRepository;
 import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.review.entity.Review;
+import com.example.book_talker_backend.review.entity.ReviewVisibilityEnum;
 import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,7 +105,7 @@ public class ReviewRepositoryTest {
         review.setRating(rating);
         review.setRegDate(LocalDateTime.now());
         review.setModDate(LocalDateTime.now());
-        review.setIsPublic(true);
+        review.setVisibility(ReviewVisibilityEnum.PUBLIC);
         review.setReadingCount(readingCount);
         
         return review;
