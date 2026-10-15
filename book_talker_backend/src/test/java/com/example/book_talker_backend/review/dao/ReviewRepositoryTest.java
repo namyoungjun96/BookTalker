@@ -57,9 +57,9 @@ public class ReviewRepositoryTest {
         List<BookRatingStats> result = reviewRepository.aggregateRankData();
         assertThat(result).hasSize(1);
         BookRatingStats stats = result.get(0);
-        assertThat(stats.isbn13()).isEqualTo("1234567891011");
-        assertThat(stats.reviewCount()).isEqualTo(3);
-        assertThat(stats.avgRating()).isCloseTo(4.0, within(0.0001));
+        assertThat(stats.getIsbn13()).isEqualTo("1234567891011");
+        assertThat(stats.getReviewCount()).isEqualTo(3);
+        assertThat(stats.getAvgRating()).isCloseTo(4.0, within(0.0001));
     }
 
     @Test
@@ -82,9 +82,9 @@ public class ReviewRepositoryTest {
         List<BookRatingStats> result = reviewRepository.aggregateRankData();
         assertThat(result).hasSize(1);
         BookRatingStats stats = result.get(0);
-        assertThat(stats.isbn13()).isEqualTo("1234567891011");
-        assertThat(stats.reviewCount()).isEqualTo(3);
-        assertThat(stats.avgRating()).isCloseTo(4.0, within(0.0001));
+        assertThat(stats.getIsbn13()).isEqualTo("1234567891011");
+        assertThat(stats.getReviewCount()).isEqualTo(3);
+        assertThat(stats.getAvgRating()).isCloseTo(4.0, within(0.0001));
     }
 
     private Book book(String isbn13) {
