@@ -290,6 +290,7 @@ PR 문서(`[commit]`)는 실제 PR 제목을 그대로 파일명으로 사용한
 - [ ] Swagger/OpenAPI 문서화
 - [ ] Spring Boot Actuator (헬스체크)
 - [ ] PostgreSQL 슬로우 쿼리 로그 + 인덱스 튜닝
+- [ ] Flyway 도입 — 현재 운영 스키마를 baseline으로, 이후 운영 `ddl-auto: update` → `validate` 전환 (팀 기능 1차 배포 때 UNIQUE 누락·NOT NULL 전환을 수동 SQL로 처리한 문제 해결)
 - [ ] 마이 페이지 완성 (독서 통계, 프로필 수정)
 - [ ] 운영 DB 마이그레이션: `review.is_public` → `visibility` (**visibility 전환 배포 전 필수**)
 - [ ] `GROUP` 리뷰 모임원 열람 권한 (모임 피드 API 개발 시)
