@@ -4,16 +4,14 @@ import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.service.BookService;
 import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Review;
-import com.example.book_talker_backend.review.entity.dto.PublicReviewResponse;
-import com.example.book_talker_backend.review.entity.dto.ReviewDetailResponse;
-import com.example.book_talker_backend.review.entity.dto.ReviewListResponse;
-import com.example.book_talker_backend.review.entity.dto.ReviewRequest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import com.example.book_talker_backend.review.entity.dto.*;
+import com.example.book_talker_backend.team.service.TeamService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +27,9 @@ import java.util.stream.Collectors;
 public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final BookService bookService;
+    private final TeamService teamService;
+
+    private static final int TEAM_REVIEW_SIZE = 4;
 
     @Transactional
     public void insertReview(ReviewRequest request, String writer) {
@@ -138,5 +139,15 @@ public class ReviewService {
             throw new AccessDeniedException("해당 독후감에 접근 권한이 없습니다.");
         }
         return ReviewDetailResponse.from(review);
+    }
+
+    @Transactional(readOnly = true)
+    public TeamReviewsResponse getTeamReviews(Long teamId, int page, String providerId) {
+        teamService.checkTeamAuthority("getTeamReviews", teamId, providerId);
+        Pageable pageable = PageRequest.of(Math.max(page, 1) - 1, TEAM_REVIEW_SIZE);
+
+        Page<TeamReviewItem> reviews = reviewRepository.findAllByTeamReview(teamId, pageable);
+
+        return new TeamReviewsResponse(reviews.getTotalElements(), Math.max(page, 1), TEAM_REVIEW_SIZE, reviews.getTotalPages(), reviews.getContent());
     }
 }

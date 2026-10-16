@@ -3,6 +3,7 @@ package com.example.book_talker_backend.review.dao;
 
 import com.example.book_talker_backend.review.entity.Review;
 import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
+import com.example.book_talker_backend.review.entity.dto.TeamReviewItem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,6 +36,19 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
                   "GROUP BY r.book.isbn13 " +
                   "HAVING COUNT(r) >= 3")
     List<BookRatingStats> aggregateRankData();
+
+    // 모임 공개 이상 리뷰만
+    @Query("""
+        SELECT new com.example.book_talker_backend.review.entity.dto.TeamReviewItem(
+                r.id, r.headline, r.content, b.title, b.cover, r.regDate, tm.displayName, r.visibility
+        )
+                FROM Review r
+                JOIN TeamMember tm on r.writer = tm.oAuth2User.providerId
+                JOIN r.book b
+                WHERE tm.team.teamId = :teamId and tm.status = 'ACTIVE' and r.visibility != 'PRIVATE'
+                ORDER BY r.regDate DESC, r.id DESC
+        """)
+    Page<TeamReviewItem> findAllByTeamReview(Long teamId, Pageable pageable);
 
     List<Review> findAllByWriterInAndRegDateBetween(List<String> writers, LocalDateTime start, LocalDateTime end);
 }

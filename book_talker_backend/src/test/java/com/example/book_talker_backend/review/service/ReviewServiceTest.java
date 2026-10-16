@@ -6,6 +6,8 @@ import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Review;
 import com.example.book_talker_backend.review.entity.ReviewVisibilityEnum;
 import com.example.book_talker_backend.review.entity.dto.ReviewRequest;
+import com.example.book_talker_backend.team.exception.NotFoundTeamException;
+import com.example.book_talker_backend.team.service.TeamService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,7 @@ class ReviewServiceTest {
     @InjectMocks ReviewService reviewService;
     @Mock ReviewRepository reviewRepository;
     @Mock BookService bookService;
+    @Mock TeamService teamService;
 
     private static final String WRITER = "youngjun@test.com";
     private static final String OTHER_WRITER = "other@test.com";
@@ -258,6 +261,20 @@ class ReviewServiceTest {
 
             assertThatThrownBy(() -> reviewService.deleteReview(99L, WRITER))
                     .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("모임 독후감 조회")
+    class TeamReview {
+        @Test
+        void 모임_독후감_조회_비모임원이면_404() {
+            given(teamService.checkTeamAuthority("getTeamReviews", 9999L, "notFoundUser"))
+                    .willThrow(new NotFoundTeamException("...."));
+
+            assertThatThrownBy(() -> reviewService.getTeamReviews(9999L, 1,"notFoundUser"))
+                    .isInstanceOf(NotFoundTeamException.class);
+            then(reviewRepository).shouldHaveNoInteractions();
         }
     }
 

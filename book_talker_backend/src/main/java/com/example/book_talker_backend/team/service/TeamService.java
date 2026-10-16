@@ -212,6 +212,13 @@ public class TeamService {
         return new JoinTeamResponse(team.getTeamId());
     }
 
+    public TeamMember checkTeamAuthority(String methodName, Long teamId, String providerId) {
+        return teamMemberRepository
+                .findByoAuth2User_ProviderIdAndTeam_TeamId(providerId, teamId)
+                .filter(m -> m.getStatus() == MemberStatusEnum.ACTIVE)
+                .orElseThrow(() -> new NotFoundTeamException("["+ methodName + "] 모임을 찾을 수 없습니다." + teamId + " / " + providerId));
+    }
+
     void saveMember(Team team, OAuth2UserEntity providerUser, String displayName) {
         TeamMember member = new TeamMember(team, providerUser, MemberRoleEnum.MEMBER, MemberStatusEnum.ACTIVE, displayName);
 
