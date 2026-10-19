@@ -16,7 +16,7 @@ public record TeamReviewItem(
         String displayName,
         ReviewVisibilityEnum visibility
 ) {
-    private static final int SUMMARY_LENGTH = 20;
+    private static final int SUMMARY_LENGTH = 40;
 
     public TeamReviewItem {
         summary = summarize(summary);
