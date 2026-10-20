@@ -66,7 +66,12 @@
 
             <template v-else-if="reviews.length > 0">
               <div class="feed-list">
-                <article v-for="review in reviews" :key="review.reviewId" class="feed-item">
+                <router-link
+                  v-for="review in reviews"
+                  :key="review.reviewId"
+                  :to="{ name: 'team-review-detail', params: { teamId, reviewId: review.reviewId } }"
+                  class="feed-item"
+                >
                   <div class="feed-book">
                     <div class="feed-cover">
                       <img v-if="review.cover" :src="review.cover" alt="" loading="lazy" />
@@ -86,7 +91,7 @@
                     <p class="feed-summary">{{ review.summary }}</p>
                   </div>
                   <span class="feed-arrow" aria-hidden="true">→</span>
-                </article>
+                </router-link>
               </div>
 
               <button
@@ -308,7 +313,9 @@ onMounted(async () => {
 .feed-empty { margin-top: 12px; padding: 48px 24px; }
 
 .feed-list { margin-top: 12px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
-.feed-item { display: flex; align-items: flex-start; gap: 13px; padding: 19px 20px; border-bottom: 1px solid #f3f4f6; }
+.feed-item { display: flex; align-items: flex-start; gap: 13px; padding: 19px 20px; border-bottom: 1px solid #f3f4f6; text-decoration: none; transition: background-color 0.15s ease; }
+.feed-item:hover { background: #f9fafb; }
+.feed-item:hover .feed-arrow { color: #2563eb; }
 .feed-item:last-child { border-bottom: none; }
 .feed-body { flex: 1; min-width: 0; }
 .feed-meta { display: flex; align-items: center; gap: 7px; }

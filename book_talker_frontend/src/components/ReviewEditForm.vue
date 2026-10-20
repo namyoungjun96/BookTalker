@@ -40,6 +40,7 @@
           </button>
         </div>
       </div>
+      <p v-if="privateNotice && form.visibility === 'PRIVATE'" class="private-notice">{{ privateNotice }}</p>
       <textarea
         v-model="form.content"
         rows="12"
@@ -93,6 +94,8 @@ import { VISIBILITY_OPTIONS, DEFAULT_VISIBILITY } from '../constants/reviewVisib
 const props = defineProps({
   reviewId: { type: [Number, String], required: true },
   review: { type: Object, required: true },
+  // PRIVATE를 골랐을 때 선택지 아래에 띄울 안내 — 비공개로 바꾸면 글이 안 보이게 되는 화면(모임 등)에서 넘김
+  privateNotice: { type: String, default: '' },
 });
 
 const emit = defineEmits(['saved', 'cancel']);
@@ -237,6 +240,16 @@ const onSubmit = async () => {
 .visibility-badge.selectable.selected.public { background: #dbeafe; color: #2563eb; border-color: #bfdbfe; }
 .visibility-badge.selectable.selected.group { background: #f3f0ff; color: #7658bd; border-color: #ddd6fe; }
 .visibility-badge.selectable.selected.private { background: #f3f4f6; color: #6b7280; border-color: #e5e7eb; }
+
+.private-notice {
+  margin: 0 0 12px 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+}
 
 /* 평점 */
 .rating-control {
