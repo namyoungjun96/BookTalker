@@ -5,6 +5,7 @@ import com.example.book_talker_backend.book.service.BookService;
 import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Review;
 import com.example.book_talker_backend.review.entity.dto.*;
+import com.example.book_talker_backend.review.exception.NotFoundReviewException;
 import com.example.book_talker_backend.team.service.TeamService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -149,5 +150,13 @@ public class ReviewService {
         Page<TeamReviewItem> reviews = reviewRepository.findAllByTeamReview(teamId, pageable);
 
         return new TeamReviewsResponse(reviews.getTotalElements(), Math.max(page, 1), TEAM_REVIEW_SIZE, reviews.getTotalPages(), reviews.getContent());
+    }
+
+    @Transactional(readOnly = true)
+    public TeamReviewDetailResponse getTeamReviewDetail(Long teamId, Long reviewId, String providerId) {
+        teamService.checkTeamAuthority("getTeamReviewDetail", teamId, providerId);
+
+        return reviewRepository.findByTeamReviewDetail(teamId, reviewId, providerId)
+                .orElseThrow(() -> new NotFoundReviewException("독후감이 존재하지 않습니다."));
     }
 }

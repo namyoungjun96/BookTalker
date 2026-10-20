@@ -1,5 +1,6 @@
 package com.example.book_talker_backend.review;
 
+import com.example.book_talker_backend.review.entity.dto.TeamReviewDetailResponse;
 import com.example.book_talker_backend.review.entity.dto.TeamReviewsResponse;
 import com.example.book_talker_backend.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
@@ -29,5 +30,17 @@ public class TeamReviewController {
         String providerId = (String) response.get("id");
 
         return new ResponseEntity<>(reviewService.getTeamReviews(teamId, page, providerId), HttpStatus.OK);
+    }
+
+    @GetMapping("/{reviewId}")
+    public ResponseEntity<TeamReviewDetailResponse> getTeamReviewDetail(
+            @AuthenticationPrincipal OAuth2User oauth2User,
+            @PathVariable Long teamId,
+            @PathVariable Long reviewId
+    ) {
+        Map<String, Object> response = oauth2User.getAttribute("response");
+        String providerId = (String) response.get("id");
+
+        return new ResponseEntity<>(reviewService.getTeamReviewDetail(teamId, reviewId, providerId), HttpStatus.OK);
     }
 }

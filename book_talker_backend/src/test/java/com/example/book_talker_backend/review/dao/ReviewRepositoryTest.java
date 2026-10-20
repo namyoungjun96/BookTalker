@@ -5,6 +5,7 @@ import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.review.entity.Review;
 import com.example.book_talker_backend.review.entity.ReviewVisibilityEnum;
 import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
+import com.example.book_talker_backend.review.entity.dto.TeamReviewDetailResponse;
 import com.example.book_talker_backend.review.entity.dto.TeamReviewItem;
 import com.example.book_talker_backend.team.dao.TeamMemberRepository;
 import com.example.book_talker_backend.team.dao.TeamRepository;
@@ -250,6 +251,141 @@ public class ReviewRepositoryTest {
             Page<TeamReviewItem> result = reviewRepository.findAllByTeamReview(naver.getTeamId(), Pageable.ofSize(10));
             assertThat(result.getTotalElements()).isEqualTo(2);
             assertThat(result).extracting(TeamReviewItem::displayName).containsExactly("하치와레", "치이카와");
+        }
+    }
+
+
+    @Nested
+    @DisplayName("모임 독후감 상세 조회")
+    class FindByTeamReviewDetail {
+        @ParameterizedTest
+        @EnumSource(value = ReviewVisibilityEnum.class, names = {"PUBLIC", "GROUP"})
+        void 모임_독후감_상세_조회_성공(ReviewVisibilityEnum visibility) {
+            Team naver = saveTeam("naver");
+            saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
+
+            Book book = bookRepository.save(book("1234567891011"));
+            Review review = reviewRepository.save(
+                    review(book, "userA", day(13), visibility)
+            );
+
+            em.flush();
+            em.clear();
+
+            TeamReviewDetailResponse teamReviewDetail = reviewRepository.findByTeamReviewDetail(
+                    naver.getTeamId(), review.getId(), "userA"
+            ).orElseThrow();
+
+            assertThat(teamReviewDetail.headline()).isEqualTo("headline");
+            assertThat(teamReviewDetail.content()).isEqualTo("good");
+            assertThat(teamReviewDetail.bookTitle()).isEqualTo("title");
+            assertThat(teamReviewDetail.cover()).isEqualTo("cover");
+            assertThat(teamReviewDetail.displayName()).isEqualTo("치이카와");
+            assertThat(teamReviewDetail.mine()).isTrue();
+        }
+
+        @Test
+        void 모임_독후감_상세_조회_작성자가_아니면_mine은_false() {
+            Team naver = saveTeam("naver");
+            saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
+            saveMember(naver, "userB", "우사기", MemberStatusEnum.ACTIVE);
+
+            Book book = bookRepository.save(book("1234567891011"));
+            Review review = reviewRepository.save(
+                    review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC)
+            );
+
+            em.flush();
+            em.clear();
+
+            TeamReviewDetailResponse teamReviewDetail = reviewRepository.findByTeamReviewDetail(
+                    naver.getTeamId(), review.getId(), "userB"
+            ).orElseThrow();
+
+            assertThat(teamReviewDetail.bookTitle()).isEqualTo("title");
+            assertThat(teamReviewDetail.cover()).isEqualTo("cover");
+            assertThat(teamReviewDetail.displayName()).isEqualTo("치이카와");
+            assertThat(teamReviewDetail.mine()).isFalse();
+        }
+
+        @Test
+        void 모임_독후감_상세_조회_PRIVATE는_빈_결과() {
+            Team naver = saveTeam("naver");
+            saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
+
+            Book book = bookRepository.save(book("1234567891011"));
+            Review review = reviewRepository.save(
+                    review(book, "userA", day(13), ReviewVisibilityEnum.PRIVATE)
+            );
+
+            em.flush();
+            em.clear();
+
+            assertThat(reviewRepository.findByTeamReviewDetail(
+                    naver.getTeamId(), review.getId(), "userA"
+            )).isEmpty();
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = MemberStatusEnum.class, names = {"INACTIVE", "BANNED"})
+        void 모임_독후감_상세_조회_작성자가_INACTIVE_BANNED면_빈_결과(MemberStatusEnum status) {
+            Team naver = saveTeam("naver");
+            saveMember(naver, "userA", "치이카와", status);
+            saveMember(naver, "userB", "하치와레", MemberStatusEnum.ACTIVE);
+
+            Book book = bookRepository.save(book("1234567891011"));
+            Review review = reviewRepository.save(
+                    review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC)
+            );
+
+            em.flush();
+            em.clear();
+
+            assertThat(reviewRepository.findByTeamReviewDetail(
+                    naver.getTeamId(), review.getId(), "userB"
+            )).isEmpty();
+        }
+
+        @Test
+        void 모임_독후감_상세_조회_두_모임에_속했으면_조회한_모임_닉네임() {
+            Team naver = saveTeam("naver");
+            Team line = saveTeam("line");
+            saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
+            saveMember(line, "userA", "모몽가", MemberStatusEnum.ACTIVE);
+
+            Book book = bookRepository.save(book("1234567891011"));
+            Review review = reviewRepository.save(
+                    review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC)
+            );
+
+            em.flush();
+            em.clear();
+
+            TeamReviewDetailResponse teamReviewDetail = reviewRepository.findByTeamReviewDetail(
+                    naver.getTeamId(), review.getId(), "userA"
+            ).orElseThrow();
+
+            assertThat(teamReviewDetail.displayName()).isEqualTo("치이카와");
+        }
+
+        @Test
+        void 모임_독후감_상세_조회_다른_모임_소속_작성자의_글이면_빈_결과() {
+            Team naver = saveTeam("naver");
+            Team line = saveTeam("line");
+            saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
+            saveMember(line, "userB", "모몽가", MemberStatusEnum.ACTIVE);
+
+            Book book = bookRepository.save(book("1234567891011"));
+            Review review = reviewRepository.save(
+                    review(book, "userB", day(13), ReviewVisibilityEnum.PUBLIC)
+            );
+
+            em.flush();
+            em.clear();
+
+            assertThat(reviewRepository.findByTeamReviewDetail(
+                    naver.getTeamId(), review.getId(), "userA"
+            )).isEmpty();
         }
     }
 

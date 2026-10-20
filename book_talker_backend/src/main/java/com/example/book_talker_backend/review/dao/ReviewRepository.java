@@ -3,6 +3,7 @@ package com.example.book_talker_backend.review.dao;
 
 import com.example.book_talker_backend.review.entity.Review;
 import com.example.book_talker_backend.review.entity.dto.BookRatingStats;
+import com.example.book_talker_backend.review.entity.dto.TeamReviewDetailResponse;
 import com.example.book_talker_backend.review.entity.dto.TeamReviewItem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByWriter(String writer);
@@ -49,6 +51,21 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
                 ORDER BY r.regDate DESC, r.id DESC
         """)
     Page<TeamReviewItem> findAllByTeamReview(Long teamId, Pageable pageable);
+
+    @Query("""
+    SELECT new com.example.book_talker_backend.review.entity.dto.TeamReviewDetailResponse(
+            r.id, r.headline, r.content, r.rating, r.readingCount, r.visibility, r.regDate, b.title, b.cover, tm.displayName,
+            CASE WHEN r.writer = :providerId THEN true ELSE false END
+    )
+            FROM Review r
+            JOIN TeamMember tm on r.writer = tm.oAuth2User.providerId
+            JOIN r.book b
+            WHERE tm.team.teamId = :teamId
+                AND tm.status = 'ACTIVE'
+                AND r.visibility != 'PRIVATE'
+                AND r.id = :reviewId
+    """)
+    Optional<TeamReviewDetailResponse> findByTeamReviewDetail(Long teamId, Long reviewId, String providerId);
 
     List<Review> findAllByWriterInAndRegDateBetween(List<String> writers, LocalDateTime start, LocalDateTime end);
 }
