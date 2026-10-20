@@ -80,6 +80,12 @@ const routes = [
     component: () => import('../views/TeamDetailView.vue'),
     meta: { activeNav: '/teams' },
   },
+  {
+    path: '/teams/:teamId/reviews/:reviewId',
+    name: 'team-review-detail',
+    component: () => import('../views/TeamReviewDetailView.vue'),
+    meta: { activeNav: '/teams' },
+  },
 ];
 
 const router = createRouter({

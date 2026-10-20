@@ -520,11 +520,11 @@ public class TeamServiceTest {
         }
 
         @Test
-        void 초대코드_가입_BANNED면_404() {
+        void 초대코드_가입_BANNED면_409() {
             Long teamId = createTeamWithMemberB(MemberStatusEnum.BANNED);
 
             assertThatThrownBy(() -> teamService.joinTeamByInviteCode(new JoinByInviteCodeRequest(inviteCodeOf(teamId), "userB"), "userB"))
-                    .isInstanceOf(NotFoundInviteCodeException.class);
+                    .isInstanceOf(BannedTeamMemberException.class);
         }
     }
 }

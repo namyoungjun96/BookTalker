@@ -9,8 +9,8 @@ import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
 import com.example.book_talker_backend.user.dao.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -21,9 +21,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 // 보안 설정(SecurityConfig)까지 포함해 비로그인 요청을 검증한다. 인증 사용자(@WithMockUser 등) 없이 요청한다.
 @WebMvcTest(TeamController.class)
@@ -32,7 +30,7 @@ class TeamControllerTest {
     // 메인 클래스(BookTalkerBackendApplication) 대신 쓰는 테스트 전용 설정.
     // 메인 클래스의 @EnableJpaRepositories가 슬라이스 테스트에서도 레포지토리를 등록해 entityManagerFactory를 요구하므로,
     // 필요한 빈만 직접 등록한다. 컴포넌트 스캔을 하지 않아 WebConfig 등 무관한 빈도 올라오지 않는다.
-    @SpringBootConfiguration
+    @Configuration
     @Import({TeamController.class, SecurityConfig.class, GlobalExceptionHandler.class})
     static class TestConfig {
     }

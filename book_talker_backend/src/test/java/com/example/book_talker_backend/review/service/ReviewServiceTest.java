@@ -6,6 +6,9 @@ import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Review;
 import com.example.book_talker_backend.review.entity.ReviewVisibilityEnum;
 import com.example.book_talker_backend.review.entity.dto.ReviewRequest;
+import com.example.book_talker_backend.review.exception.NotFoundReviewException;
+import com.example.book_talker_backend.team.exception.NotFoundTeamException;
+import com.example.book_talker_backend.team.service.TeamService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,10 +35,14 @@ class ReviewServiceTest {
     @InjectMocks ReviewService reviewService;
     @Mock ReviewRepository reviewRepository;
     @Mock BookService bookService;
+    @Mock TeamService teamService;
 
     private static final String WRITER = "youngjun@test.com";
     private static final String OTHER_WRITER = "other@test.com";
     private static final String ISBN13 = "9791234567890";
+    private static final Long TEAM_ID = 9999L;
+    private static final Long REVIEW_ID = 1111L;
+
 
     // ─────────────────────────────────────────────
     // insertReview
@@ -258,6 +265,39 @@ class ReviewServiceTest {
 
             assertThatThrownBy(() -> reviewService.deleteReview(99L, WRITER))
                     .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("모임 독후감 조회")
+    class TeamReview {
+        @Test
+        void 모임_독후감_조회_비모임원이면_404() {
+            given(teamService.checkTeamAuthority("getTeamReviews", TEAM_ID, WRITER))
+                    .willThrow(new NotFoundTeamException("...."));
+
+            assertThatThrownBy(() -> reviewService.getTeamReviews(TEAM_ID, 1,WRITER))
+                    .isInstanceOf(NotFoundTeamException.class);
+            then(reviewRepository).shouldHaveNoInteractions();
+        }
+
+        @Test
+        void 모임_독후감_상세_조회_비모임원이면_404() {
+            given(teamService.checkTeamAuthority("getTeamReviewDetail", TEAM_ID, WRITER))
+                    .willThrow(new NotFoundTeamException("...."));
+
+            assertThatThrownBy(() -> reviewService.getTeamReviewDetail(TEAM_ID, REVIEW_ID,WRITER))
+                    .isInstanceOf(NotFoundTeamException.class);
+            then(reviewRepository).shouldHaveNoInteractions();
+        }
+
+        @Test
+        void 모임_독후감_상세_조회_리뷰가_없으면_404() {
+            given(reviewRepository.findByTeamReviewDetail(TEAM_ID, REVIEW_ID, WRITER))
+                    .willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> reviewService.getTeamReviewDetail(TEAM_ID, REVIEW_ID,WRITER))
+                    .isInstanceOf(NotFoundReviewException.class);
         }
     }
 
