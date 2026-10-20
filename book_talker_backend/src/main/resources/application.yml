@@ -12,6 +12,9 @@ spring:
           batch_size: 30
         order_inserts: true
 
+  flyway:
+    baseline-on-migrate: true
+
 server:
   port: 8010
   forward-headers-strategy: native

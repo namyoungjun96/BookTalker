@@ -2,13 +2,13 @@ package com.example.book_talker_backend.review.entity;
 
 import com.example.book_talker_backend.book.entity.Book;
 import jakarta.persistence.*;
-import lombok.Setter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
-import org.springframework.format.annotation.DateTimeFormat;
 
 @Entity
 @Table(
@@ -29,8 +29,9 @@ public class Review {
     @JoinColumn(name = "isbn13")
     private Book book;
     private String writer;
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
+    @Column(nullable = false)
     private String headline;  // 필수, 항상 공개
     private Integer rating;
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
