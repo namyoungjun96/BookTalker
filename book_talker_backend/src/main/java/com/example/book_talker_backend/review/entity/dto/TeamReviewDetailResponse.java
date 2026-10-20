@@ -9,6 +9,7 @@ public record TeamReviewDetailResponse(
         Long reviewId,
         String headline,
         String content,
+        String author,
         Integer rating,
         Integer readingCount,
         ReviewVisibilityEnum visibility,
@@ -16,6 +17,7 @@ public record TeamReviewDetailResponse(
         LocalDateTime regDate,
         String bookTitle,
         String cover,
+        String teamName,
         String displayName,
         Boolean mine
 ) {

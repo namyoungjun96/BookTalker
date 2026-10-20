@@ -54,7 +54,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     @Query("""
     SELECT new com.example.book_talker_backend.review.entity.dto.TeamReviewDetailResponse(
-            r.id, r.headline, r.content, r.rating, r.readingCount, r.visibility, r.regDate, b.title, b.cover, tm.displayName,
+            r.id, r.headline, r.content, b.author, r.rating, r.readingCount, r.visibility, r.regDate, b.title, b.cover, tm.team.teamName, tm.displayName,
             CASE WHEN r.writer = :providerId THEN true ELSE false END
     )
             FROM Review r

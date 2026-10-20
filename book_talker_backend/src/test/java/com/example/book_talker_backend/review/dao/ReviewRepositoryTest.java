@@ -278,9 +278,11 @@ public class ReviewRepositoryTest {
 
             assertThat(teamReviewDetail.headline()).isEqualTo("headline");
             assertThat(teamReviewDetail.content()).isEqualTo("good");
+            assertThat(teamReviewDetail.author()).isEqualTo("author");
             assertThat(teamReviewDetail.bookTitle()).isEqualTo("title");
             assertThat(teamReviewDetail.cover()).isEqualTo("cover");
             assertThat(teamReviewDetail.displayName()).isEqualTo("치이카와");
+            assertThat(teamReviewDetail.teamName()).isEqualTo("naver");
             assertThat(teamReviewDetail.mine()).isTrue();
         }
 
