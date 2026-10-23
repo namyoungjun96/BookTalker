@@ -57,7 +57,10 @@ jobs:
         port: ${{ secrets.SSH_PORT }} # Defaults to 22 if omitted
         script: |
           /bin/bash /home/ubuntu/deploy.sh
-          
+
+    # 서버 밖에서 사용자와 같은 경로(DNS·방화벽·Nginx·TLS)로 확인 — deploy.sh의 localhost 헬스체크로는 못 잡는 문제 감지
+    - name: Health check from outside
+      run: curl -f -s --retry 5 --retry-delay 10 --retry-all-errors https://booktalker.co.kr/api/actuator/health
 
     # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
     # If your project does not have the Gradle Wrapper configured, you can use the following configuration to run Gradle with a specified version.
