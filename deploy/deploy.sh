@@ -1,5 +1,6 @@
 #!/bin/bash
-source /etc/bash.bashrc
+#source /etc/bash.bashrc
+source /home/ubuntu/.env
 
 NGINX_LINK=/etc/nginx/sites-enabled/booktalker
 BLUE_CONF=/etc/nginx/sites-available/booktalker-blue

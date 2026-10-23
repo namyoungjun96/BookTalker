@@ -5,9 +5,9 @@ spring:
           ddl-auto: validate
     datasource:
         driver-class-name: org.postgresql.Driver
-        username: talker
-        password: password
-        url: jdbc:postgresql://193.123.244.199:5432/book_talker_db
+        username: ${DB_USERNAME}
+        password: ${DB_PASSWORD}
+        url: ${DB_URL}
     security:
       oauth2:
         client:
@@ -20,8 +20,8 @@ spring:
           registration:
             naver:
               client-name: Naver
-              client-id: gP9iCmsiOkKQNSlQRkqt
-              client-secret: VhPBrEXpPt
+              client-id: ${NAVER_CLIENT_ID}
+              client-secret: ${NAVER_CLIENT_SECRET}
               authorization-grant-type: authorization_code
               redirect-uri: https://booktalker.co.kr/api/login/oauth2/code/naver
               scope:
@@ -39,7 +39,7 @@ base-url:
 
 app:
   discord:
-    webhook-url: ${DISCORD_WEBHOOK_URL:}
+    webhook-url: ${DISCORD_WEBHOOK_URL}
 
 aladin:
   api:

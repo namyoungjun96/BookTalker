@@ -21,6 +21,13 @@ start() {
   fi
 
   echo "▶ Starting ${APP_NAME} on port ${port} with ${jar}..."
+
+  if [ ! -f /home/ubuntu/.env ]; then
+    echo "❌ .env not found"
+    return 1
+  fi
+  . /home/ubuntu/.env
+
   nohup ${JAVA_CMD} ${JAVA_OPTS} -jar ${jar} \
     --spring.profiles.active=${PROFILE} \
     --server.port=${port} \
