@@ -9,7 +9,7 @@
           홈
         </router-link>
         <router-link v-if="isLoggedIn" to="/mypage" class="nav-link" :class="{ active: isActiveNav('/mypage') }">
-          마이페이지
+          <span class="label-full">마이페이지</span><span class="label-short">마이</span>
         </router-link>
         <router-link v-if="isLoggedIn" to="/book-search" class="nav-link" :class="{ active: isActiveNav('/book-search') }">
           검색
@@ -96,6 +96,7 @@ watch(() => route.path, checkLoginStatus, { immediate: true });
   border: none;
   cursor: pointer;
   padding: 0;
+  white-space: nowrap;
   transition: color 0.15s ease;
 }
 
@@ -103,4 +104,16 @@ watch(() => route.path, checkLoginStatus, { immediate: true });
 .nav-link.active { color: #2563eb; font-weight: 500; }
 .logout-btn:hover { color: #ef4444; }
 .login-btn { color: #2563eb; }
+
+.label-short { display: none; }
+
+/* 모바일: 메뉴 5개가 한 줄에 들어가도록 여백·글자 축소 + "마이페이지" → "마이" */
+@media (max-width: 480px) {
+  .header-content { padding: 0 16px; }
+  .logo { font-size: 18px; }
+  .nav-links { gap: 12px; }
+  .nav-link { font-size: 14px; }
+  .label-full { display: none; }
+  .label-short { display: inline; }
+}
 </style>
