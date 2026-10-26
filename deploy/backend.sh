@@ -2,7 +2,7 @@
 
 APP_NAME="book_talker_backend"
 JAVA_CMD="java"
-JAVA_OPTS="-Xms128m -Xmx384m"
+JAVA_OPTS="-Xms128m -Xmx384m -XX:TieredStopAtLevel=1"
 PROFILE="prod"
 
 get_pid() {
