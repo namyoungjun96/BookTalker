@@ -1,52 +1,71 @@
 # 📚 BookTalker
 
-> 책 에세이를 기록하고, 다른 독자들과 나누는 공간
+> 같은 책을 다시 읽을 때마다 독후감을 남기고, 독서 모임 안에서 나누는 서비스
 
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=flat-square&logo=springboot&logoColor=white)
 ![Java](https://img.shields.io/badge/Java-17-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Flyway](https://img.shields.io/badge/Flyway-CC0200?style=flat-square&logo=flyway&logoColor=white)
 ![Vue3](https://img.shields.io/badge/Vue3-42b883?style=flat-square&logo=vue.js&logoColor=white)
 ![OCI](https://img.shields.io/badge/Oracle_Cloud-F80000?style=flat-square&logo=oracle&logoColor=white)
+
+**서비스** https://booktalker.co.kr · **포트폴리오** https://wiry-cress-f67.notion.site/Booktalker-3b3b51ad86d980fba4a9c96c7751d852
 
 <br>
 
 ## 프로젝트 소개
 
-BookTalker는 책 한 권을 읽고 난 뒤의 생각과 감상을 **에세이 형태로 기록**하고, 원하는 경우 다른 사람들과 나눌 수 있는 서비스입니다.
+BookTalker는 책을 읽고 난 뒤의 생각을 **회독 단위로 기록**하고, 원하는 범위(전체·모임·나만)로 나눌 수 있는 서비스입니다.
 
-단순한 별점·한 줄 평을 넘어, 자신만의 독서 기록을 남기고 싶은 사람들을 위해 만들었습니다.
+- 같은 책을 두 번, 세 번 읽으면 그때마다 새 독후감을 남겨 생각이 어떻게 바뀌었는지 볼 수 있습니다.
+- 독서 모임을 만들고 초대 링크로 모임원을 모아, 모임원끼리 독후감을 모아 볼 수 있습니다.
+- **2026년 10월부터 실제 독서 모임에서 사용 중**입니다.
+
+1GB 메모리 서버 한 대(OCI Free Tier)에서 배포·운영까지 직접 하고 있습니다.
 
 <br>
 
 ## 주요 기능
 
-### 🔐 소셜 로그인
-- 네이버 OAuth2 로그인 (Authorization Code Flow)
-- HTTP Cookie 기반 세션 관리
+### 📝 독후감
+- 회독 수 기반 작성: 1회독 작성과 다음 회독 작성을 별도 API로 분리
+- 공개 범위 선택: 전체공개 / 모임공개 / 비공개 (회차와 관계없이 선택·변경 가능)
+- 한 줄 요약(`headline`)은 항상 공개, 본문은 공개 범위에 따라 노출
 
-### 🔍 책 검색
-- 알라딘 API 연동으로 제목·저자 검색
-- 책 상세 정보 조회 및 DB 저장 (최초 조회 시 자동 저장)
+### 👥 독서 모임
+- 모임 생성, 초대 링크(코드)로 가입 — 가입 전 모임 미리보기, 로그인 후 초대 링크로 복귀
+- 모임원 목록, 모임 피드(모임원의 전체공개·모임공개 독후감), 모임 독후감 상세
 
-### 📝 리뷰 (책 에세이)
-- 회독 수 기반 리뷰 시스템: 같은 책을 여러 번 읽을수록 새로운 리뷰 작성 가능
-- 1회독 리뷰는 공개 여부(`isPublic`) 선택 가능, 2회독 이상은 자동 비공개
-- `headline` (한 줄 요약): 필수 입력, 비공개 리뷰도 랭킹 페이지에 노출
-- 리뷰 수정·삭제는 본인 리뷰만 가능 (소유권 검증)
+### 🏆 랭킹
+- 매일 새벽 4시 배치로 전체·장르별 랭킹 집계
+- 베이즈 추정 가중 평점, 1회독 리뷰만 집계, 리뷰 3건 이상인 책만 포함
 
-### 🏆 책별 랭킹
-- 매일 새벽 4시 배치로 책별 평균 평점 랭킹 산출 (`@Scheduled`)
-- 리뷰 3개 미만 책은 랭킹에서 제외 (`HAVING COUNT(*) >= 3`)
-- 전체 랭킹 및 장르별 랭킹 조회 지원
+### 🔍 책 검색 · 🔐 로그인
+- 알라딘 API 기반 책 검색
+- 네이버 OAuth2 로그인 (회원가입 없음)
 
-### 🌐 비로그인 공개 조회
-- 로그인 없이 책별 공개 리뷰 열람 가능 (페이지네이션 적용)
-- 프라이버시 중심 설계: 사용자가 공개를 선택한 1회독 리뷰만 노출
+<br>
 
-### 🚨 운영 모니터링
-- 프로파일별 로그 분리 (`local` / `prod`)
-- `prod` 환경에서 ERROR 로그 발생 시 Discord Webhook으로 실시간 알림
-- ERROR 전용 로그 파일 별도 분리, 일별 롤링 정책 (`maxHistory=100`)
+## 시스템 아키텍처
+
+![BookTalker 운영 아키텍처](document/infra/infra_image.png)
+
+- WAS 서버(RAM 1GB)와 DB 서버를 분리. DB 서버는 외부에 SSH(22)만 열고, 5432는 WAS 서버 NSG에서 오는 요청만 허용 (운영자 DB 접속은 SSH 터널)
+- Nginx가 Vue3 정적 파일을 서빙하고, API 요청은 WAS로 리버스 프록시
+- WAS는 배포 때 8010 ⇄ 8011 포트를 교대하며 무중단 전환
+
+### 배포 흐름
+
+```
+main push → GitHub Actions 빌드 → jar 전송 → deploy.sh
+  ├─ 기존 버전을 둔 채 새 버전을 다른 포트에 기동
+  ├─ 헬스체크 반복 → 성공 시 Nginx 전환, 기존 버전 종료
+  ├─ 실패 시 새 버전 종료(자동 롤백) · Discord 알림 · exit 1
+  └─ Actions 마지막 단계에서 실제 도메인(HTTPS)으로 한 번 더 헬스체크
+```
+
+- 스키마 변경은 Flyway 마이그레이션 파일로만 (`ddl-auto: validate`)
+- 운영 비밀값은 서버 환경변수 파일에서 주입, 저장소에는 없음
 
 <br>
 
@@ -54,178 +73,98 @@ BookTalker는 책 한 권을 읽고 난 뒤의 생각과 감상을 **에세이 �
 
 | 영역 | 기술 |
 |------|------|
-| Backend | Spring Boot 3.x, Spring Security, Spring Data JPA, Spring Scheduler |
-| Language | Java 17 |
-| Database | PostgreSQL |
+| Backend | Java 17, Spring Boot 3.x, Spring Security, Spring Data JPA, Spring Scheduler |
+| Database | PostgreSQL, Flyway |
 | Frontend | Vue3, PWA |
-| Infrastructure | OCI (Oracle Cloud), Nginx |
-| Logging | Logback (프로파일별 분리, Discord Webhook Appender) |
+| Infra · 배포 | OCI Free Tier (WAS·DB 서버 분리), Nginx, GitHub Actions |
+| 운영 | Logback (프로파일별 분리), Discord Webhook Appender, Spring Boot Actuator |
+| Test | JUnit 5, Testcontainers |
 | External API | 알라딘 API, Naver OAuth2 |
 
 <br>
 
-## 시스템 아키텍처
+## 주요 문제 해결
 
-```
-[사용자]
-  │
-  ├──▶ Nginx:80 (Vue3 정적 파일 서빙)
-  │
-  └──▶ WAS:8010 (Spring Boot, API 서버)   ──▶ PostgreSQL:5432
-             │                                   (OCI Server 2)
-             ├──▶ 알라딘 API (책 정보)
-             ├──▶ Naver OAuth2 (소셜 로그인)
-             └──▶ Discord Webhook (ERROR 알림)
-```
+### 1. 1GB 서버 무중단 배포 장애 → 실측으로 배포 구조 결정
+독서 모임 기능 배포 직후 새 버전이 뜨지 않았고, 배포 스크립트는 실패해도 CI에 성공으로 표시됐습니다. 추정치 대신 메모리·스왑·기동 시간을 실측해 비교한 뒤 **무중단 배포를 유지**하고, 자동 롤백·실패 감지·외부 경로 헬스체크를 넣었습니다. 배포 중 외부 요청은 모두 정상 응답했습니다.
 
-- **서버 2대 구성** (OCI Free Tier): WAS 서버 + DB 서버 분리
-- Nginx는 Vue3 빌드 파일만 서빙 (리버스 프록시 아님)
-- 브라우저가 WAS:8010으로 직접 API 요청 → CORS 설정 필요
+📄 [장애 보고서](<document/infra/[incident]_1차 배포 장애 — 메모리 부족·방화벽 차단.md>) · [배포 구조 결정](<document/infra/[design]_배포 구조 결정.md>)
+
+### 2. 랭킹 집계 배치 DB 왕복 66% 감소
+리뷰 10만 건 테스트 데이터로 배치를 실측해, 저장 전 존재 확인 SELECT·건별 DELETE·건별 INSERT를 찾아 `Persistable`·벌크 삭제·JDBC 배치로 줄였습니다. 집계 쿼리는 GROUP BY 대상을 단일 테이블로 좁혀 실행 계획을 바꿨습니다.
+
+| | 개선 전 | 개선 후 |
+|---|---|---|
+| 배치 1회 DB 왕복 | 242회 | 82회 (−66%) |
+| 집계 쿼리 실행 시간 | 182ms | 77ms (−58%) |
+
+📄 커밋 [`e21125b`](https://github.com/namyoungjun96/BookTalker/commit/e21125b) · [`2fd1143`](https://github.com/namyoungjun96/BookTalker/commit/2fd1143)
+
+### 3. 이력 없이 쌓인 운영 스키마 → Flyway 전환
+`ddl-auto: update`와 수동 SQL로 만들어진 운영 스키마를 `pg_dump`로 추출해 baseline으로 삼고, 엔티티와 대조해 빠져 있던 NOT NULL 제약 4개를 보강했습니다. 로컬에서 운영과 같은 경로로 리허설한 뒤 실사용 전에 적용했습니다.
+
+📄 [Flyway 도입](<document/infra/[design]_Flyway 도입.md>) · [운영 DB 마이그레이션 (1차 배포)](<document/infra/[design]_운영 DB 마이그레이션 (팀 기능 1차 배포).md>)
 
 <br>
 
 ## 기술적 의사결정
 
-### 1. 회독 수 기반 리뷰 시스템 설계
+### 회독 단위 리뷰
+같은 책을 다시 읽은 기록을 덮어쓰지 않도록 `(writer, isbn13, reading_count)` 복합 UNIQUE 제약을 두고, 1회독과 다음 회독(기존 회독이 있어야 작성 가능)을 별도 API로 나눴습니다. 서비스 사전 검증으로 친절한 오류를 주고, 동시 요청으로 제약이 발동하면 409로 응답합니다.
 
-**문제:** 같은 책을 여러 번 읽으면 리뷰를 어떻게 관리할 것인가?
+### 공개 범위 3단계 전환
+모임 기능으로 '모임공개'라는 선택지가 생기면서, **사용자가 지정하지 않았는데도 2회독 이상을 비공개로 묶던 정책**을 없앴습니다. 독후감은 개인적인 기록이지만, 폐쇄성은 시스템이 아니라 사용자가 정해야 한다고 봤습니다. 대신 기본값은 `PRIVATE`로 두었습니다.
+📄 [리뷰 visibility 전환](<document/review/[design]_리뷰 visibility 전환.md>)
 
-**결정:** `(writer, isbn13, reading_count)` 복합 유니크 제약 + 두 가지 별도 엔드포인트로 분리
+### 랭킹 신뢰도
+리뷰 1~2개뿐인 책이 상위에 오르거나 같은 사람의 회독별 평점이 겹치면 랭킹을 믿기 어렵습니다. 베이즈 추정 가중 평점을 쓰고, 1회독 리뷰만·리뷰 3건 이상인 책만 집계합니다.
 
-| 엔드포인트 | 역할 |
-|---|---|
-| `POST /review` | 1회독 리뷰 작성 |
-| `POST /review/next-reading` | 2회독 이상 리뷰 작성 |
+### 모임 존재 여부 숨기기
+"모임 없음"과 "모임원 아님"을 모두 404로 응답해, 모임 ID를 바꿔 넣어 다른 모임이 있는지 알아낼 수 없게 했습니다. 이미 모임원인 사용자의 권한 부족만 403으로 구분합니다.
+📄 [팀 기능 의사결정 로그](<document/team/[decision]_팀 기능 의사결정.md>)
 
-**이유:**
-- 1회독과 다음 회독은 비즈니스 규칙이 다름 (공개 여부, 선행 조건 검증)
-- DB 유니크 제약으로 중복 삽입을 막되, 서비스 레이어에서 사전 검증해 사용자 친화적 에러 메시지 제공 (2-layer 방어)
+### 초대코드는 DB 제약으로
+별도 테이블 대신 모임 테이블의 NOT NULL + UNIQUE 컬럼으로 저장해, "모임에는 항상 초대코드가 1개 있다"는 규칙을 DB가 보장하게 했습니다.
+📄 [초대코드 설계](<document/team/[design]_초대코드 설계.md>)
 
----
-
-### 2. 예외 처리: HTTP 상태 코드 의미론 확보
-
-**문제:** Spring은 `IllegalArgumentException`에 기본적으로 500을 반환한다.
-
-**결정:** `@RestControllerAdvice` 기반 `GlobalExceptionHandler` 구현
-
-| 예외 | HTTP 상태 | 사유 |
-|---|---|---|
-| `IllegalArgumentException` | 400 | 잘못된 입력·존재하지 않는 리소스 |
-| `AccessDeniedException` | 403 | 리소스 소유자 불일치 |
-| `DataIntegrityViolationException` | 409 | DB 유니크 제약 위반 (중복 리뷰) |
-| `Exception` | 500 | 그 외 미처리 예외 |
-
-**이유:** 클라이언트가 에러 원인을 상태 코드만으로 구분할 수 있어야 API 설계가 완결됨
-
----
-
-### 3. 운영 알림: Discord Webhook Custom Appender
-
-**문제:** OCI Free Tier 환경에서 Prometheus + Grafana 같은 모니터링 스택을 올리기엔 메모리 부담이 큼.
-
-**결정:** Logback `AppenderBase`를 직접 구현해 ERROR 로그를 Discord로 실시간 전송
-
-**이유:**
-- 추가 인프라 없이 에러 알림 확보
-- `logback-spring.xml`의 `springProfile`로 `prod` 환경에서만 활성화 → 로컬 개발에 영향 없음
-- 알림에는 타임스탬프(KST), 로거명, 메시지만 포함해 노이즈 최소화
-
----
-
-### 4. 랭킹 집계: DB 윈도우 함수 활용
-
-**문제:** 매일 책별 랭킹을 산출해야 하는데, 어떻게 구현할 것인가?
-
-**결정:** PostgreSQL `RANK() OVER` + `@Scheduled` 배치로 별도 랭킹 테이블에 저장
-
-```sql
-SELECT isbn13, avg_rating, review_count,
-       RANK() OVER (ORDER BY avg_rating DESC) AS ranking
-FROM (
-    SELECT isbn13, AVG(rating) AS avg_rating, COUNT(*) AS review_count
-    FROM review
-    GROUP BY isbn13
-    HAVING COUNT(*) >= 3
-) sub
-```
-
-**이유:**
-- 애플리케이션에서 전수 조회·정렬하는 것보다 DB가 잘하는 일을 DB에 맡기는 게 적합
-- 배치로 별도 테이블에 저장해 랭킹 조회 시 집계 연산 없이 단순 SELECT로 응답 가능
-
----
-
-### 5. 리뷰 공개 설계: `headline`과 `isPublic` 분리
-
-**문제:** 리뷰를 비공개로 두면서도 랭킹 페이지에 존재감을 남길 수 있어야 한다.
-
-**결정:** `headline`(한 줄 요약)은 항상 공개, `content`(본문)만 `isPublic`으로 제어
-
-| 필드 | 특성 | 비로그인 노출 |
-|------|------|--------------|
-| `headline` | 필수 입력, 항상 공개 | ✅ 항상 |
-| `content` | 선택적 공개 (`isPublic`) | `isPublic=true` 일 때만 |
-
-**이유:** "완전 공개 아니면 완전 비공개"가 아닌 중간 상태를 제공해 사용자 선택권 확보
-
----
-
-### 6. PostgreSQL 선택
-
-**이유:**
-- 실무(모비젠 NI팀)에서 PostgreSQL을 사용했고, 심화 학습 목적으로 동일 DB 선택
-- MySQL 대비 윈도우 함수, JSON 타입 등 고급 기능이 풍부함
-- 랭킹 집계처럼 복잡한 쿼리를 직접 짜볼 수 있는 환경 확보
+### 가벼운 운영 모니터링
+1GB 서버에 Prometheus·Grafana를 올리는 대신 Logback Appender를 직접 구현해 ERROR 로그를 Discord로 보내고, API 호출량·JVM Heap·커넥션 풀 상태를 매일 리포트합니다.
 
 <br>
 
 ## 개발 문서
 
-설계 검토, 코드 리뷰, 커밋 내역 등 작업 단위별 의사결정 기록을 `document/` 폴더에 HTML로 남기고 있습니다.
+작업 단위마다 설계 → 승인 → 구현 → 검토 순서로 진행하며 문서를 남기고 있습니다. 그중 공개용으로 정리한 문서를 `document/`에 두었습니다.
 
 | 폴더 | 내용 |
 |------|------|
-| `document/naver_login/` | OAuth2 설계·마이페이지 구조 개편 설계 문서 |
-| `document/commit/` | 커밋·PR 검수 문서 |
-| `document/pr/` | PR 내용 정리 문서 |
-| `document/code_review/` | 코드 리뷰 결과 문서 |
-| `document/test/` | 테스트 설계 문서 |
-| `document/backend_*/` | 백엔드 최적화·캐시 설계 문서 |
+| [`document/infra/`](document/infra) | 배포 장애 보고서, 배포 구조 결정, Flyway 도입, 운영 DB 마이그레이션 |
+| [`document/review/`](document/review) | 리뷰 공개 범위 전환 설계 |
+| [`document/team/`](document/team) | 초대코드 설계, 팀 기능 의사결정 로그 |
 
-> AI를 활용한 설계·검토 흐름을 구조화하기 위해 도입했습니다. 코드 변경 전 설계 문서를 먼저 작성하고 검수받은 뒤 구현합니다.
+> 설계 검토에 AI(Claude)를 활용합니다. 선택지와 결정 근거는 문서로 남기고, 결정과 백엔드 구현은 직접 합니다.
 
 <br>
 
-## 향후 계획
-
-- [ ] 테스트 코드 작성 (단위 테스트, 통합 테스트)
-- [ ] 알라딘 API 응답 캐싱 (Caffeine, 반복 호출 최소화)
-- [ ] Swagger/OpenAPI 문서화
-- [ ] 마이 페이지 완성 (독서 통계, 프로필 수정)
-- [ ] Spring Boot Actuator 도입 (헬스체크, JVM 메트릭)
-- [ ] PostgreSQL 슬로우 쿼리 로그 설정 및 인덱스 튜닝
-
-<br>
-
-## 로컬 실행 방법
+## 로컬 실행
 
 ```bash
-# Backend
-./gradlew bootRun
+# DB (PostgreSQL 16)
+cd docker && docker compose up -d
+
+# Backend — 기동 시 Flyway가 스키마 적용
+cd book_talker_backend && ./gradlew bootRun
 
 # Frontend
-npm install
-npm run dev
+cd book_talker_frontend && npm install && npm run dev
 ```
 
-> 환경변수 설정 필요: 알라딘 API Key, Naver OAuth2 Client ID/Secret, Discord Webhook URL
+> 로컬은 `application-local.yml` 설정으로 실행됩니다. 운영(`prod`)은 환경변수로 주입: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`, `ALADIN_API_KEY`, `DISCORD_WEBHOOK_URL`
 
 <br>
 
 ## 프로젝트 배경
 
-SI/공공 분야에서 3년간 백엔드 개발을 하면서 (네트워크 인프라 관리 시스템, 국토교통부 데이터 거래 플랫폼),  
-"많은 사용자에게 실제로 가치를 주는 서비스를 만들어보고 싶다"는 목표로 시작한 프로젝트입니다.
+SI에서 3년간 공공·통신 분야 웹 서비스를 개발·운영하면서, **실제 사용자가 쓰는 서비스를 처음부터 끝까지 직접 만들고 운영해 보고 싶다**는 목표로 시작했습니다.
 
-실무에서 경험한 배치 처리, PostgreSQL, Spring Boot를 직접 설계 단계부터 적용해보면서, 단순 CRUD를 넘어 **설계 의도가 있는 코드**를 작성하는 데 집중했습니다.
+정책 설계·백엔드 개발부터 배포·장애 대응까지 직접 책임지면서(프론트엔드 구현은 AI 활용), 추측 대신 측정으로 판단하고 그 근거를 문서로 남기는 데 집중하고 있습니다.
