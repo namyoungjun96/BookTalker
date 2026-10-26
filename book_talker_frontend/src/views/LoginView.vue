@@ -5,8 +5,13 @@
       <p class="login-subtitle">독서 후기를 기록하고 공유하세요</p>
 
       <button type="button" @click="onNaverLogin" class="naver-button">
-        네이버 로그인
+        네이버로 시작하기
       </button>
+
+      <p class="login-hint">
+        회원가입 없이 네이버 아이디로 바로 시작할 수 있어요.<br />
+        이름·이메일 같은 개인정보는 저장하지 않아요.
+      </p>
     </div>
   </div>
 </template>
@@ -103,6 +108,14 @@ onMounted(() => {
 
 .naver-button:hover {
   background: #02b350;
+}
+
+.login-hint {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #6b7280;
+  text-align: center;
+  margin: 16px 0 0 0;
 }
 
 @media (max-width: 640px) {
