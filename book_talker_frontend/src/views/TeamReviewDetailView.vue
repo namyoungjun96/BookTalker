@@ -47,74 +47,9 @@
             @cancel="isEditing = false"
           />
 
-          <article v-else class="review-article">
-            <header class="article-head">
-              <div class="head-main">
-                <div class="badge-row">
-                  <span class="visibility-badge" :class="visibility.className">
-                    <img v-if="review.visibility === 'GROUP'" :src="groupIcon" alt="" width="11" height="11" />
-                    {{ visibility.label }}
-                  </span>
-                  <span v-if="review.teamName" class="team-name">{{ review.teamName }}</span>
-                </div>
-                <p class="headline-label">한 줄 요약</p>
-                <h2 class="headline">{{ review.headline }}</h2>
-                <p class="writer">
-                  <strong>{{ review.displayName }}</strong>
-                  <span v-if="review.mine" class="me-mark">(나)</span>
-                </p>
-              </div>
-
-              <div class="head-book">
-                <div class="book-cover">
-                  <img v-if="review.cover" :src="review.cover" alt="" />
-                  <span v-else class="book-cover-fallback">{{ review.bookTitle }}</span>
-                </div>
-                <div class="book-info">
-                  <p class="book-label">읽은 책</p>
-                  <h1 class="book-title">{{ review.bookTitle }}</h1>
-                  <p v-if="review.author" class="book-author">{{ review.author }}</p>
-                </div>
-              </div>
-            </header>
-
-            <div class="article-body">
-              <section class="review-content">
-                <h3 class="content-title">독후감</h3>
-                <p class="content-text">{{ review.content }}</p>
-              </section>
-
-              <aside class="review-info" aria-label="독후감 정보">
-                <div class="info-row">
-                  <span class="info-label">
-                    <img :src="starIcon" alt="" width="13" height="13" />
-                    평점
-                  </span>
-                  <strong class="rating">
-                    {{ review.rating ?? '-' }}<span class="rating-max"> / 5</span>
-                  </strong>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">
-                    <img :src="repeatIcon" alt="" width="13" height="13" />
-                    회독 수
-                  </span>
-                  <strong class="info-value">{{ review.readingCount }}회독</strong>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">
-                    <img :src="calendarIcon" alt="" width="13" height="13" />
-                    작성일
-                  </span>
-                  <strong class="info-value">{{ formatRegDate(review.regDate) }}</strong>
-                </div>
-                <p class="info-note">
-                  <img :src="membersIcon" alt="" width="13" height="13" />
-                  <span>{{ visibilityNote }}</span>
-                </p>
-              </aside>
-            </div>
-          </article>
+          <ReviewArticle v-else :review="review" show-writer :team-name="review.teamName">
+            <template #info-note>{{ visibilityNote }}</template>
+          </ReviewArticle>
         </template>
 
       </div>
@@ -127,16 +62,11 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
-import { getVisibilityOption } from '../constants/reviewVisibility';
 import ReviewEditForm from '../components/ReviewEditForm.vue';
+import ReviewArticle from '../components/ReviewArticle.vue';
 import backIcon from '../assets/icons/back.svg';
 import editIcon from '../assets/icons/edit.svg';
 import deleteIcon from '../assets/icons/delete.svg';
-import groupIcon from '../assets/icons/group.svg';
-import starIcon from '../assets/icons/star.svg';
-import repeatIcon from '../assets/icons/repeat.svg';
-import calendarIcon from '../assets/icons/calendar.svg';
-import membersIcon from '../assets/icons/members.svg';
 
 const route = useRoute();
 const router = useRouter();
@@ -154,17 +84,9 @@ const isEditing = ref(false);
 // 숫자가 아닌 id는 400 — 없는 독후감과 같은 화면으로 처리
 const NOT_FOUND_CODES = [400, 404];
 
-const visibility = computed(() => getVisibilityOption(review.value.visibility));
-
 const visibilityNote = computed(() => (review.value.visibility === 'GROUP'
   ? `${review.value.teamName ?? '이 모임'} 멤버에게만 보여요.`
   : '모든 사용자에게 공개된 독후감이에요.'));
-
-// "2026-03-22" → "2026년 3월 22일"
-const formatRegDate = (regDate) => {
-  const [year, month, day] = regDate.split('-').map(Number);
-  return `${year}년 ${month}월 ${day}일`;
-};
 
 const fetchDetail = async () => {
   try {
@@ -234,57 +156,14 @@ onMounted(fetchDetail);
 .back-link:hover { color: #2563eb; }
 
 .owner-actions { display: flex; align-items: center; gap: 4px; }
-.action-btn { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 7px 10px; font-size: 12px; font-weight: 700; border-radius: 4px; border: 1px solid transparent; background: none; cursor: pointer; transition: background-color 0.15s ease; }
+.action-btn { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 7px 10px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid transparent; background: none; cursor: pointer; transition: background-color 0.15s ease; }
 .action-btn.edit { background: white; border-color: #93c5fd; color: #2563eb; }
 .action-btn.edit:hover { background: #eff6ff; }
 .action-btn.delete { color: #b42318; }
 .action-btn.delete:hover { background: #fef3f2; }
 .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* 본문 카드 */
-.review-article { background: white; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
-
-.article-head { display: grid; grid-template-columns: minmax(0, 1fr) 185px; gap: 28px; align-items: center; padding: 28px 34px; background: #fbfdff; border-bottom: 1px solid #e5e7eb; }
-
-.badge-row { display: flex; align-items: center; gap: 8px; min-height: 20px; }
-.visibility-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 3px; font-size: 11px; font-weight: 700; line-height: 1.4; }
-.visibility-badge.public { background: #eff6ff; color: #2563eb; }
-.visibility-badge.group { background: #f3f0ff; color: #7658bd; }
-.team-name { min-width: 0; font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.headline-label { margin: 10px 0 0 0; font-size: 11px; font-weight: 700; color: #2563eb; letter-spacing: 0.4px; }
-.headline { margin: 9px 0 0 0; font-size: 20px; font-weight: 400; line-height: 1.55; letter-spacing: -0.38px; color: #111827; word-break: break-word; }
-.writer { display: flex; align-items: center; gap: 4px; margin: 10px 0 0 0; font-size: 12px; }
-.writer strong { color: #374151; }
-.writer .me-mark { color: #9ca3af; }
-
-.head-book { display: flex; align-items: center; gap: 13px; min-width: 0; padding-left: 24px; border-left: 1px solid #e5e7eb; }
-.book-cover { flex-shrink: 0; width: 54px; height: 76px; overflow: hidden; box-shadow: -2px 3px 0 0 #d8d2e0; }
-.book-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.book-cover-fallback { display: block; height: 100%; box-sizing: border-box; background: #e8d7b5; padding: 7px 5px; font-family: Georgia, serif; font-size: 9px; font-weight: 700; line-height: 1.4; color: #4a3a25; word-break: break-all; overflow: hidden; }
-.book-info { min-width: 0; }
-.book-label { margin: 0 0 6px 0; font-size: 11px; color: #9ca3af; }
-.book-title { margin: 0; font-size: 16px; font-weight: 400; line-height: 1.3; color: #111827; word-break: break-word; }
-.book-author { margin: 4px 0 0 0; font-size: 11px; color: #6b7280; word-break: break-word; }
-
-.article-body { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 34px; align-items: start; padding: 32px 34px 38px; }
-.content-title { margin: 0; font-size: 15px; font-weight: 400; color: #111827; }
-.content-text { margin: 20px 0 0 0; font-size: 14px; line-height: 1.9; color: #374151; white-space: pre-wrap; word-break: break-word; }
-
-.review-info { padding: 4px 16px 16px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 5px; }
-.info-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 0; border-bottom: 1px solid #e5e7eb; }
-.info-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; white-space: nowrap; }
-.info-value { font-size: 12px; font-weight: 700; color: #374151; white-space: nowrap; }
-.rating { font-size: 16px; font-weight: 700; color: #d97706; }
-.rating-max { font-size: 11px; color: #9ca3af; }
-.info-note { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding-top: 15px; font-size: 11px; line-height: 1.5; color: #6b7280; }
-.info-note img { flex-shrink: 0; margin-top: 2px; }
-
 @media (max-width: 640px) {
   .main-content { padding: 32px 16px 64px; }
-  .article-head { grid-template-columns: 1fr; gap: 20px; padding: 24px 20px; }
-  .head-book { padding-left: 0; padding-top: 20px; border-left: none; border-top: 1px solid #e5e7eb; }
-  .article-body { grid-template-columns: 1fr; gap: 24px; padding: 24px 20px 28px; }
-  .headline { font-size: 18px; }
 }
 </style>

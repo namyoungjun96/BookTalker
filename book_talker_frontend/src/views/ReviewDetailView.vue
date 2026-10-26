@@ -3,81 +3,39 @@
     <main class="main-content">
       <div class="content-wrapper">
 
-        <!-- 로딩 -->
         <div v-if="isLoading" class="loading-state">
           <div class="spinner"></div>
         </div>
 
-        <!-- 에러 -->
-        <div v-else-if="error" class="error-state">
-          <p class="error-title">{{ error }}</p>
-          <button @click="router.back()" class="back-btn">돌아가기</button>
+        <div v-else-if="error" class="empty-state">
+          <p class="empty-title">{{ error }}</p>
+          <button type="button" class="btn-primary" @click="router.back()">돌아가기</button>
         </div>
 
-        <!-- 상세 내용 -->
         <template v-else-if="review">
-          <!-- 상단 액션 바 -->
           <div class="top-bar">
-            <button @click="router.back()" class="back-link">← 마이페이지로</button>
-            <button v-if="!isEditing" @click="startEdit" class="edit-btn">수정하기</button>
+            <button type="button" class="back-link" @click="router.back()">
+              <img :src="backIcon" alt="" width="14" height="14" />
+              마이페이지로
+            </button>
+            <button v-if="!isEditing" type="button" class="action-btn edit" @click="isEditing = true">
+              <img :src="editIcon" alt="" width="14" height="14" />
+              수정
+            </button>
           </div>
 
-          <!-- 책 정보 카드 -->
-          <div class="book-card">
-            <div class="book-cover">
-              <img
-                v-if="review.bookCover"
-                :src="review.bookCover"
-                :alt="review.bookTitle"
-                @error="handleImageError"
-              />
-              <div v-else class="cover-placeholder">📖</div>
-            </div>
-            <div class="book-info">
-              <h2 class="book-title">{{ review.bookTitle || '-' }}</h2>
-              <span v-if="review.readingCount" class="reading-badge">{{ review.readingCount }}회독</span>
-            </div>
-          </div>
-
-          <!-- 조회 모드 -->
-          <div v-if="!isEditing" class="review-card">
-            <div class="headline-section">
-              <p class="section-label">한 줄 요약</p>
-              <p class="headline-text">{{ review.headline || '-' }}</p>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="content-section">
-              <div class="content-header">
-                <p class="section-label">독후감 본문</p>
-                <span class="visibility-badge" :class="getVisibilityOption(review.visibility).className">
-                  {{ getVisibilityOption(review.visibility).label }}
-                </span>
-              </div>
-              <p class="content-text">{{ review.content || '-' }}</p>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="meta-section">
-              <span class="rating-display">★ {{ review.rating || '-' }}점</span>
-              <div class="dates">
-                <span class="date">작성 {{ formatDate(review.regDate) }}</span>
-                <span v-if="review.modDate" class="date modified">수정 {{ formatDate(review.modDate) }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 수정 모드 -->
+          <!-- 수정 모드: 화면 이동 없이 제자리에서 폼으로 전환 -->
           <ReviewEditForm
-            v-else
+            v-if="isEditing"
             :review-id="review.id"
             :review="review"
             @saved="onSaved"
             @cancel="isEditing = false"
           />
 
+          <ReviewArticle v-else :review="article">
+            <template #info-note>{{ visibilityNote }}</template>
+          </ReviewArticle>
         </template>
 
       </div>
@@ -86,12 +44,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
-import { getVisibilityOption } from '../constants/reviewVisibility';
 import ReviewEditForm from '../components/ReviewEditForm.vue';
+import ReviewArticle from '../components/ReviewArticle.vue';
+import backIcon from '../assets/icons/back.svg';
+import editIcon from '../assets/icons/edit.svg';
 
 const router = useRouter();
 const route = useRoute();
@@ -101,6 +61,17 @@ const review = ref(null);
 const isLoading = ref(true);
 const error = ref(null);
 const isEditing = ref(false);
+
+// 내 독후감 API는 표지 필드명이 bookCover — 모임 독후감(cover)과 맞춰 넘긴다
+const article = computed(() => ({ ...review.value, cover: review.value.bookCover }));
+
+const VISIBILITY_NOTES = {
+  PUBLIC: '모든 사용자에게 공개된 독후감이에요.',
+  GROUP: '내가 속한 모임 멤버에게만 보여요.',
+  PRIVATE: '나만 볼 수 있는 독후감이에요.',
+};
+
+const visibilityNote = computed(() => VISIBILITY_NOTES[review.value.visibility] ?? VISIBILITY_NOTES.PRIVATE);
 
 const fetchDetail = async () => {
   try {
@@ -119,8 +90,11 @@ const fetchDetail = async () => {
   }
 };
 
-const startEdit = () => {
-  isEditing.value = true;
+// "2026-10-26" — 수정일은 날짜만 표시하므로 로컬 날짜로 갱신
+const today = () => {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 };
 
 // 저장 후 로컬 데이터 갱신
@@ -128,252 +102,40 @@ const onSaved = (updated) => {
   review.value = {
     ...review.value,
     ...updated,
-    modDate: new Date().toISOString(),
+    modDate: today(),
   };
   isEditing.value = false;
   toast.success('독후감이 수정되었습니다.');
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return '-';
-  try {
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  } catch {
-    return dateString;
-  }
-};
-
-const handleImageError = (event) => {
-  event.target.style.display = 'none';
 };
 
 onMounted(fetchDetail);
 </script>
 
 <style scoped>
-.app-container {
-  min-height: 100%;
-}
+.app-container { min-height: 100%; }
+.main-content { padding: 42px 24px 90px; }
+.content-wrapper { max-width: 720px; margin: 0 auto; }
 
-.main-content {
-  padding: 48px 24px;
-}
-
-.content-wrapper {
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-/* 로딩/에러 */
-.loading-state {
-  display: flex;
-  justify-content: center;
-  padding: 80px 0;
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #2563eb;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
+/* 로딩·에러 */
+.loading-state { display: flex; justify-content: center; padding: 80px 0; }
+.spinner { width: 32px; height: 32px; border: 3px solid #e5e7eb; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.error-state {
-  text-align: center;
-  padding: 80px 24px;
-}
-
-.error-title {
-  font-size: 18px;
-  color: #6b7280;
-  margin: 0 0 24px 0;
-}
+.empty-state { text-align: center; padding: 64px 24px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; }
+.empty-title { font-size: 18px; font-weight: 500; color: #1f2937; margin: 0 0 24px 0; }
+.btn-primary { display: inline-block; padding: 10px 20px; font-size: 15px; font-weight: 500; color: white; background: #2563eb; border: none; border-radius: 8px; cursor: pointer; }
+.btn-primary:hover { background: #1d4ed8; }
 
 /* 상단 바 */
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.back-link {
-  font-size: 14px;
-  color: #6b7280;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.15s ease;
-}
-
+.top-bar { display: flex; align-items: center; justify-content: space-between; min-height: 38px; margin-bottom: 12px; }
+.back-link { display: inline-flex; align-items: center; gap: 7px; padding: 7px 0; font-size: 13px; color: #6b7280; background: none; border: none; cursor: pointer; transition: color 0.15s ease; }
 .back-link:hover { color: #2563eb; }
 
-.edit-btn {
-  padding: 8px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #2563eb;
-  background: white;
-  border: 1px solid #2563eb;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.edit-btn:hover {
-  background: #2563eb;
-  color: white;
-}
-
-.back-btn {
-  padding: 10px 20px;
-  font-size: 15px;
-  font-weight: 500;
-  color: white;
-  background: #2563eb;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.back-btn:hover { background: #1d4ed8; }
-
-/* 책 카드 */
-.book-card {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 16px;
-}
-
-.book-cover {
-  width: 60px;
-  height: 80px;
-  flex-shrink: 0;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #f3f4f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.book-cover img { width: 100%; height: 100%; object-fit: cover; }
-.cover-placeholder { font-size: 28px; }
-.book-info { flex: 1; min-width: 0; }
-
-.book-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 6px 0;
-  line-height: 1.4;
-}
-
-.reading-badge {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #2563eb;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 12px;
-  padding: 2px 10px;
-}
-
-/* 공통 카드 */
-.review-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 28px;
-}
-
-.divider {
-  border: none;
-  border-top: 1px solid #f3f4f6;
-  margin: 24px 0;
-}
-
-.section-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 10px 0;
-}
-
-/* 조회 모드 */
-.headline-text {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.content-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.content-text {
-  font-size: 16px;
-  line-height: 1.8;
-  color: #1f2937;
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.visibility-badge {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 10px;
-  cursor: default;
-}
-
-.visibility-badge.public { background: #dbeafe; color: #2563eb; }
-.visibility-badge.group { background: #f3f0ff; color: #7658bd; }
-.visibility-badge.private { background: #f3f4f6; color: #6b7280; }
-
-.meta-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.rating-display {
-  font-size: 15px;
-  font-weight: 600;
-  color: #f59e0b;
-}
-
-.dates { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.date { font-size: 13px; color: #9ca3af; }
-.date.modified { font-size: 12px; }
+.action-btn { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 7px 10px; font-size: 11px; font-weight: 700; border-radius: 4px; border: 1px solid transparent; background: none; cursor: pointer; transition: background-color 0.15s ease; }
+.action-btn.edit { background: white; border-color: #93c5fd; color: #2563eb; }
+.action-btn.edit:hover { background: #eff6ff; }
 
 @media (max-width: 640px) {
-  .main-content { padding: 32px 16px; }
-  .review-card { padding: 20px; }
-  .headline-text { font-size: 18px; }
+  .main-content { padding: 32px 16px 64px; }
 }
 </style>
