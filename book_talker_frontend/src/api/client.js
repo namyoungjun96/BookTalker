@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
+import { savePendingRedirect } from '../composables/usePendingRedirect';
 
 // 환경 변수에서 API Base URL 가져오기
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -77,6 +78,11 @@ apiClient.interceptors.response.use(
     if (status === 401) {
       if (toast) {
         toast.error('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+      }
+      // 로그인 후 지금 화면으로 돌아오도록 경로를 남김 (로그인 성공 시 router가 꺼내서 이동)
+      const { pathname, search, hash } = window.location;
+      if (pathname !== '/login') {
+        savePendingRedirect(pathname + search + hash);
       }
       // 1초 후 로그인 페이지로 리다이렉트
       setTimeout(() => {
