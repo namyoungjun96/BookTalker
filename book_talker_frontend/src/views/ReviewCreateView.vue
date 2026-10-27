@@ -28,6 +28,12 @@
           </div>
         </div>
 
+        <!-- 임시저장 복원 안내 -->
+        <div v-if="restoredAt" class="draft-notice">
+          <span>임시저장된 글을 불러왔어요 ({{ formatSavedAt(restoredAt) }})</span>
+          <button type="button" class="draft-reset" @click="onResetDraft">새로 쓰기</button>
+        </div>
+
         <!-- 독후감 작성 폼 (브런치 스타일) -->
         <form @submit.prevent="onSubmitReview" class="review-form">
           <!-- 헤드라인 -->
@@ -118,16 +124,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
 import { useSelectionStore } from '../stores/selectionStore';
 import { VISIBILITY_OPTIONS, DEFAULT_VISIBILITY } from '../constants/reviewVisibility';
+import {
+  loadReviewDraft,
+  saveReviewDraft,
+  clearReviewDraft,
+  findLatestFirstReadingDraft,
+} from '../composables/useReviewDraft';
 
 const router = useRouter();
 const route = useRoute();
-const { selectedBook } = useSelectionStore();
+const { selectedBook, setSelectedBook } = useSelectionStore();
 const toast = useToast();
 
 // next-reading 모드 판별
@@ -156,6 +168,86 @@ const isCheckingBook = ref(false);
 const bookExists = ref(null);
 const bookAddError = ref(null);
 const isSubmitting = ref(false);
+
+// ===== 임시저장 =====
+// 키: 책(isbn13) + 작성할 회차
+const draftIsbn = computed(() => activeBook.value?.isbn13 || activeBook.value?.isbn || '');
+const draftReadingCount = computed(() => (isNextReading.value ? nextReadingCount.value : 1));
+const restoredAt = ref(null);
+let saveTimer = null;
+
+const persistDraft = () => {
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  if (!draftIsbn.value) return;
+
+  // 아무것도 안 썼으면 저장하지 않음 (화면만 열어도 임시저장이 생기는 것 방지)
+  if (!reviewHeadline.value.trim() && !reviewContent.value.trim()) {
+    clearReviewDraft(draftIsbn.value, draftReadingCount.value);
+    return;
+  }
+  saveReviewDraft(draftIsbn.value, draftReadingCount.value, {
+    // 새로고침 후 selectedBook 없이 들어왔을 때 화면 복구용
+    book: { ...activeBook.value, isbn13: draftIsbn.value },
+    headline: reviewHeadline.value,
+    content: reviewContent.value,
+    rating: rating.value,
+    visibility: visibility.value,
+  });
+};
+
+// 웹뷰가 강제 종료되면 beforeunload가 불리지 않으므로 입력할 때마다 저장
+const scheduleSave = () => {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(persistDraft, 500);
+};
+
+// 대기 중인 저장이 있으면 바로 저장 (다른 앱으로 전환·화면 이동 직전)
+const flushDraft = () => {
+  if (saveTimer) persistDraft();
+};
+
+const discardDraft = () => {
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  clearReviewDraft(draftIsbn.value, draftReadingCount.value);
+};
+
+const restoreDraft = () => {
+  const draft = loadReviewDraft(draftIsbn.value, draftReadingCount.value);
+  if (!draft) return;
+
+  reviewHeadline.value = draft.headline || '';
+  reviewContent.value = draft.content || '';
+  rating.value = Number.isInteger(draft.rating) && draft.rating >= 1 && draft.rating <= 5 ? draft.rating : 5;
+  visibility.value = VISIBILITY_OPTIONS.some((option) => option.value === draft.visibility)
+    ? draft.visibility
+    : DEFAULT_VISIBILITY;
+  restoredAt.value = draft.savedAt;
+};
+
+const onResetDraft = () => {
+  if (!confirm('임시저장된 글을 지우고 새로 쓸까요?')) return;
+  discardDraft();
+  reviewHeadline.value = '';
+  reviewContent.value = '';
+  rating.value = 5;
+  visibility.value = DEFAULT_VISIBILITY;
+  restoredAt.value = null;
+};
+
+const formatSavedAt = (savedAt) => {
+  const date = new Date(savedAt);
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${hh}:${mm}`;
+};
+
+const onVisibilityChange = () => {
+  if (document.visibilityState === 'hidden') flushDraft();
+};
+
+watch([reviewHeadline, reviewContent, rating, visibility], scheduleSave);
 
 const goBackToSearch = () => {
   if (isNextReading.value) {
@@ -205,6 +297,8 @@ const onSubmitReview = async () => {
   if (!activeBook.value || !reviewHeadline.value.trim() || !reviewContent.value.trim() || isSubmitting.value) return;
 
   isSubmitting.value = true;
+  // 세션 만료(401)로 로그인 화면으로 이동해도 마지막 입력이 남도록 등록 전에 저장
+  persistDraft();
 
   try {
     if (isNextReading.value) {
@@ -217,6 +311,7 @@ const onSubmitReview = async () => {
         visibility: visibility.value,
       };
       await apiClient.post('/review/next-reading', reviewData);
+      discardDraft();
       toast.success('회독 독후감이 등록되었습니다!');
       router.push({ name: 'mypage' });
     } else {
@@ -250,6 +345,7 @@ const onSubmitReview = async () => {
         visibility: visibility.value,
       };
       await apiClient.post('/review', reviewData);
+      discardDraft();
       toast.success('독후감이 성공적으로 등록되었습니다!');
       setTimeout(() => {
         router.push({ name: 'book-search' });
@@ -269,19 +365,34 @@ const onSubmitReview = async () => {
 };
 
 onMounted(async () => {
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
   if (isNextReading.value) {
     if (!route.query.isbn13) {
       router.push({ name: 'mypage' });
+      return;
     }
+    restoreDraft();
     return;
   }
 
   if (!selectedBook.value) {
-    router.push({ name: 'book-search' });
-    return;
+    // 새로고침·로그인 후 복귀로 선택한 책이 사라졌으면, 가장 최근 1회독 임시저장의 책으로 복구
+    const latestDraft = findLatestFirstReadingDraft();
+    if (!latestDraft) {
+      router.push({ name: 'book-search' });
+      return;
+    }
+    setSelectedBook(latestDraft.book);
   }
 
+  restoreDraft();
   await checkBookInBackend();
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', onVisibilityChange);
+  flushDraft();
 });
 </script>
 
@@ -371,6 +482,33 @@ onMounted(async () => {
   border-radius: 4px;
   color: #dc2626;
   font-size: 14px;
+}
+
+/* 임시저장 복원 안내 */
+.draft-notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e40af;
+}
+
+.draft-reset {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* 독후감 폼 (브런치 스타일) */
