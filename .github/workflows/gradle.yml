@@ -10,6 +10,12 @@ name: Java CI with Gradle
 on:
   push:
     branches: [ "main" ]
+    # 백엔드가 바뀐 경우에만 재배포 (FE 전용 PR 머지로 백엔드가 재기동되는 것 방지)
+    paths:
+      - "book_talker_backend/**"
+      - ".github/workflows/gradle.yml"
+  # 경로 조건과 관계없이 Actions 화면에서 수동 재배포
+  workflow_dispatch:
 
 jobs:
   build:
