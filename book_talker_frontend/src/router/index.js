@@ -9,7 +9,7 @@ import ReviewCreateView from '../views/ReviewCreateView.vue';
 import ReviewDetailView from '../views/ReviewDetailView.vue';
 import BookReviewsView from '../views/BookReviewsView.vue';
 import { useSelectionStore } from '../stores/selectionStore';
-import { consumePendingRedirect } from '../composables/usePendingRedirect';
+import { savePendingRedirect, consumePendingRedirect } from '../composables/usePendingRedirect';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -157,6 +157,8 @@ router.beforeEach(async (to, from, next) => {
   if (!publicPages.includes(to.name) && !isAuthenticated) {
     store.setCurrentUser(null);
     userLoaded = false;
+    // 세션 만료 후 화면 이동·새로고침이면 API 401보다 여기서 먼저 걸리므로, 로그인 후 돌아올 경로를 여기서도 남김
+    savePendingRedirect(to.fullPath);
     return next({ name: 'login' });
   }
 
