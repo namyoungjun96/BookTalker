@@ -5,8 +5,11 @@ import com.example.book_talker_backend.book.dao.BookRepository;
 import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.entity.dto.AladinBook;
 import com.example.book_talker_backend.book.entity.dto.AladinResponse;
+import com.example.book_talker_backend.book.entity.dto.BookSearchResponse;
+import com.example.book_talker_backend.book.entity.dto.CoverSizeEnum;
 import com.example.book_talker_backend.book.entity.dto.ListRequest;
 import com.example.book_talker_backend.book.entity.dto.SearchRequest;
+import com.example.book_talker_backend.book.exception.AladinApiException;
 import com.example.book_talker_backend.book.infrastructure.AladinBookMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +18,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,8 @@ public class BookService {
     private final RestTemplate restTemplate;
     private final Cache<SearchCacheKey, AladinResponse> searchCache;
     private final BookRepository bookRepository;
+    private static final long PAGE_SIZE = 10;
+    private static final String BOOK_COVER_SIZE = CoverSizeEnum.SMALL.getValue();
 
     @Value("${aladin.api.key}")
     private String aladinApiKey;
@@ -41,16 +45,23 @@ public class BookService {
                 "ttbKey", aladinApiKey,
                 "queryType", request.queryType().getValue(),
                 "start", request.start(),
-                "maxResults", request.maxResults(),
-                "cover", request.cover()
+                "maxResults", PAGE_SIZE,
+                "cover", BOOK_COVER_SIZE
         );
 
         return restTemplate.getForObject(urlTemplate, AladinResponse.class, params);
     }
 
-    public AladinResponse search(SearchRequest request) {
-        SearchCacheKey queryKey = new SearchCacheKey(request.query(), Integer.parseInt(request.start()));
-        return searchCache.get(queryKey, key -> fetchFromAladin(request));
+    public BookSearchResponse search(SearchRequest request) {
+        SearchCacheKey queryKey = new SearchCacheKey(request.query(), request.start());
+        AladinResponse response = searchCache.get(queryKey, key -> fetchFromAladin(request));
+
+        return new BookSearchResponse(
+                response.item(),
+                response.totalResults(),
+                response.startIndex(),
+                (long) request.start() * PAGE_SIZE < response.totalResults()
+        );
     }
 
     private AladinResponse fetchFromAladin(SearchRequest request) {
@@ -60,11 +71,16 @@ public class BookService {
                 "ttbKey", aladinApiKey,
                 "query", request.query(),
                 "start", request.start(),
-                "maxResults", request.maxResults(),
-                "cover", request.cover()
+                "maxResults", PAGE_SIZE,
+                "cover", BOOK_COVER_SIZE
         );
 
-        return restTemplate.getForObject(urlTemplate, AladinResponse.class, params);
+        AladinResponse response = restTemplate.getForObject(urlTemplate, AladinResponse.class, params);
+
+        if (response == null || response.item() == null)
+            throw new AladinApiException("알라딘 검색 응답 오류 (query=" + request.query() + ", start=" + request.start() + ")");
+
+        return response;
     }
 
     public Book getBookByIsbn13WithApi(String isbn13) {

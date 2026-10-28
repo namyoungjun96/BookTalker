@@ -4,7 +4,8 @@ import java.util.List;
 
 public record BookSearchResponse(
         List<AladinBook> items,
-        String totalResults,
-        long startIndex
+        long totalResults,
+        long startIndex,
+        boolean hasNext
 ) {
 }

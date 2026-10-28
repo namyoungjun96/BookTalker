@@ -8,7 +8,7 @@ public record AladinResponse(
         String title,
         String link,
         String pubDate,
-        String totalResults,
+        long totalResults,
         long startIndex,
         long itemsPerPage,
         String query,
