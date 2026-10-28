@@ -58,7 +58,8 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .csrf(AbstractHttpConfigurer::disable)
                 .securityMatcher("/actuator/**")
                 .authorizeHttpRequests(authorizeRequests ->
-                        authorizeRequests.requestMatchers("/actuator/health").authenticated())
+                        authorizeRequests.requestMatchers("/actuator/health").permitAll()
+                                .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
         ;
 
