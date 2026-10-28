@@ -5,6 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>북토커</title>
+    <script>
+      // 카카오톡 인앱 브라우저로 열리면 외부 브라우저로 다시 연다 (인앱에서는 로그인·임시저장 등이 불안정)
+      (function () {
+        var ua = navigator.userAgent;
+        if (/KAKAOTALK/i.test(ua) && /Android|iPhone|iPad|iPod/i.test(ua)) {
+          location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
