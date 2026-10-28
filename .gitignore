@@ -40,3 +40,4 @@ out/
 /docs
 /logs
 *.dump
+.local_env

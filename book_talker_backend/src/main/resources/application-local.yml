@@ -34,11 +34,11 @@ spring:
 #      redis:
 #        host: localhost
 #        port: 6379
+    config:
+      import: optional:file:docs/.local_env[.properties]
 
 base-url:
   frontend: http://localhost:5173
-
-
 
 app:
   admin:
@@ -48,3 +48,7 @@ app:
 aladin:
   api:
     key: ttbehdgornltls1927003
+
+api:
+  key:
+    kakao: ${KAKAO_API_KEY}
