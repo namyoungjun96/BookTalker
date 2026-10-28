@@ -9,13 +9,13 @@ import com.example.book_talker_backend.book.service.BookService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
@@ -44,25 +44,7 @@ public class BookController {
     @GetMapping("/search")
     public ResponseEntity<BookSearchResponse> search(@Valid SearchRequest request) {
         log.info("검색어: {}", request.query());
-        AladinResponse response = bookService.search(request);
-
-        if (response == null) {
-            log.debug("[search] internal server error: {}", request);
-            return ResponseEntity.internalServerError().build();
-        } else if (response.item().isEmpty()) {
-            return ResponseEntity.ok(new BookSearchResponse(
-                    List.of(),
-                    response.totalResults(),
-                    response.startIndex()
-            ));
-        }
-
-        log.info("검색 결과: {} 건", response.totalResults());
-        return ResponseEntity.ok(new BookSearchResponse(
-                response.item(),
-                response.totalResults(),
-                response.startIndex()
-        ));
+        return ResponseEntity.ok(bookService.search(request));
     }
 
     @PostMapping

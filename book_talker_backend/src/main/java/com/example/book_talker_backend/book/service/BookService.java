@@ -1,29 +1,36 @@
 package com.example.book_talker_backend.book.service;
 
+import com.example.book_talker_backend.book.cache.SearchCacheKey;
 import com.example.book_talker_backend.book.dao.BookRepository;
 import com.example.book_talker_backend.book.entity.Book;
-import com.example.book_talker_backend.book.entity.dto.AladinResponse;
 import com.example.book_talker_backend.book.entity.dto.AladinBook;
-import com.example.book_talker_backend.book.infrastructure.AladinBookMapper;
+import com.example.book_talker_backend.book.entity.dto.AladinResponse;
+import com.example.book_talker_backend.book.entity.dto.BookSearchResponse;
+import com.example.book_talker_backend.book.entity.dto.CoverSizeEnum;
 import com.example.book_talker_backend.book.entity.dto.ListRequest;
 import com.example.book_talker_backend.book.entity.dto.SearchRequest;
+import com.example.book_talker_backend.book.exception.AladinApiException;
+import com.example.book_talker_backend.book.infrastructure.AladinBookMapper;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class BookService {
     private final RestTemplate restTemplate;
+    private final Cache<SearchCacheKey, AladinResponse> searchCache;
     private final BookRepository bookRepository;
+    private static final long PAGE_SIZE = 10;
+    private static final String BOOK_COVER_SIZE = CoverSizeEnum.SMALL.getValue();
 
     @Value("${aladin.api.key}")
     private String aladinApiKey;
@@ -31,37 +38,49 @@ public class BookService {
     private final static String ALADIN_BASE_URL = "https://www.aladin.co.kr/ttb/api";
 
     public AladinResponse list(ListRequest request) {
-        String url = UriComponentsBuilder.fromUriString(ALADIN_BASE_URL + "/ItemList.aspx")
-                .queryParam("TTBKey", aladinApiKey)
-                .queryParam("QueryType", request.queryType().getValue())
-                .queryParam("SearchTarget", "Book")
-                .queryParam("Start", request.start())
-                .queryParam("MaxResults", request.maxResults())
-                .queryParam("cover", request.cover())
-                .queryParam("Output", "js")
-                .queryParam("Version", "20131101")
-                .toUriString();
+        String urlTemplate = ALADIN_BASE_URL + "/ItemList.aspx?TTBKey={ttbKey}&QueryType={queryType}&SearchTarget=Book"
+                + "&Start={start}&MaxResults={maxResults}&Cover={cover}&Output=js&InputEncoding=utf-8&Version=20131101";
 
-        return restTemplate.getForObject(url, AladinResponse.class);
+        Map<String, Object> params = Map.of(
+                "ttbKey", aladinApiKey,
+                "queryType", request.queryType().getValue(),
+                "start", request.start(),
+                "maxResults", PAGE_SIZE,
+                "cover", BOOK_COVER_SIZE
+        );
+
+        return restTemplate.getForObject(urlTemplate, AladinResponse.class, params);
     }
 
-    public AladinResponse search(SearchRequest request) {
-        String url = UriComponentsBuilder
-                .fromUriString(ALADIN_BASE_URL + "/ItemSearch.aspx")
-                .queryParam("TTBKey", aladinApiKey)
-                .queryParam("Query", request.query())
-                .queryParam("QueryType", "Title")
-                .queryParam("SearchTarget", "Book")
-                .queryParam("Start", request.start())
-                .queryParam("MaxResults", request.maxResults())
-                .queryParam("Cover", request.cover())
-                .queryParam("Output", "js")
-                .queryParam("InputEncoding", "utf-8")
-                .queryParam("Version", "20131101")
-                .build()
-                .toUriString();
+    public BookSearchResponse search(SearchRequest request) {
+        SearchCacheKey queryKey = new SearchCacheKey(request.query(), request.start());
+        AladinResponse response = searchCache.get(queryKey, key -> fetchFromAladin(request));
 
-        return restTemplate.getForObject(url, AladinResponse.class);
+        return new BookSearchResponse(
+                response.item(),
+                response.totalResults(),
+                response.startIndex(),
+                (long) request.start() * PAGE_SIZE < response.totalResults()
+        );
+    }
+
+    private AladinResponse fetchFromAladin(SearchRequest request) {
+        String urlTemplate = ALADIN_BASE_URL + "/ItemSearch.aspx?TTBKey={ttbKey}&Query={query}&QueryType=Title&SearchTarget=Book"
+                + "&Start={start}&MaxResults={maxResults}&Cover={cover}&Output=js&InputEncoding=utf-8&Version=20131101";
+        Map<String, Object> params = Map.of(
+                "ttbKey", aladinApiKey,
+                "query", request.query(),
+                "start", request.start(),
+                "maxResults", PAGE_SIZE,
+                "cover", BOOK_COVER_SIZE
+        );
+
+        AladinResponse response = restTemplate.getForObject(urlTemplate, AladinResponse.class, params);
+
+        if (response == null || response.item() == null)
+            throw new AladinApiException("알라딘 검색 응답 오류 (query=" + request.query() + ", start=" + request.start() + ")");
+
+        return response;
     }
 
     public Book getBookByIsbn13WithApi(String isbn13) {
@@ -81,19 +100,14 @@ public class BookService {
     }
 
     public AladinResponse searchByIsbn13(String isbn13) {
-        String url = UriComponentsBuilder
-                .fromUriString(ALADIN_BASE_URL + "/ItemLookUp.aspx")
-                .queryParam("TTBKey", aladinApiKey)
-                .queryParam("ItemIdType", "ISBN13")
-                .queryParam("ItemId", isbn13)
-                .queryParam("Cover", "Small")
-                .queryParam("Output", "js")
-                .queryParam("InputEncoding", "utf-8")
-                .queryParam("Version", "20131101")
-                .build()
-                .toUriString();
+        String urlTemplate = ALADIN_BASE_URL + "/ItemLookUp.aspx?TTBKey={ttbKey}&ItemId={isbn13}&ItemIdType=ISBN13" +
+                "&Cover=Small&Output=js&InputEncoding=utf-8&Version=20131101";
+        Map<String, Object> params = Map.of(
+                "ttbKey", aladinApiKey,
+                "isbn13", isbn13
+        );
 
-        return restTemplate.getForObject(url, AladinResponse.class);
+        return restTemplate.getForObject(urlTemplate, AladinResponse.class, params);
     }
 
     public Book getBookByIsbn13(String isbn13) {
