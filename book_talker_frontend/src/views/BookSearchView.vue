@@ -32,6 +32,11 @@
             <p class="loading-text">검색 중...</p>
           </div>
 
+          <!-- 검색 서비스 장애 (서버 5xx) -->
+          <div v-else-if="isSearchUnavailable" class="empty-state">
+            <p class="empty-title">책 검색 서비스 점검 중입니다</p>
+          </div>
+
           <!-- 결과 없음 -->
           <div v-else-if="books.length === 0" class="empty-state">
             <p class="empty-title">검색 결과가 없습니다</p>
@@ -143,6 +148,7 @@ const currentPage = ref(1);
 const pageSize = 10;
 const canGoNext = ref(false);
 const totalResults = ref(0);
+const isSearchUnavailable = ref(false);
 
 const goToReviewCreate = (book) => {
   if (!book) return;
@@ -155,6 +161,7 @@ const fetchBooks = async (page = 1) => {
 
   isLoading.value = true;
   hasSearched.value = true;
+  isSearchUnavailable.value = false;
 
   const startIndex = page;
 
@@ -166,7 +173,8 @@ const fetchBooks = async (page = 1) => {
         maxResults: String(pageSize),
         cover: 'Small',
       },
-      skipErrorCodes: [204]  // 204는 "검색 결과 없음"이라 정상
+      // 204는 "검색 결과 없음"이라 정상, 5xx는 화면에 점검 안내를 띄우므로 토스트 생략
+      skipErrorCodes: [204, 500, 502, 503, 504]
     });
 
     const data = response.data.items || [];
@@ -189,6 +197,12 @@ const fetchBooks = async (page = 1) => {
       totalResults.value = 0;
       canGoNext.value = false;
       toast.info('검색 결과가 없습니다.');
+    } else if (error.response?.status >= 500) {
+      // 검색 제공처 장애 등 서버 오류 - 이전 결과를 지우고 점검 안내 표시
+      books.value = [];
+      totalResults.value = 0;
+      canGoNext.value = false;
+      isSearchUnavailable.value = true;
     } else {
       // 다른 에러는 Interceptor가 자동 처리함
       totalResults.value = 0;
