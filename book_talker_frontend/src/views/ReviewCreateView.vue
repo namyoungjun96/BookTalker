@@ -23,9 +23,6 @@
               </p>
             </div>
           </div>
-          <div v-if="bookAddError" class="error-message">
-            {{ bookAddError }}
-          </div>
         </div>
 
         <!-- 임시저장 복원 안내 -->
@@ -164,9 +161,6 @@ const reviewHeadline = ref('');
 const reviewContent = ref('');
 const rating = ref(5);
 const visibility = ref(DEFAULT_VISIBILITY);
-const isCheckingBook = ref(false);
-const bookExists = ref(null);
-const bookAddError = ref(null);
 const isSubmitting = ref(false);
 
 // ===== 임시저장 =====
@@ -257,42 +251,6 @@ const goBackToSearch = () => {
   }
 };
 
-const checkBookInBackend = async () => {
-  if (!selectedBook.value) return;
-
-  isCheckingBook.value = true;
-  bookAddError.value = null;
-  
-  try {
-    const bookData = {
-      title: selectedBook.value.title,
-      author: selectedBook.value.author || '',
-      isbn: selectedBook.value.isbn || selectedBook.value.isbn13 || '',
-      isbn13: selectedBook.value.isbn13 || selectedBook.value.isbn || '',
-      cover: selectedBook.value.cover || '',
-      categoryName: selectedBook.value.categoryName || '',
-      publisher: selectedBook.value.publisher || '',
-    };
-
-    try {
-      await apiClient.post('/book', bookData);
-      bookExists.value = false;
-    } catch (error) {
-      if (error.response?.status === 409 || error.response?.status === 400) {
-        bookExists.value = true;
-      } else {
-        throw error;
-      }
-    }
-  } catch (error) {
-    console.error('책 존재 여부 확인 실패:', error);
-    bookExists.value = null;
-    bookAddError.value = error.response?.data?.message || '책 정보 확인 중 오류가 발생했습니다.';
-  } finally {
-    isCheckingBook.value = false;
-  }
-};
-
 const onSubmitReview = async () => {
   if (!activeBook.value || !reviewHeadline.value.trim() || !reviewContent.value.trim() || isSubmitting.value) return;
 
@@ -315,28 +273,7 @@ const onSubmitReview = async () => {
       toast.success('회독 독후감이 등록되었습니다!');
       router.push({ name: 'mypage' });
     } else {
-      // 1회독: 기존 플로우
-      if (bookExists.value === false) {
-        const bookData = {
-          title: selectedBook.value.title,
-          author: selectedBook.value.author || '',
-          isbn: selectedBook.value.isbn || selectedBook.value.isbn13 || '',
-          isbn13: selectedBook.value.isbn13 || selectedBook.value.isbn || '',
-          cover: selectedBook.value.cover || '',
-          categoryName: selectedBook.value.categoryName || '',
-          publisher: selectedBook.value.publisher || '',
-        };
-        try {
-          await apiClient.post('/book', bookData);
-          bookExists.value = true;
-        } catch (error) {
-          if (error.response?.status !== 409) {
-            throw new Error('책 추가 실패: ' + (error.response?.data?.message || error.message));
-          }
-          bookExists.value = true;
-        }
-      }
-
+      // 1회독: 책이 DB에 없으면 서버가 ISBN으로 조회해 저장
       const reviewData = {
         isbn13: selectedBook.value.isbn13 || selectedBook.value.isbn || '',
         headline: reviewHeadline.value.trim(),
@@ -364,7 +301,7 @@ const onSubmitReview = async () => {
   }
 };
 
-onMounted(async () => {
+onMounted(() => {
   document.addEventListener('visibilitychange', onVisibilityChange);
 
   if (isNextReading.value) {
@@ -387,7 +324,6 @@ onMounted(async () => {
   }
 
   restoreDraft();
-  await checkBookInBackend();
 });
 
 onBeforeUnmount(() => {
@@ -472,16 +408,6 @@ onBeforeUnmount(() => {
   font-size: 14px;
   color: #6b7280;
   margin: 0;
-}
-
-.error-message {
-  margin-top: 12px;
-  padding: 12px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 4px;
-  color: #dc2626;
-  font-size: 14px;
 }
 
 /* 임시저장 복원 안내 */

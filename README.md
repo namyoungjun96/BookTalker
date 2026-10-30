@@ -41,7 +41,7 @@ BookTalker는 책을 읽고 난 뒤의 생각을 **회독 단위로 기록**하�
 - 베이즈 추정 가중 평점, 1회독 리뷰만 집계, 리뷰 3건 이상인 책만 포함
 
 ### 🔍 책 검색 · 🔐 로그인
-- 알라딘 API 기반 책 검색
+- 카카오 API 기반 책 검색
 - 네이버 OAuth2 로그인 (회원가입 없음)
 
 <br>
@@ -76,10 +76,10 @@ main push → GitHub Actions 빌드 → jar 전송 → deploy.sh
 | Backend | Java 17, Spring Boot 3.x, Spring Security, Spring Data JPA, Spring Scheduler |
 | Database | PostgreSQL, Flyway |
 | Frontend | Vue3, PWA |
-| Infra · 배포 | OCI Free Tier (WAS·DB 서버 분리), Nginx, GitHub Actions |
-| 운영 | Logback (프로파일별 분리), Discord Webhook Appender, Spring Boot Actuator |
-| Test | JUnit 5, Testcontainers |
-| External API | 알라딘 API, Naver OAuth2 |
+| Infra · 배포 | OCI Free Tier (WAS·DB 서버 분리), Nginx, GitHub Actions|
+| 운영 | Logback (프로파일별 분리), Discord Webhook Appender, Spring Boot Actuator|
+| Test | JUnit 5, Testcontainers|
+| External API | 카카오 API, Naver OAuth2|
 
 <br>
 
@@ -159,7 +159,7 @@ cd book_talker_backend && ./gradlew bootRun
 cd book_talker_frontend && npm install && npm run dev
 ```
 
-> 로컬은 `application-local.yml` 설정으로 실행됩니다. 운영(`prod`)은 환경변수로 주입: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`, `ALADIN_API_KEY`, `DISCORD_WEBHOOK_URL`
+> 로컬은 `application-local.yml` 설정으로 실행됩니다. 운영(`prod`)은 환경변수로 주입: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`, `KAKAO_API_KEY`, `DISCORD_WEBHOOK_URL`
 
 <br>
 
