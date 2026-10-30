@@ -35,6 +35,7 @@
           <!-- 검색 서비스 장애 (서버 5xx) -->
           <div v-else-if="isSearchUnavailable" class="empty-state">
             <p class="empty-title">책 검색 서비스 점검 중입니다</p>
+            <p class="empty-subtitle">잠시 후 다시 시도해주세요</p>
           </div>
 
           <!-- 결과 없음 -->
@@ -73,7 +74,7 @@
             <div class="book-list">
               <article
                 v-for="book in books"
-                :key="book.itemId"
+                :key="book.isbn13"
                 class="book-card"
               >
                 <div class="book-card-content">
@@ -95,12 +96,6 @@
                       <span v-if="book.author">{{ book.author }}</span>
                       <span v-if="book.author && book.publisher"> · </span>
                       <span v-if="book.publisher">{{ book.publisher }}</span>
-                    </p>
-                    <p v-if="book.pubDate" class="book-date">
-                      {{ formatDate(book.pubDate) }}
-                    </p>
-                    <p v-if="book.priceSales" class="book-price">
-                      {{ formatPrice(book.priceSales) }}원
                     </p>
                   </div>
                 </div>
@@ -145,7 +140,6 @@ const books = ref([]);
 const isLoading = ref(false);
 const hasSearched = ref(false);
 const currentPage = ref(1);
-const pageSize = 10;
 const canGoNext = ref(false);
 const totalResults = ref(0);
 const isSearchUnavailable = ref(false);
@@ -163,31 +157,20 @@ const fetchBooks = async (page = 1) => {
   hasSearched.value = true;
   isSearchUnavailable.value = false;
 
-  const startIndex = page;
-
   try {
     const response = await apiClient.get('/book/search', {
       params: {
         query: searchQuery.value.trim(),
-        start: String(startIndex),
-        maxResults: String(pageSize),
-        cover: 'Small',
+        start: String(page),
       },
       // 204는 "검색 결과 없음"이라 정상, 5xx는 화면에 점검 안내를 띄우므로 토스트 생략
       skipErrorCodes: [204, 500, 502, 503, 504]
     });
 
-    const data = response.data.items || [];
-    const total = parseInt(response.data.totalResults || '0', 10);
-    const responseStartIndex = response.data.startIndex || startIndex;
-
-    books.value = data;
-    totalResults.value = total;
+    books.value = response.data.items || [];
+    totalResults.value = response.data.totalResults || 0;
     currentPage.value = page;
-
-    const currentStartIndex = responseStartIndex;
-    const remainingResults = total - (currentStartIndex - 1) - data.length;
-    canGoNext.value = remainingResults > 0;
+    canGoNext.value = response.data.hasNext === true;
   } catch (error) {
     console.error('책 검색 실패:', error);
 
@@ -231,19 +214,6 @@ const goToNextPage = async () => {
   if (!canGoNext.value || isLoading.value) return;
   const target = currentPage.value + 1;
   await fetchBooks(target);
-};
-
-const formatPrice = (price) => {
-  if (!price) return '0';
-  return new Intl.NumberFormat('ko-KR').format(price);
-};
-
-const formatDate = (date) => {
-  if (!date) return '';
-  if (typeof date === 'string') {
-    return date.split('T')[0];
-  }
-  return date;
 };
 
 const handleImageError = (event) => {
@@ -498,19 +468,6 @@ const handleImageError = (event) => {
   font-size: 14px;
   color: #6b7280;
   margin: 0 0 4px 0;
-}
-
-.book-date {
-  font-size: 13px;
-  color: #9ca3af;
-  margin: 0 0 4px 0;
-}
-
-.book-price {
-  font-size: 15px;
-  font-weight: 500;
-  color: #2563eb;
-  margin: 0;
 }
 
 .review-button {
