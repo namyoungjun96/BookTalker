@@ -3,15 +3,23 @@
     <!-- 메인 콘텐츠 (max-width: 720px) -->
     <main class="main-content">
       <div class="content-wrapper">
-        <h2 class="page-title">책 검색</h2>
+        <!-- 검색 카드 -->
+        <section class="search-hero">
+          <div class="hero-heading">
+            <div class="hero-badge">
+              <img :src="searchBadgeIcon" alt="" width="19" height="19" />
+            </div>
+            <div>
+              <h2 class="hero-title">어떤 책을 읽으셨나요?</h2>
+              <p class="hero-subtitle">책 제목을 검색하고 나만의 독후감을 남겨보세요.</p>
+            </div>
+          </div>
 
-        <!-- 검색 입력 (노션 스타일) -->
-        <form @submit.prevent="onSearch" class="search-form">
-          <div class="search-input-wrapper">
+          <form @submit.prevent="onSearch" class="search-form">
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="책 제목을 입력하세요..."
+              placeholder="책 제목을 입력해 주세요"
               class="search-input"
             />
             <button
@@ -19,105 +27,96 @@
               :disabled="isLoading || !searchQuery.trim()"
               class="search-button"
             >
-              {{ isLoading ? '검색 중...' : '검색' }}
+              <img :src="searchButtonIcon" alt="" width="13" height="13" />
+              {{ isLoading ? '검색 중' : '검색' }}
             </button>
-          </div>
-        </form>
+          </form>
+        </section>
 
-        <!-- 검색 결과 -->
-        <div v-if="hasSearched">
-          <!-- 로딩 -->
-          <div v-if="isLoading" class="loading-state">
-            <div class="spinner"></div>
-            <p class="loading-text">검색 중...</p>
-          </div>
-
-          <!-- 검색 서비스 장애 (서버 5xx) -->
-          <div v-else-if="isSearchUnavailable" class="empty-state">
-            <p class="empty-title">책 검색 서비스 점검 중입니다</p>
-            <p class="empty-subtitle">잠시 후 다시 시도해주세요</p>
-          </div>
-
-          <!-- 결과 없음 -->
-          <div v-else-if="books.length === 0" class="empty-state">
-            <p class="empty-title">검색 결과가 없습니다</p>
-            <p class="empty-subtitle">다른 검색어로 시도해보세요</p>
-          </div>
-
-          <!-- 검색 결과 카드 리스트 -->
-          <div v-else>
-            <!-- 페이지네이션 -->
-            <div class="pagination-info">
-              <span class="result-count">총 {{ totalResults }}개의 결과</span>
-              <div class="pagination-controls">
-                <button
-                  type="button"
-                  @click="goToPrevPage"
-                  :disabled="currentPage === 1 || isLoading"
-                  class="page-button"
-                >
-                  이전
-                </button>
-                <span class="page-number">{{ currentPage }} 페이지</span>
-                <button
-                  type="button"
-                  @click="goToNextPage"
-                  :disabled="!canGoNext || isLoading"
-                  class="page-button"
-                >
-                  다음
-                </button>
-              </div>
-            </div>
-
-            <!-- 책 카드 리스트 -->
-            <div class="book-list">
-              <article
-                v-for="book in books"
-                :key="book.isbn13"
-                class="book-card"
-              >
-                <div class="book-card-content">
-                  <!-- 책 표지 -->
-                  <div class="book-cover">
-                    <img
-                      v-if="book.cover"
-                      :src="book.cover"
-                      :alt="book.title"
-                      @error="handleImageError"
-                    />
-                    <div v-else class="cover-placeholder">📖</div>
-                  </div>
-
-                  <!-- 책 정보 -->
-                  <div class="book-info">
-                    <h3 class="book-title">{{ book.title }}</h3>
-                    <p class="book-meta">
-                      <span v-if="book.author">{{ book.author }}</span>
-                      <span v-if="book.author && book.publisher"> · </span>
-                      <span v-if="book.publisher">{{ book.publisher }}</span>
-                    </p>
-                  </div>
-                </div>
-
-                <!-- 독후감 쓰기 버튼 -->
-                <button
-                  type="button"
-                  @click="goToReviewCreate(book)"
-                  class="review-button"
-                >
-                  독후감 쓰기
-                </button>
-              </article>
-            </div>
-          </div>
+        <!-- 로딩 -->
+        <div v-if="isLoading" class="state-card">
+          <div class="spinner"></div>
+          <p class="state-subtitle">검색 중...</p>
         </div>
 
-        <!-- 초기 상태 -->
-        <div v-else class="initial-state">
-          <div class="initial-icon">🔍</div>
-          <h3 class="initial-title">책을 검색해보세요</h3>
-          <p class="initial-subtitle">위의 검색창에 책 제목을 입력하고 검색 버튼을 클릭하세요</p>
+        <!-- 검색 결과 -->
+        <section v-else-if="hasSearched && !isSearchUnavailable && books.length > 0" class="result-card">
+          <div class="result-header">
+            <div>
+              <h3 class="result-title">검색 결과</h3>
+              <p class="result-count">{{ totalResults }}권의 책을 찾았어요.</p>
+            </div>
+            <div class="pagination-controls">
+              <button
+                type="button"
+                @click="goToPrevPage"
+                :disabled="currentPage === 1 || isLoading"
+                class="page-button"
+                aria-label="이전 페이지"
+              >
+                ←
+              </button>
+              <span class="page-number">
+                <strong>{{ currentPage }}</strong><span class="page-total"> / {{ totalPages }}</span>
+              </span>
+              <button
+                type="button"
+                @click="goToNextPage"
+                :disabled="!canGoNext || isLoading"
+                class="page-button"
+                aria-label="다음 페이지"
+              >
+                →
+              </button>
+            </div>
+          </div>
+
+          <div class="book-list">
+            <article
+              v-for="book in books"
+              :key="book.isbn13"
+              class="book-row"
+            >
+              <div class="book-cover">
+                <img
+                  v-if="book.cover"
+                  :src="book.cover"
+                  :alt="book.title"
+                  @error="handleImageError"
+                />
+              </div>
+              <div class="book-info">
+                <h4 class="book-title">{{ book.title }}</h4>
+                <p v-if="book.author" class="book-author">{{ book.author }}</p>
+              </div>
+              <button
+                type="button"
+                @click="goToReviewCreate(book)"
+                class="review-button"
+              >
+                독후감 쓰기
+              </button>
+            </article>
+          </div>
+        </section>
+
+        <!-- 검색 전 · 결과 없음 · 검색 서비스 장애 -->
+        <div v-else class="state-card">
+          <div class="state-icon">
+            <img :src="bookIcon" alt="" width="22" height="22" />
+          </div>
+          <template v-if="isSearchUnavailable">
+            <p class="state-title">책 검색 서비스 점검 중입니다</p>
+            <p class="state-subtitle">잠시 후 다시 시도해주세요</p>
+          </template>
+          <template v-else-if="hasSearched">
+            <p class="state-title">검색 결과가 없습니다</p>
+            <p class="state-subtitle">다른 검색어로 시도해보세요</p>
+          </template>
+          <template v-else>
+            <p class="state-title">찾고 싶은 책이 있나요?</p>
+            <p class="state-subtitle">위 검색창에 책 제목을 입력하면 독후감을 작성할 책을 찾을 수 있어요.</p>
+          </template>
         </div>
       </div>
     </main>
@@ -125,15 +124,21 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'vue-toastification';
 import apiClient from '../api/client';
 import { useSelectionStore } from '../stores/selectionStore';
+import searchBadgeIcon from '../assets/icons/search-badge.svg';
+import searchButtonIcon from '../assets/icons/search-button.svg';
+import bookIcon from '../assets/icons/book.svg';
 
 const router = useRouter();
 const selectionStore = useSelectionStore();
 const toast = useToast();
+
+// 서버 검색 페이지 크기 (BE에서 고정)
+const PAGE_SIZE = 10;
 
 const searchQuery = ref('');
 const books = ref([]);
@@ -143,6 +148,8 @@ const currentPage = ref(1);
 const canGoNext = ref(false);
 const totalResults = ref(0);
 const isSearchUnavailable = ref(false);
+
+const totalPages = computed(() => Math.max(currentPage.value, Math.ceil(totalResults.value / PAGE_SIZE)));
 
 const goToReviewCreate = (book) => {
   if (!book) return;
@@ -228,55 +235,101 @@ const handleImageError = (event) => {
 
 /* 메인 콘텐츠 */
 .main-content {
-  padding: 48px 24px;
+  padding: 42px 24px 90px;
 }
 
 .content-wrapper {
   max-width: 720px;
   margin: 0 auto;
-}
-
-.page-title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 32px 0;
-  line-height: 1.3;
-}
-
-/* 검색 폼 (노션 스타일) */
-.search-form {
-  margin-bottom: 32px;
-}
-
-.search-input-wrapper {
   display: flex;
-  gap: 0;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 검색 카드 */
+.search-hero {
+  padding: 26px 28px 28px;
   border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  overflow: hidden;
+  border-radius: 6px;
+  background: linear-gradient(166deg, #f4f8ff 0%, #fbfdff 100%);
+}
+
+.hero-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hero-badge {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
   background: white;
+  filter: drop-shadow(0 5px 8px rgba(37, 99, 235, 0.1));
+}
+
+.hero-title {
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 31.5px;
+  color: #111827;
+  margin: 0;
+}
+
+.hero-subtitle {
+  font-size: 12px;
+  line-height: 18px;
+  color: #6b7280;
+  margin: 6px 0 0 0;
+}
+
+.search-form {
+  position: relative;
+  margin-top: 22px;
 }
 
 .search-input {
-  flex: 1;
-  border: none;
-  padding: 12px 16px;
-  font-size: 15px;
+  width: 100%;
+  height: 46px;
+  box-sizing: border-box;
+  padding: 0 86px 0 12px;
+  font-size: 13px;
+  color: #111827;
+  background: white;
+  border: 1px solid #dbeafe;
+  border-radius: 5px;
+  box-shadow: 0 5px 18px rgba(37, 99, 235, 0.05);
   outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
 }
 
 .search-input:focus {
-  border-color: #2563eb;
+  border-color: #93c5fd;
 }
 
 .search-button {
-  padding: 12px 24px;
-  background: #2563eb;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 13px;
+  font-size: 12px;
+  font-weight: 700;
   color: white;
-  font-size: 15px;
-  font-weight: 500;
+  background: #2563eb;
   border: none;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
@@ -290,14 +343,44 @@ const handleImageError = (event) => {
   cursor: not-allowed;
 }
 
-/* 로딩/빈 상태 (HomeView와 동일) */
-.loading-state,
-.empty-state {
+/* 검색 전 · 결과 없음 · 장애 · 로딩 */
+.state-card {
+  min-height: 330px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
   text-align: center;
-  padding: 64px 24px;
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 6px;
+}
+
+.state-icon {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #eff6ff;
+}
+
+.state-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 25.5px;
+  color: #111827;
+  margin: 17px 0 0 0;
+}
+
+.state-subtitle {
+  font-size: 13px;
+  line-height: 21.45px;
+  color: #6b7280;
+  margin: 9px 0 0 0;
 }
 
 .spinner {
@@ -307,79 +390,59 @@ const handleImageError = (event) => {
   border-top-color: #2563eb;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  margin: 0 auto 16px;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-.loading-text {
-  color: #6b7280;
-  font-size: 15px;
+/* 검색 결과 */
+.result-card {
+  overflow: hidden;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
 }
 
-.empty-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: #1f2937;
-  margin: 0 0 8px 0;
-}
-
-.empty-subtitle {
-  font-size: 15px;
-  color: #6b7280;
-  margin: 0;
-}
-
-/* 초기 상태 */
-.initial-state {
-  text-align: center;
-  padding: 80px 24px;
-}
-
-.initial-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.initial-title {
-  font-size: 20px;
-  font-weight: 500;
-  color: #1f2937;
-  margin: 0 0 8px 0;
-}
-
-.initial-subtitle {
-  font-size: 15px;
-  color: #6b7280;
-  margin: 0;
-}
-
-/* 페이지네이션 */
-.pagination-info {
+.result-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding: 16px 0;
+  padding: 17px 22px;
+  background: #fbfdff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.result-title {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 25.5px;
+  color: #111827;
+  margin: 0;
 }
 
 .result-count {
-  font-size: 14px;
+  font-size: 11px;
+  line-height: 16.5px;
   color: #6b7280;
+  margin: 5px 0 0 0;
 }
 
 .pagination-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .page-button {
-  padding: 6px 12px;
-  font-size: 14px;
-  color: #1f2937;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 12px;
+  color: #4b5563;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 4px;
@@ -393,62 +456,58 @@ const handleImageError = (event) => {
 }
 
 .page-button:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
 .page-number {
-  font-size: 14px;
-  color: #6b7280;
+  min-width: 42px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  color: #2563eb;
 }
 
-/* 책 카드 리스트 */
+.page-total {
+  font-size: 10px;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
 .book-list {
+  padding: 0 20px;
+}
+
+.book-row {
+  min-height: 112px;
+  box-sizing: border-box;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  gap: 18px;
+  padding: 15px 4px;
+  border-bottom: 1px solid #f0f1f3;
 }
 
-.book-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 20px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.book-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.book-card-content {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+.book-row:last-child {
+  border-bottom: none;
 }
 
 .book-cover {
-  width: 60px;
-  height: 80px;
+  width: 52px;
+  height: 76px;
   flex-shrink: 0;
-  border-radius: 4px;
   overflow: hidden;
+  border-radius: 2px;
   background: #f3f4f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  box-shadow: -2px 3px 0 rgba(17, 24, 39, 0.12);
 }
 
 .book-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.cover-placeholder {
-  font-size: 32px;
-  color: #9ca3af;
+  display: block;
 }
 
 .book-info {
@@ -457,63 +516,79 @@ const handleImageError = (event) => {
 }
 
 .book-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 8px 0;
-  line-height: 1.4;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 22.5px;
+  color: #111827;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.book-meta {
-  font-size: 14px;
+.book-author {
+  font-size: 11px;
+  line-height: 16.5px;
   color: #6b7280;
-  margin: 0 0 4px 0;
+  margin: 7px 0 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .review-button {
-  width: 100%;
-  padding: 10px 20px;
-  background: #2563eb;
-  color: white;
-  font-size: 15px;
-  font-weight: 500;
-  border: none;
+  min-width: 94px;
+  min-height: 38px;
+  flex-shrink: 0;
+  padding: 9px 15px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2563eb;
+  background: white;
+  border: 1px solid #93c5fd;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
 .review-button:hover {
-  background: #1d4ed8;
+  background: #eff6ff;
 }
 
 @media (max-width: 640px) {
   .main-content {
-    padding: 32px 16px;
+    padding: 32px 16px 64px;
   }
 
-  .page-title {
-    font-size: 24px;
-    margin-bottom: 24px;
+  .search-hero {
+    padding: 22px 18px 20px;
   }
 
-  .book-card {
-    padding: 16px;
+  .hero-title {
+    font-size: 18px;
+    line-height: 26px;
   }
 
-  .book-card-content {
+  /* iOS는 16px 미만 입력창에 포커스하면 화면을 확대함 */
+  .search-input {
+    font-size: 16px;
+  }
+
+  .result-header {
+    padding: 15px 16px;
+  }
+
+  .book-list {
+    padding: 0 12px;
+  }
+
+  .book-row {
     gap: 12px;
   }
 
-  .book-cover {
-    width: 50px;
-    height: 70px;
-  }
-
-  .pagination-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  .review-button {
+    min-width: 0;
+    padding: 8px 12px;
   }
 }
 </style>
