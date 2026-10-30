@@ -1,5 +1,6 @@
 package com.example.book_talker_backend.book.infrastructure.kakao;
 
+import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.infrastructure.BookSearchItem;
 import com.example.book_talker_backend.book.infrastructure.BookSearchResult;
 import com.example.book_talker_backend.book.infrastructure.IsbnParser;
@@ -32,6 +33,17 @@ public class KakaoBookMapper {
                         kakaoBook.publisher(),
                         kakaoBook.thumbnail()
                 )
+        );
+    }
+
+    public static Book toDomain(BookSearchItem bookSearchItem) {
+        return new Book(
+                bookSearchItem.isbn13(),
+                bookSearchItem.title(),
+                bookSearchItem.author(),
+                "미분류",
+                bookSearchItem.publisher(),
+                bookSearchItem.cover()
         );
     }
 }

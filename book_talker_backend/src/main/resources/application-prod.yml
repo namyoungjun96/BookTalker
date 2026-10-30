@@ -44,6 +44,6 @@ app:
     id: ${ADMIN_USER_ID}
     password: ${ADMIN_USER_PASSWORD}
 
-aladin:
-  api:
-    key: ${ALADIN_API_KEY}
+api:
+  key:
+    kakao: ${KAKAO_API_KEY}

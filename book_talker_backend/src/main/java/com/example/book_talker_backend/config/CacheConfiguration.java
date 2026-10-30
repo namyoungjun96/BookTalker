@@ -1,7 +1,7 @@
 package com.example.book_talker_backend.config;
 
 import com.example.book_talker_backend.book.cache.SearchCacheKey;
-import com.example.book_talker_backend.book.entity.dto.AladinResponse;
+import com.example.book_talker_backend.book.infrastructure.BookSearchResult;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -14,8 +14,8 @@ import java.time.Duration;
 @Configuration
 public class CacheConfiguration {
     @Bean
-    public Cache<SearchCacheKey, AladinResponse> bookSearchCache(MeterRegistry meterRegistry) {
-        Cache<SearchCacheKey, AladinResponse> cache =  Caffeine.newBuilder()
+    public Cache<SearchCacheKey, BookSearchResult> bookSearchCache(MeterRegistry meterRegistry) {
+        Cache<SearchCacheKey, BookSearchResult> cache =  Caffeine.newBuilder()
                 .maximumSize(1000)
                 .expireAfterWrite(Duration.ofDays(1))
                 .recordStats()

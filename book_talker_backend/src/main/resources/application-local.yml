@@ -45,10 +45,6 @@ app:
     id: user
     password: password
 
-aladin:
-  api:
-    key: ttbehdgornltls1927003
-
 api:
   key:
     kakao: ${KAKAO_API_KEY}
