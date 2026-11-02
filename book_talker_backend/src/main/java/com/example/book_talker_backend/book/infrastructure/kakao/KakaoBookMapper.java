@@ -1,8 +1,8 @@
 package com.example.book_talker_backend.book.infrastructure.kakao;
 
 import com.example.book_talker_backend.book.entity.Book;
-import com.example.book_talker_backend.book.infrastructure.BookSearchItem;
-import com.example.book_talker_backend.book.infrastructure.BookSearchResult;
+import com.example.book_talker_backend.book.entity.dto.BookSearchItem;
+import com.example.book_talker_backend.book.entity.dto.BookSearchResult;
 import com.example.book_talker_backend.book.infrastructure.IsbnParser;
 
 import java.util.List;
@@ -37,11 +37,10 @@ public class KakaoBookMapper {
     }
 
     public static Book toDomain(BookSearchItem bookSearchItem) {
-        return new Book(
+        return Book.withoutGenre(
                 bookSearchItem.isbn13(),
                 bookSearchItem.title(),
                 bookSearchItem.author(),
-                "미분류",
                 bookSearchItem.publisher(),
                 bookSearchItem.cover()
         );

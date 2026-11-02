@@ -2,8 +2,8 @@ package com.example.book_talker_backend.book.infrastructure.kakao;
 
 import com.example.book_talker_backend.book.exception.KakaoApiException;
 import com.example.book_talker_backend.book.infrastructure.BookSearchClient;
-import com.example.book_talker_backend.book.infrastructure.BookSearchItem;
-import com.example.book_talker_backend.book.infrastructure.BookSearchResult;
+import com.example.book_talker_backend.book.entity.dto.BookSearchItem;
+import com.example.book_talker_backend.book.entity.dto.BookSearchResult;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpHeaders;
