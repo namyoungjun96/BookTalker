@@ -37,11 +37,10 @@ public class KakaoBookMapper {
     }
 
     public static Book toDomain(BookSearchItem bookSearchItem) {
-        return new Book(
+        return Book.withoutGenre(
                 bookSearchItem.isbn13(),
                 bookSearchItem.title(),
                 bookSearchItem.author(),
-                "미분류",
                 bookSearchItem.publisher(),
                 bookSearchItem.cover()
         );
