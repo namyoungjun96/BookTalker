@@ -68,4 +68,5 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'api.key.kakao', 'test-key'
 }
