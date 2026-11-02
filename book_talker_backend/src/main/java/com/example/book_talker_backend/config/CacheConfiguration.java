@@ -1,7 +1,7 @@
 package com.example.book_talker_backend.config;
 
 import com.example.book_talker_backend.book.cache.SearchCacheKey;
-import com.example.book_talker_backend.book.infrastructure.BookSearchResult;
+import com.example.book_talker_backend.book.entity.dto.BookSearchResult;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.micrometer.core.instrument.MeterRegistry;

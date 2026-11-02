@@ -1,5 +1,8 @@
 package com.example.book_talker_backend.book.infrastructure;
 
+import com.example.book_talker_backend.book.entity.dto.BookSearchItem;
+import com.example.book_talker_backend.book.entity.dto.BookSearchResult;
+
 import java.util.Optional;
 
 public interface BookSearchClient {

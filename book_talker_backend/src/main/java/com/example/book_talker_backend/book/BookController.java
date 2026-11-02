@@ -1,7 +1,7 @@
 package com.example.book_talker_backend.book;
 
 import com.example.book_talker_backend.book.entity.dto.SearchRequest;
-import com.example.book_talker_backend.book.infrastructure.BookSearchResult;
+import com.example.book_talker_backend.book.entity.dto.BookSearchResult;
 import com.example.book_talker_backend.book.service.BookService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
