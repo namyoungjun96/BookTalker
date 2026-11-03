@@ -25,10 +25,16 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT MAX(r.readingCount) FROM Review r WHERE r.writer = :writer AND r.book.isbn13 = :isbn13")
     Integer findMaxReadingCount(@Param("writer") String writer, @Param("isbn13") String isbn13);
 
-    // 공개 리뷰: visibility=PUBLIC 만
-    @Query("SELECT r FROM Review r WHERE r.book.isbn13 = :isbn13 AND r.visibility = com.example.book_talker_backend.review.entity.ReviewVisibilityEnum.PUBLIC " +
+    // 책별 독후감 목록: 공개 범위 무관 (한 줄 요약은 항상 공개, 본문은 상세에서 PUBLIC만)
+    @Query("SELECT r FROM Review r WHERE r.book.isbn13 = :isbn13 " +
             "ORDER BY r.regDate DESC")
-    Page<Review> findPublicReviews(@Param("isbn13") String isbn13, Pageable pageable);
+    Page<Review> findBookReviews(@Param("isbn13") String isbn13, Pageable pageable);
+
+    // 공개 독후감 상세: PUBLIC만 (없음·비공개 모두 empty → 404)
+    @Query("SELECT r FROM Review r " +
+            "JOIN FETCH r.book b " +
+            "WHERE r.id = :reviewId and r.visibility = com.example.book_talker_backend.review.entity.ReviewVisibilityEnum.PUBLIC")
+    Optional<Review> findBookReview(@Param("reviewId") Long reviewId);
 
     // 집계: 1회독 리뷰만 대상, 3개 이상인 책
     @Query("SELECT new com.example.book_talker_backend.review.entity.dto.BookRatingStats(" +

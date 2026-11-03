@@ -188,7 +188,7 @@ class ReviewServiceTest {
 
             given(reviewRepository.findById(1L)).willReturn(Optional.of(existing));
 
-            ReviewRequest request = new ReviewRequest(1L, ISBN13, WRITER, "수정 요약", "수정 본문", 4, ReviewVisibilityEnum.PRIVATE);
+            ReviewRequest request = new ReviewRequest(1L, ISBN13, "수정 요약", "수정 본문", 4, ReviewVisibilityEnum.PRIVATE);
             reviewService.updateReview(request, WRITER);
 
             assertThat(existing.getHeadline()).isEqualTo("수정 요약");
@@ -203,7 +203,7 @@ class ReviewServiceTest {
         void 실패_독후감_없음() {
             given(reviewRepository.findById(99L)).willReturn(Optional.empty());
 
-            ReviewRequest request = new ReviewRequest(99L, ISBN13, WRITER, "요약", "본문", 3, ReviewVisibilityEnum.PUBLIC);
+            ReviewRequest request = new ReviewRequest(99L, ISBN13, "요약", "본문", 3, ReviewVisibilityEnum.PUBLIC);
             assertThatThrownBy(() -> reviewService.updateReview(request, WRITER))
                     .isInstanceOf(IllegalArgumentException.class);
         }
@@ -214,7 +214,7 @@ class ReviewServiceTest {
             Review existing = createReviewInDb(1L, WRITER, 1);
             given(reviewRepository.findById(1L)).willReturn(Optional.of(existing));
 
-            ReviewRequest request = new ReviewRequest(1L, ISBN13, OTHER_WRITER, "요약", "본문", 3, ReviewVisibilityEnum.PUBLIC);
+            ReviewRequest request = new ReviewRequest(1L, ISBN13, "요약", "본문", 3, ReviewVisibilityEnum.PUBLIC);
             assertThatThrownBy(() -> reviewService.updateReview(request, OTHER_WRITER))
                     .isInstanceOf(AccessDeniedException.class);
         }
@@ -222,7 +222,7 @@ class ReviewServiceTest {
         @Test
         @DisplayName("실패 - reviewId 없이 요청")
         void 실패_reviewId_없음() {
-            ReviewRequest request = new ReviewRequest(null, ISBN13, WRITER, "요약", "본문", 3, ReviewVisibilityEnum.PUBLIC);
+            ReviewRequest request = new ReviewRequest(null, ISBN13, "요약", "본문", 3, ReviewVisibilityEnum.PUBLIC);
             assertThatThrownBy(() -> reviewService.updateReview(request, WRITER))
                     .isInstanceOf(IllegalArgumentException.class);
         }
@@ -305,7 +305,7 @@ class ReviewServiceTest {
     // 헬퍼
     // ─────────────────────────────────────────────
     private ReviewRequest createInsertRequest() {
-        return new ReviewRequest(null, ISBN13, WRITER, "꿀잼!", "재밌었음", 3, ReviewVisibilityEnum.PUBLIC);
+        return new ReviewRequest(null, ISBN13, "꿀잼!", "재밌었음", 3, ReviewVisibilityEnum.PUBLIC);
     }
 
     private Book createBook() {

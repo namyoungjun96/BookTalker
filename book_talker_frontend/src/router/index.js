@@ -58,6 +58,12 @@ const routes = [
     meta: { activeNav: '/' },
   },
   {
+    path: '/books/:isbn13/reviews/:reviewId',
+    name: 'public-review-detail',
+    component: () => import('../views/PublicReviewDetailView.vue'),
+    meta: { activeNav: '/' },
+  },
+  {
     path: '/teams',
     name: 'teams',
     component: () => import('../views/TeamListView.vue'),
@@ -151,7 +157,7 @@ router.beforeEach(async (to, from, next) => {
 
   // 로그인이 필요 없는 페이지 목록 (홈, 로그인 페이지)
   // team-join: 초대 링크 미리보기는 비로그인도 볼 수 있어야 함 (가입은 화면에서 로그인 유도)
-  const publicPages = ['login', 'home', 'book-reviews', 'team-join'];
+  const publicPages = ['login', 'home', 'book-reviews', 'public-review-detail', 'team-join'];
   
   // 로그인 안 된 사용자가 보호된 페이지를 가려 하면 /login 으로
   if (!publicPages.includes(to.name) && !isAuthenticated) {
