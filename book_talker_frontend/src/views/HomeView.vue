@@ -169,27 +169,27 @@ onMounted(async () => {
 /* 시작 안내 배너 */
 .start-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 22px; border: 1px solid #dbeafe; border-radius: 6px; background: linear-gradient(166.28deg, #f4f8ff 8.49%, #fbfdff 91.51%); }
 .start-banner-body { display: flex; align-items: center; gap: 13px; min-width: 0; }
-.start-banner-icon { flex-shrink: 0; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 19px; background: white; filter: drop-shadow(0 4px 6px rgba(37, 99, 235, 0.09)); }
-.start-banner-icon img { width: 17px; height: 17px; }
-.start-banner-title { margin: 0; font-size: 13px; font-weight: 700; line-height: 19.5px; color: #111827; }
-.start-banner-desc { margin: 0; padding-top: 5px; font-size: 10px; line-height: 15px; color: #6b7280; }
-.start-banner-btn { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 142px; min-height: 38px; padding: 9px 15px; box-sizing: border-box; border-radius: 4px; background: #2563eb; font-size: 13px; font-weight: 700; line-height: 19.5px; color: white; text-decoration: none; white-space: nowrap; }
+.start-banner-icon { flex-shrink: 0; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 22px; background: white; filter: drop-shadow(0 4px 6px rgba(37, 99, 235, 0.09)); }
+.start-banner-icon img { width: 20px; height: 20px; }
+.start-banner-title { margin: 0; font-size: 16px; font-weight: 700; line-height: 24px; color: #111827; }
+.start-banner-desc { margin: 0; padding-top: 5px; font-size: 13px; line-height: 19.5px; color: #6b7280; }
+.start-banner-btn { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 160px; min-height: 42px; padding: 10px 16px; box-sizing: border-box; border-radius: 4px; background: #2563eb; font-size: 14px; font-weight: 700; line-height: 21px; color: white; text-decoration: none; white-space: nowrap; }
 .start-banner-btn:hover { background: #1d4ed8; }
 .start-banner-btn img { width: 16px; height: 16px; }
 
 /* 제목 */
 .start-banner + .rank-header { margin-top: 34px; }
 .rank-header { margin-bottom: 12px; }
-.rank-heading { margin: 0; padding-top: 7px; font-size: 16px; font-weight: 400; line-height: 24px; color: #111827; }
-.rank-subtitle { margin: 0; padding-top: 5px; font-size: 11px; line-height: 16.5px; color: #6b7280; }
+.rank-heading { margin: 0; padding-top: 7px; font-size: 20px; font-weight: 700; line-height: 30px; color: #111827; }
+.rank-subtitle { margin: 0; padding-top: 5px; font-size: 13px; line-height: 19.5px; color: #6b7280; }
 
 /* 카드 */
 .rank-card { background: white; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
 
 /* 장르 탭 */
-.genre-tabs { display: flex; gap: 23px; height: 47px; box-sizing: border-box; padding: 0 22px; background: #fbfdff; border-bottom: 1px solid #e5e7eb; overflow-x: auto; scrollbar-width: none; }
+.genre-tabs { display: flex; gap: 23px; height: 52px; box-sizing: border-box; padding: 0 22px; background: #fbfdff; border-bottom: 1px solid #e5e7eb; overflow-x: auto; scrollbar-width: none; }
 .genre-tabs::-webkit-scrollbar { display: none; }
-.genre-tab { position: relative; flex-shrink: 0; padding: 15px 1px 13px; background: none; border: none; font-size: 12px; line-height: 18px; color: #6b7280; white-space: nowrap; cursor: pointer; }
+.genre-tab { position: relative; flex-shrink: 0; padding: 15px 1px 13px; background: none; border: none; font-size: 14px; line-height: 21px; color: #6b7280; white-space: nowrap; cursor: pointer; }
 .genre-tab:hover { color: #2563eb; }
 .genre-tab.active { font-weight: 700; color: #2563eb; }
 .genre-tab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: #2563eb; }
@@ -197,35 +197,35 @@ onMounted(async () => {
 /* 랭킹 목록 */
 .rank-list { list-style: none; margin: 0; padding: 0 18px; }
 .rank-list li + li .rank-item { border-top: 1px solid #f0f1f3; }
-.rank-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 84px; padding: 10px 4px; background: white; border: none; text-align: left; cursor: pointer; }
+.rank-item { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 96px; padding: 12px 4px; background: white; border: none; text-align: left; cursor: pointer; }
 .rank-item:hover .rank-title,
 .rank-item:hover .rank-arrow { color: #2563eb; }
 
-.rank-number { flex-shrink: 0; width: 20px; text-align: center; font-weight: 700; font-size: 14px; line-height: 21px; color: #9ca3af; }
-.rank-number.top3 { font-size: 17px; line-height: 25.5px; color: #2563eb; }
+.rank-number { flex-shrink: 0; width: 24px; text-align: center; font-weight: 700; font-size: 16px; line-height: 24px; color: #9ca3af; }
+.rank-number.top3 { font-size: 20px; line-height: 30px; color: #2563eb; }
 
-.rank-cover { flex-shrink: 0; width: 38px; height: 55px; overflow: hidden; box-shadow: -2px 2px 0 0 rgba(17, 24, 39, 0.12); }
+.rank-cover { flex-shrink: 0; width: 46px; height: 66px; overflow: hidden; box-shadow: -2px 2px 0 0 rgba(17, 24, 39, 0.12); }
 .rank-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.rank-cover-fallback { display: flex; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; padding: 5px 4px; font-family: Georgia, serif; font-size: 7px; font-weight: 700; line-height: 8.75px; color: white; text-align: center; word-break: break-all; overflow: hidden; }
+.rank-cover-fallback { display: flex; align-items: center; justify-content: center; height: 100%; box-sizing: border-box; padding: 5px 4px; font-family: Georgia, serif; font-size: 8px; font-weight: 700; line-height: 10px; color: white; text-align: center; word-break: break-all; overflow: hidden; }
 
 .rank-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.rank-title { font-size: 14px; font-weight: 700; line-height: 21px; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rank-meta { display: flex; align-items: center; gap: 4px; padding-top: 7px; }
-.rank-star { width: 11px; height: 11px; }
-.rank-rating { font-size: 12px; font-weight: 700; line-height: 18px; color: #d97706; }
-.rank-count { padding-left: 4px; font-size: 10px; line-height: 15px; color: #9ca3af; }
+.rank-title { font-size: 16px; font-weight: 700; line-height: 24px; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-meta { display: flex; align-items: center; gap: 5px; padding-top: 6px; }
+.rank-star { width: 14px; height: 14px; }
+.rank-rating { font-size: 14px; font-weight: 700; line-height: 21px; color: #d97706; }
+.rank-count { padding-left: 4px; font-size: 13px; line-height: 19.5px; color: #9ca3af; }
 
-.rank-arrow { flex-shrink: 0; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 14px; font-size: 13px; color: #9ca3af; }
+.rank-arrow { flex-shrink: 0; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 16px; font-size: 16px; color: #9ca3af; }
 
 /* 로딩 · 빈 상태 */
 .rank-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 360px; padding: 40px 20px; box-sizing: border-box; }
 .spinner { width: 32px; height: 32px; border: 3px solid #e5e7eb; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.empty-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 23px; background: #f3f4f6; }
-.empty-icon img { width: 20px; height: 20px; }
-.empty-title { margin: 0; padding-top: 15px; font-size: 13px; font-weight: 700; line-height: 19.5px; color: #111827; text-align: center; }
-.empty-desc { margin: 0; padding-top: 7px; font-size: 10px; line-height: 15px; color: #6b7280; text-align: center; }
+.empty-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 28px; background: #f3f4f6; }
+.empty-icon img { width: 24px; height: 24px; }
+.empty-title { margin: 0; padding-top: 15px; font-size: 16px; font-weight: 700; line-height: 24px; color: #111827; text-align: center; }
+.empty-desc { margin: 0; padding-top: 7px; font-size: 13px; line-height: 19.5px; color: #6b7280; text-align: center; }
 
 @media (max-width: 640px) {
   .main-content { padding: 32px 16px 64px; }
