@@ -4,7 +4,8 @@ import com.example.book_talker_backend.book.entity.Book;
 import com.example.book_talker_backend.book.service.BookService;
 import com.example.book_talker_backend.review.dao.ReviewRepository;
 import com.example.book_talker_backend.review.entity.Review;
-import com.example.book_talker_backend.review.entity.dto.PublicReviewResponse;
+import com.example.book_talker_backend.review.entity.dto.BookReviewListResponse;
+import com.example.book_talker_backend.review.entity.dto.BookReviewResponse;
 import com.example.book_talker_backend.review.entity.dto.ReviewDetailResponse;
 import com.example.book_talker_backend.review.entity.dto.ReviewListResponse;
 import com.example.book_talker_backend.review.entity.dto.ReviewRequest;
@@ -128,6 +129,15 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
+    public ReviewDetailResponse getReviewDetail(Long reviewId, String naverId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new IllegalArgumentException("Review not found: " + reviewId));
+        if (!review.getWriter().equals(naverId)) {
+            throw new AccessDeniedException("해당 독후감에 접근 권한이 없습니다.");
+        }
+        return ReviewDetailResponse.from(review);
+    }
+
     @Transactional
     public void deleteReview(Long reviewId, String naverId) {
         Review review = reviewRepository.findById(reviewId)
@@ -138,19 +148,15 @@ public class ReviewService {
         reviewRepository.delete(review);
     }
 
-    public Page<PublicReviewResponse> getPublicReviews(String isbn13, int page) {
+    public Page<BookReviewListResponse> getBookReviews(String isbn13, int page) {
         Pageable pageable = PageRequest.of(page, 10);
-        return reviewRepository.findPublicReviews(isbn13, pageable)
-                .map(PublicReviewResponse::from);
+        return reviewRepository.findBookReviews(isbn13, pageable)
+                .map(BookReviewListResponse::from);
     }
 
-    public ReviewDetailResponse getReviewDetail(Long reviewId, String naverId) {
-        Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new IllegalArgumentException("Review not found: " + reviewId));
-        if (!review.getWriter().equals(naverId)) {
-            throw new AccessDeniedException("해당 독후감에 접근 권한이 없습니다.");
-        }
-        return ReviewDetailResponse.from(review);
+    public BookReviewResponse getBookReview(Long reviewId) {
+        return BookReviewResponse.from(reviewRepository.findBookReview(reviewId)
+                .orElseThrow(() -> new NotFoundReviewException("독후감이 존재하지 않습니다.")));
     }
 
     @Transactional(readOnly = true)
