@@ -92,7 +92,7 @@ com.example.book_talker_backend
 
 - `headline` (한 줄 요약): 필수 입력, 항상 공개
 - `visibility`: 필수 (null이면 400), 프론트 기본값은 `PRIVATE`
-- 책별 공개 리뷰(`GET /rank/reviews`): 회차와 관계없이 `PUBLIC`만 노출
+- 책별 독후감 목록(`GET /rank/reviews`): 공개 범위·회차와 관계없이 한 줄 요약 노출, 본문 상세(`GET /rank/reviews/{reviewId}`)는 `PUBLIC`만
 - 이전 정책(`is_public` Boolean, 2회독 이상 강제 비공개)은 폐기
 
 ### 랭킹 시스템
@@ -188,7 +188,8 @@ com.example.book_talker_backend
 |--------|------|------|
 | GET | /rank | 전체/장르별 랭킹 조회 (`?genre=` 옵션) |
 | GET | /rank/genres | 장르별 그룹 랭킹 |
-| GET | /rank/reviews | 책별 공개 리뷰 (`?isbn13=`, 페이지네이션) |
+| GET | /rank/reviews | 책별 독후감 목록 — 한 줄 요약, 공개 범위 무관 (`?isbn13=`, 페이지네이션) |
+| GET | /rank/reviews/{reviewId} | 공개 독후감 상세 (`PUBLIC`만, 아니면 404) |
 | GET | /book/search | 알라딘 책 검색 |
 | GET | /book/list | 알라딘 책 목록 (베스트셀러 등) |
 
