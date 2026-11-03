@@ -45,6 +45,22 @@ class ReviewServiceTest {
 
 
     // ─────────────────────────────────────────────
+    // readBookReviews
+    // ─────────────────────────────────────────────
+    @Nested
+    @DisplayName("공개 독후감 상세")
+    class ReadBookReviews {
+        @Test
+        void 책_상세_독후감이_없을경우_404() {
+            given(reviewRepository.findBookReview(anyLong())).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> reviewService.getBookReview(REVIEW_ID))
+                    .isInstanceOf(NotFoundReviewException.class);
+        }
+    }
+
+
+    // ─────────────────────────────────────────────
     // insertReview
     // ─────────────────────────────────────────────
     @Nested

@@ -15,6 +15,7 @@ import com.example.book_talker_backend.team.entity.Team;
 import com.example.book_talker_backend.team.entity.TeamMember;
 import com.example.book_talker_backend.user.dao.OAuth2UserRepository;
 import com.example.book_talker_backend.user.entity.OAuth2UserEntity;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ import org.testcontainers.utility.DockerImageName;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -50,14 +52,17 @@ public class ReviewRepositoryTest {
     @Autowired OAuth2UserRepository oAuth2UserRepository;
     @Autowired TestEntityManager em;
 
+    private static final String ISBN13_1 = "1234567891011";
+    private static final String ISBN13_2 = "1234567891112";
+
     @ServiceConnection
     static PostgreSQLContainer postgreSQLContainer =
             new PostgreSQLContainer(DockerImageName.parse("postgres:13.10-alpine"));
 
     @Test
     void 리뷰_3개는_집계되고_2개는_제외된다 () {
-        Book dummyBook = bookRepository.save(book("1234567891011"));
-        Book boundaryDummyBook = bookRepository.save(book("1234567891112"));
+        Book dummyBook = bookRepository.save(book(ISBN13_1));
+        Book boundaryDummyBook = bookRepository.save(book(ISBN13_2));
 
         List<Review> dummyReview = List.of(
             review(dummyBook, "one", 3),
@@ -78,14 +83,14 @@ public class ReviewRepositoryTest {
         List<BookRatingStats> result = reviewRepository.aggregateRankData();
         assertThat(result).hasSize(1);
         BookRatingStats stats = result.get(0);
-        assertThat(stats.getIsbn13()).isEqualTo("1234567891011");
+        assertThat(stats.getIsbn13()).isEqualTo(ISBN13_1);
         assertThat(stats.getReviewCount()).isEqualTo(3);
         assertThat(stats.getAvgRating()).isCloseTo(4.0, within(0.0001));
     }
 
     @Test
     void 회독수가_2이상인_리뷰는_집계에서_제외된다 () {
-        Book dummyBook = bookRepository.save(book("1234567891011"));
+        Book dummyBook = bookRepository.save(book(ISBN13_1));
 
         List<Review> dummyReview = List.of(
             review(dummyBook, "one", 3),
@@ -103,9 +108,84 @@ public class ReviewRepositoryTest {
         List<BookRatingStats> result = reviewRepository.aggregateRankData();
         assertThat(result).hasSize(1);
         BookRatingStats stats = result.get(0);
-        assertThat(stats.getIsbn13()).isEqualTo("1234567891011");
+        assertThat(stats.getIsbn13()).isEqualTo(ISBN13_1);
         assertThat(stats.getReviewCount()).isEqualTo(3);
         assertThat(stats.getAvgRating()).isCloseTo(4.0, within(0.0001));
+    }
+
+    @Nested
+    @DisplayName("책별 독후감 목록")
+    class ReadBookReviews {
+        @ParameterizedTest
+        @EnumSource(value = ReviewVisibilityEnum.class, names = {"GROUP", "PRIVATE"})
+        void 책별_독후감_목록_조회_성공(ReviewVisibilityEnum visibility) {
+            Book dummyBook = bookRepository.save(book(ISBN13_1));
+            Book dummyBook2 = bookRepository.save(book(ISBN13_2));
+            List<Review> dummyReview = List.of(
+                    review(dummyBook, "one", 3),
+                    review(dummyBook, "two", LocalDateTime.now(), visibility),
+                    review(dummyBook, "three", 5),
+                    review(dummyBook, "one", 3, 2),
+                    review(dummyBook2, "two", 4, 2)
+            );
+            reviewRepository.saveAll(dummyReview);
+
+            em.flush();
+            em.clear();
+
+            List<Review> reviews = reviewRepository.findBookReviews(dummyBook.getIsbn13(), PageRequest.of(0, 10)).getContent();
+            assertThat(reviews).hasSize(4);
+            assertThat(reviews).extracting(Review::getBook).matches(book -> book.stream().allMatch(b -> b.getIsbn13().equals(ISBN13_1)));
+            assertThat(reviews).extracting(Review::getVisibility).contains(visibility);
+        }
+    }
+
+
+    @Nested
+    @DisplayName("공개 독후감 상세")
+    class ReadBookReview {
+        @Test
+        void 공개_독후감_상세_조회_성공() {
+            Book dummyBook = bookRepository.save(book(ISBN13_1));
+            Review dummyReview = reviewRepository.save(review(dummyBook, "one", 3));
+
+            em.flush();
+            em.clear();
+
+            Review review = reviewRepository.findBookReview(dummyReview.getId()).orElseThrow();
+            assertThat(review.getId()).isEqualTo(dummyReview.getId());
+            assertThat(review.getHeadline()).isEqualTo(dummyReview.getHeadline());
+            assertThat(review.getContent()).isEqualTo(dummyReview.getContent());
+            assertThat(review.getRating()).isEqualTo(3);
+            assertThat(review.getVisibility()).isEqualTo(ReviewVisibilityEnum.PUBLIC);
+            assertThat(Hibernate.isInitialized(review.getBook())).isTrue();
+        }
+
+        @Test
+        void 공개_독후감_상세_회독수_무관하게_조회_가능() {
+            Book dummyBook = bookRepository.save(book(ISBN13_1));
+            Review dummyReview = reviewRepository.save(review(dummyBook, "one", 3, 2));
+
+            em.flush();
+            em.clear();
+
+            Review review = reviewRepository.findBookReview(dummyReview.getId()).orElseThrow();
+            assertThat(review.getVisibility()).isEqualTo(ReviewVisibilityEnum.PUBLIC);
+            assertThat(review.getReadingCount()).isEqualTo(2);
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = ReviewVisibilityEnum.class, names = {"GROUP", "PRIVATE"})
+        void 공개_독후감_상세_공개가_아니면_빈_결과(ReviewVisibilityEnum visibility) {
+            Book dummyBook = bookRepository.save(book(ISBN13_1));
+            Review dummyReview = reviewRepository.save(review(dummyBook, "one", LocalDateTime.now(), visibility));
+
+            em.flush();
+            em.clear();
+
+            Optional<Review> review = reviewRepository.findBookReview(dummyReview.getId());
+            assertThat(review).isEmpty();
+        }
     }
 
     @Nested
@@ -117,7 +197,7 @@ public class ReviewRepositoryTest {
             saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
             saveMember(naver, "userB", "하치와레", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             reviewRepository.saveAll(List.of(
                     review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC),
                     review(book, "userB", day(15), ReviewVisibilityEnum.GROUP)
@@ -140,7 +220,7 @@ public class ReviewRepositoryTest {
             saveMember(naver, "userD", "모몽가", MemberStatusEnum.ACTIVE);
             saveMember(naver, "userE", "랏코", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             reviewRepository.saveAll(List.of(
                     review(book, "userA", day(11), ReviewVisibilityEnum.PUBLIC),
                     review(book, "userB", day(12), ReviewVisibilityEnum.PUBLIC),
@@ -169,7 +249,7 @@ public class ReviewRepositoryTest {
             saveMember(naver, "userB", "하치와레", MemberStatusEnum.ACTIVE);
             saveMember(line, "userC", "우사기", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             reviewRepository.saveAll(List.of(
                     review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC),
                     review(book, "userB", day(15), ReviewVisibilityEnum.GROUP),
@@ -193,7 +273,7 @@ public class ReviewRepositoryTest {
             saveMember(line, "userB", "모몽가", MemberStatusEnum.ACTIVE);
             saveMember(line, "userC", "우사기", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             reviewRepository.saveAll(List.of(
                     review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC),
                     review(book, "userB", day(15), ReviewVisibilityEnum.GROUP),
@@ -214,8 +294,8 @@ public class ReviewRepositoryTest {
             saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
             saveMember(naver, "userB", "하치와레", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
-            Book otherBook = bookRepository.save(book("1234567891028"));
+            Book book = bookRepository.save(book(ISBN13_1));
+            Book otherBook = bookRepository.save(book(ISBN13_2));
             reviewRepository.saveAll(List.of(
                     review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC),
                     review(book, "userB", day(15), ReviewVisibilityEnum.GROUP),
@@ -238,7 +318,7 @@ public class ReviewRepositoryTest {
             saveMember(naver, "userB", "하치와레", MemberStatusEnum.ACTIVE);
             saveMember(naver, "userC", "우사기", status);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             reviewRepository.saveAll(List.of(
                     review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC),
                     review(book, "userB", day(15), ReviewVisibilityEnum.PUBLIC),
@@ -264,7 +344,7 @@ public class ReviewRepositoryTest {
             Team naver = saveTeam("naver");
             saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             Review review = reviewRepository.save(
                     review(book, "userA", day(13), visibility)
             );
@@ -292,7 +372,7 @@ public class ReviewRepositoryTest {
             saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
             saveMember(naver, "userB", "우사기", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             Review review = reviewRepository.save(
                     review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC)
             );
@@ -315,7 +395,7 @@ public class ReviewRepositoryTest {
             Team naver = saveTeam("naver");
             saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             Review review = reviewRepository.save(
                     review(book, "userA", day(13), ReviewVisibilityEnum.PRIVATE)
             );
@@ -335,7 +415,7 @@ public class ReviewRepositoryTest {
             saveMember(naver, "userA", "치이카와", status);
             saveMember(naver, "userB", "하치와레", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             Review review = reviewRepository.save(
                     review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC)
             );
@@ -355,7 +435,7 @@ public class ReviewRepositoryTest {
             saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
             saveMember(line, "userA", "모몽가", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             Review review = reviewRepository.save(
                     review(book, "userA", day(13), ReviewVisibilityEnum.PUBLIC)
             );
@@ -377,7 +457,7 @@ public class ReviewRepositoryTest {
             saveMember(naver, "userA", "치이카와", MemberStatusEnum.ACTIVE);
             saveMember(line, "userB", "모몽가", MemberStatusEnum.ACTIVE);
 
-            Book book = bookRepository.save(book("1234567891011"));
+            Book book = bookRepository.save(book(ISBN13_1));
             Review review = reviewRepository.save(
                     review(book, "userB", day(13), ReviewVisibilityEnum.PUBLIC)
             );
