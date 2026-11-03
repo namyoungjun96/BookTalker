@@ -102,6 +102,18 @@ public class SecurityConfig implements WebMvcConfigurer {
                 .oauth2Login(login -> login
                         .successHandler(customAuthenticationSuccessHandler())
                 )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"message\": \"로그인이 필요합니다.\"}");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"message\": \"접근 권한이 없습니다.\"}");
+                        })
+                )
                 .oauth2Client(Customizer.withDefaults())
                 .sessionManagement(sessionManagement ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
