@@ -37,7 +37,7 @@
           <div class="form-section">
             <label class="form-label">
               한 줄 요약
-              <span class="form-label-desc">랭킹 화면에 공개됩니다</span>
+              <span class="form-label-desc">공개 범위와 관계없이 모두에게 공개돼요</span>
             </label>
             <input
               type="text"

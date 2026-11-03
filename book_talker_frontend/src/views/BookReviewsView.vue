@@ -14,7 +14,7 @@
           </div>
           <div class="book-info">
             <h2 class="book-title">{{ title }}</h2>
-            <p class="book-sub">독자들의 공개 독후감</p>
+            <p class="book-sub">독자들의 독후감</p>
           </div>
         </div>
 
@@ -26,13 +26,28 @@
         <!-- 독후감 목록 -->
         <template v-else-if="reviews.length > 0">
           <ul class="review-list">
-            <li v-for="review in reviews" :key="review.id" class="review-item">
-              <div class="review-header">
-                <span class="rating">★ {{ review.rating }}</span>
-                <span class="date">{{ formatDate(review.regDate) }}</span>
-              </div>
-              <p class="headline">{{ review.headline }}</p>
-              <p class="content">{{ review.content }}</p>
+            <li v-for="review in reviews" :key="review.id">
+              <!-- 본문(상세)은 전체공개만 열람 가능 — 모임공개·비공개는 한 줄 요약만 보여 주고 이동하지 않음 -->
+              <component
+                :is="isOpen(review) ? RouterLink : 'div'"
+                v-bind="isOpen(review) ? { to: { name: 'public-review-detail', params: { isbn13, reviewId: review.id } } } : {}"
+                class="review-item"
+                :class="{ locked: !isOpen(review) }"
+              >
+                <div class="review-header">
+                  <span class="review-meta">
+                    <span class="rating">★ {{ review.rating }}</span>
+                    <span class="reading-count">{{ review.readingCount }}회독</span>
+                    <span v-if="!isOpen(review)" class="lock-badge">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+                      {{ getVisibilityOption(review.visibility).label }}
+                    </span>
+                  </span>
+                  <span class="date">{{ formatDate(review.regDate) }}</span>
+                </div>
+                <p class="headline">{{ review.headline }}</p>
+                <p v-if="!isOpen(review)" class="locked-desc">본문은 작성자가 정한 범위에서만 볼 수 있어요</p>
+              </component>
             </li>
           </ul>
 
@@ -54,7 +69,7 @@
 
         <!-- 빈 상태 -->
         <div v-else class="empty-state">
-          <p class="empty-title">아직 공개된 독후감이 없습니다</p>
+          <p class="empty-title">아직 작성된 독후감이 없습니다</p>
           <p class="empty-desc">이 책의 독후감을 첫 번째로 남겨보세요!</p>
         </div>
 
@@ -64,10 +79,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref, computed, watch } from 'vue';
+import { useRouter, useRoute, RouterLink } from 'vue-router';
 import axios from 'axios';
 import { API_BASE_URL } from '../api/client';
+import { getVisibilityOption } from '../constants/reviewVisibility';
 
 const router = useRouter();
 const route = useRoute();
@@ -78,8 +94,10 @@ const cover = route.query.cover || null;
 
 const reviews = ref([]);
 const isLoading = ref(true);
-const page = ref(0);
 const totalPages = ref(1);
+
+// 페이지는 쿼리(?page=, 1부터)로 들고 있어야 상세에서 뒤로 왔을 때 보던 페이지가 유지된다
+const page = computed(() => Math.max(Number(route.query.page) || 1, 1) - 1);
 
 const fetchReviews = async () => {
   isLoading.value = true;
@@ -98,8 +116,7 @@ const fetchReviews = async () => {
 };
 
 const changePage = (newPage) => {
-  page.value = newPage;
-  fetchReviews();
+  router.replace({ query: { ...route.query, page: newPage + 1 } });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -112,11 +129,14 @@ const formatDate = (dateString) => {
   });
 };
 
+// visibility가 없는 응답(BE 배포 전)은 예전처럼 공개 목록으로 취급
+const isOpen = (review) => !review.visibility || review.visibility === 'PUBLIC';
+
 const handleImageError = (event) => {
   event.target.style.display = 'none';
 };
 
-onMounted(fetchReviews);
+watch(page, fetchReviews, { immediate: true });
 </script>
 
 <style scoped>
@@ -218,10 +238,37 @@ onMounted(fetchReviews);
 }
 
 .review-item {
+  display: block;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 24px;
+  padding: 20px 24px;
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+a.review-item:hover { border-color: #93c5fd; }
+a.review-item:hover .headline { color: #2563eb; }
+
+.review-item.locked { background: #fafafa; }
+.review-item.locked .headline { color: #4b5563; }
+
+.lock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.locked-desc {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: #9ca3af;
 }
 
 .review-header {
@@ -237,6 +284,17 @@ onMounted(fetchReviews);
   color: #f59e0b;
 }
 
+.review-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reading-count {
+  font-size: 12px;
+  color: #6b7280;
+}
+
 .date {
   font-size: 13px;
   color: #9ca3af;
@@ -246,17 +304,10 @@ onMounted(fetchReviews);
   font-size: 17px;
   font-weight: 600;
   color: #1f2937;
-  margin: 0 0 12px 0;
-  line-height: 1.5;
-}
-
-.content {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #374151;
   margin: 0;
-  white-space: pre-wrap;
+  line-height: 1.5;
   word-break: break-word;
+  transition: color 0.15s ease;
 }
 
 /* 페이지네이션 */
