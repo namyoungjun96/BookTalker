@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +20,8 @@ import org.springframework.util.StopWatch;
 import java.util.List;
 import java.util.Map;
 
+// 로컬 DB(리뷰 10만 건)가 필요한 수동 실행용 성능 측정 → 기본 test에서 제외, ./gradlew perfTest로 실행
+@Tag("perf")
 @SpringBootTest
 @TestPropertySource(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 @Slf4j
@@ -63,7 +66,7 @@ public class RankPerformanceTest {
         Map<String, Book> isbn13Maps = rankService.mapBooksByIsbn13(rawData);
         stopWatch.stop();
 
-        stopWatch.start("mapBooksByIsbn13");
+        stopWatch.start("calculateTopRanksByGenre");
         List<Rank> ranks = rankService.calculateTopRanksByGenre(rawData, isbn13Maps);
         stopWatch.stop();
 

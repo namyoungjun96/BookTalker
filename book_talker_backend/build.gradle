@@ -67,6 +67,21 @@ dependencies {
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        // 로컬 DB가 필요한 성능 측정은 CI·기본 실행에서 제외
+        excludeTags 'perf'
+    }
+    systemProperty 'api.key.kakao', 'test-key'
+}
+
+// 성능 측정 테스트만 실행: ./gradlew perfTest (로컬 DB 필요)
+tasks.register('perfTest', Test) {
+    description = 'Runs performance tests tagged with "perf" against the local database.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'perf'
+    }
     systemProperty 'api.key.kakao', 'test-key'
 }
