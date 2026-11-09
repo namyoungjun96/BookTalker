@@ -7,9 +7,10 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface RankRepository extends JpaRepository<Rank, String> {
-    List<Rank> findTop10ByGenreContainingOrderByAvgRatingDescReviewCountDesc(String genre);
-    List<Rank> findAllByOrderByAvgRatingDescReviewCountDesc();
+    List<Rank> findTop10ByGenreContainingOrderByWeightedScoreDescReviewCountDesc(String genre);
+    List<Rank> findAllByOrderByWeightedScoreDescReviewCountDesc();
 
-    @Query("SELECT r FROM Rank r ORDER BY r.genre ASC, r.avgRating DESC, r.reviewCount DESC")
+    // 장르별 그룹 랭킹
+    @Query("SELECT r FROM Rank r ORDER BY r.genre ASC, r.weightedScore DESC, r.reviewCount DESC")
     List<Rank> findAllGroupable();
 }
