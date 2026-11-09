@@ -45,6 +45,22 @@ class ReviewServiceTest {
 
 
     // ─────────────────────────────────────────────
+    // readBookReviews
+    // ─────────────────────────────────────────────
+    @Nested
+    @DisplayName("공개 독후감 상세")
+    class ReadBookReviews {
+        @Test
+        void 책_상세_독후감이_없을경우_404() {
+            given(reviewRepository.findBookReview(anyLong())).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> reviewService.getBookReview(REVIEW_ID))
+                    .isInstanceOf(NotFoundReviewException.class);
+        }
+    }
+
+
+    // ─────────────────────────────────────────────
     // insertReview
     // ─────────────────────────────────────────────
     @Nested
@@ -171,6 +187,18 @@ class ReviewServiceTest {
                     .hasMessageContaining("1회독");
 
             then(reviewRepository).should(never()).save(any(Review.class));
+        }
+
+        @Test
+        @DisplayName("실패 - 저장 중 회독 충돌이 나면 재시도 안내 메시지로 변환")
+        void 실패_회독_충돌_메시지_변환() {
+            given(reviewRepository.findMaxReadingCount(WRITER, ISBN13)).willReturn(1);
+            given(bookService.getBookByIsbn13(ISBN13)).willReturn(createBook());
+            given(reviewRepository.save(any(Review.class))).willThrow(DataIntegrityViolationException.class);
+
+            assertThatThrownBy(() -> reviewService.insertNextReading(createInsertRequest(), WRITER))
+                    .isInstanceOf(DataIntegrityViolationException.class)
+                    .hasMessageContaining("이미 동일한 회독 독후감이 존재합니다. 잠시 후 다시 시도해주세요.");
         }
     }
 
