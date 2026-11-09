@@ -100,9 +100,9 @@ public class RankService {
 
     public List<Rank> getRank(String genre) {
         if (genre != null && !genre.isBlank()) {
-            return rankRepository.findTop10ByGenreContainingOrderByAvgRatingDescReviewCountDesc(genre);
+            return rankRepository.findTop10ByGenreContainingOrderByWeightedScoreDescReviewCountDesc(genre);
         }
-        return rankRepository.findAllByOrderByAvgRatingDescReviewCountDesc();
+        return rankRepository.findAllByOrderByWeightedScoreDescReviewCountDesc();
     }
 
     public Map<String, List<Rank>> getRankByGenre() {
