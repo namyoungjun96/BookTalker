@@ -126,7 +126,7 @@ public class SecurityConfig implements WebMvcConfigurer {
                         response.getWriter().write("{\"message\": \"로그아웃 성공\"}");
                     })
                     .invalidateHttpSession(true)
-                    .deleteCookies("SESSION"))
+                    .deleteCookies("JSESSIONID"))
             ;
 
         return http.build();
