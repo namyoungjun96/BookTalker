@@ -57,7 +57,7 @@ BookTalker는 책을 읽고 난 뒤의 생각을 **회독 단위로 기록**하�
 ### 배포 흐름
 
 ```
-main push → GitHub Actions 빌드 → jar 전송 → deploy.sh
+main push(백엔드 변경 시) → GitHub Actions 빌드·테스트 → jar 전송 → deploy.sh
   ├─ 기존 버전을 둔 채 새 버전을 다른 포트에 기동
   ├─ 헬스체크 반복 → 성공 시 Nginx 전환, 기존 버전 종료
   ├─ 실패 시 새 버전 종료(자동 롤백) · Discord 알림 · exit 1
@@ -90,13 +90,15 @@ main push → GitHub Actions 빌드 → jar 전송 → deploy.sh
 
 📄 [장애 보고서](<document/infra/[incident]_1차 배포 장애 — 메모리 부족·방화벽 차단.md>) · [배포 구조 결정](<document/infra/[design]_배포 구조 결정.md>)
 
-### 2. 랭킹 집계 배치 DB 왕복 66% 감소
+### 2. 랭킹 집계 배치 DB 왕복 98% 감소
 리뷰 10만 건 테스트 데이터로 배치를 실측해, 저장 전 존재 확인 SELECT·건별 DELETE·건별 INSERT를 찾아 `Persistable`·벌크 삭제·JDBC 배치로 줄였습니다. 집계 쿼리는 GROUP BY 대상을 단일 테이블로 좁혀 실행 계획을 바꿨습니다.
 
 | | 개선 전 | 개선 후 |
 |---|---|---|
-| 배치 1회 DB 왕복 | 242회 | 82회 (−66%) |
+| 배치 1회 DB 왕복 | 251회 | 6회 (−98%) |
 | 집계 쿼리 실행 시간 | 182ms | 77ms (−58%) |
+
+> DB 왕복은 Hibernate Statistics로 잰 쿼리 실행 + JDBC 배치 실행 횟수입니다. 랭킹 83건 기준 개선 전은 2 + 3N = 251회(집계 1, 전체 조회 1, 건별 DELETE·존재 확인 SELECT·INSERT 각 83), 개선 후는 쿼리 3 + 배치 3(30건 단위)입니다.
 
 📄 커밋 [`e21125b`](https://github.com/namyoungjun96/BookTalker/commit/e21125b) · [`2fd1143`](https://github.com/namyoungjun96/BookTalker/commit/2fd1143)
 
@@ -118,6 +120,9 @@ main push → GitHub Actions 빌드 → jar 전송 → deploy.sh
 
 ### 랭킹 신뢰도
 리뷰 1~2개뿐인 책이 상위에 오르거나 같은 사람의 회독별 평점이 겹치면 랭킹을 믿기 어렵습니다. 베이즈 추정 가중 평점을 쓰고, 1회독 리뷰만·리뷰 3건 이상인 책만 집계합니다.
+
+### 책 검색 제공처 교체 — 인터페이스 뒤로 분리
+알라딘 OpenAPI가 2026-10-30에 종료돼 책 검색을 카카오 책 검색 API로 교체했습니다. 알라딘을 붙일 때는 외부 API 인터페이스 없이 서비스가 응답 DTO를 직접 다뤄서, 교체하려니 서비스까지 고쳐야 했습니다. 이번에는 `BookSearchClient` 인터페이스를 두고 카카오 구현체·응답 매퍼를 `infrastructure/kakao`로 분리해, 다음에 또 바뀌면 구현체만 추가하면 되게 했습니다. 카카오는 장르를 주지 않아 새 책의 장르를 기본값으로 채우고 DB에서 NOT NULL로 막아, 장르별 랭킹 집계가 null로 깨지지 않게 했습니다.
 
 ### 모임 존재 여부 숨기기
 "모임 없음"과 "모임원 아님"을 모두 404로 응답해, 모임 ID를 바꿔 넣어 다른 모임이 있는지 알아낼 수 없게 했습니다. 이미 모임원인 사용자의 권한 부족만 403으로 구분합니다.
