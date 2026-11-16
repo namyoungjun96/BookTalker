@@ -2,7 +2,7 @@
 
 2026년 10월 15일 · 팀 기능 1차 배포(PR #19, `d30cfb1`) 직후 발생 · **상태: 해결**
 
-- 관련: `docs/decision/10월 로드맵.md` 3주차, `docs/pr/[commit]_독서 모임 1차 — 모임 생성·조회·초대코드 가입.md`
+- 관련: `docs/roadmap/10월 로드맵.md` 3주차, `docs/pr/[commit]_독서 모임 1차 — 모임 생성·조회·초대코드 가입.md`
 - 환경: OCI Free Tier E2.1.Micro (RAM 1GB, 1/8 OCPU 버스트), Nginx(80/443, TLS) → Spring Boot(8010), PostgreSQL은 별도 서버
 
 ---

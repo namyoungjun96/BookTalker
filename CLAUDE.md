@@ -314,10 +314,14 @@ com.example.book_talker_backend
 | `docs/design/` | `[design]` 설계 문서. 맨 위에 `**상태: 검토 중**` / `**상태: 결정됨 (날짜, 선택안)**`을 적고, 결정돼도 파일은 옮기지 않는다 |
 | `docs/spec/<기능>/` | 기능 하나당 폴더 하나(영문명). `<기능> 스펙 정의서.md` + `<기능> API 명세서.md`, 기능 완료 시 고정된 기록 |
 | `docs/pr/` | `[commit]` PR 문서 |
-| `docs/decision/` | 의사결정 기록, 월별 로드맵 |
-| `docs/arguments/` | 코드·스펙 현황 분석 |
+| `docs/roadmap/` | 월별 로드맵 (진행 상황 체크) |
+| `docs/decision/` | 의사결정 기록 |
+| `docs/analysis/` | 코드·스펙 현황·불일치 분석 (그 시점의 기록) |
+| `docs/review/` | `[review]` 코드 리뷰 결과 |
 | `docs/unresolved/` | 설계까지는 아닌 메모·유의점 |
-| `docs/incident/` · `docs/review/` · `docs/loadtest/` · `docs/release/` | 장애 보고서 · 리뷰 결과 · 부하 테스트 · 릴리스 기록 |
+| `docs/operations/` | 운영 기록 — `incident/`(장애 보고서) · `loadtest/`(부하 테스트) · `release/`(릴리스) |
+| `docs/records/` | 지원·이력서용 근거 자료 — 프로젝트 성과, 실사용 기록, 독후감 시트 |
+| `docs/images/` | 문서에 쓰는 첨부 이미지 |
 
 ### 파일명 규칙
 `[타입]_제목.md`
@@ -356,7 +360,7 @@ PR 문서(`[commit]`)는 실제 PR 제목을 그대로 파일명으로 사용한
 - CSS 여백 수정, 오타 수정 → 선택지 없음 → [design] 생략
 
 ## 남은 작업
-> 전체 일정과 완료 현황은 `docs/decision/11월 로드맵.md`가 기준이다.
+> 전체 일정과 완료 현황은 `docs/roadmap/11월 로드맵.md`가 기준이다.
 
 - [ ] 테스트 정비 — Testcontainers PostgreSQL 16, `application-test.yml`, 작성 API 검증 누락 테스트 (CI는 배포 전 테스트를 이미 실행 중, PR #40)
 - [ ] Swagger/OpenAPI 문서화
@@ -364,4 +368,4 @@ PR 문서(`[commit]`)는 실제 PR 제목을 그대로 파일명으로 사용한
 - [ ] 마이 페이지 완성 (독서 통계, 프로필 수정)
 - [ ] 외부 API 사용자별 호출 제한 (카카오 쿼터 한도에 근접할 때)
 - [ ] `review.writer` FK 제약 (Flyway 마이그레이션으로)
-- [ ] 예외 처리 리팩토링 — 팀 기능 완료 후 `FIX`로 진행 (`docs/unresolved/[design]_리뷰 예외 처리 방향 논의.md`)
+- [ ] 예외 처리 리팩토링 — 팀 기능 완료 후 `FIX`로 진행 (`docs/design/[design]_리뷰 예외 처리 방향 논의.md`)
