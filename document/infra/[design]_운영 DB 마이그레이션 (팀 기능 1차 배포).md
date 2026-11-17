@@ -6,7 +6,7 @@
 
 **상태: 적용 완료 (2026-10-15, 1차 배포 전 운영 DB에 수동 적용) — 이후 스키마 변경은 Flyway로 이관 (`[design]_Flyway 도입.md`)**
 
-- 관련: `docs/decision/10월 로드맵.md` 3주차, CLAUDE.md "운영 DB 마이그레이션: `review.is_public` → `visibility`"
+- 관련: `docs/roadmap/10월 로드맵.md` 3주차, CLAUDE.md "운영 DB 마이그레이션: `review.is_public` → `visibility`"
 - SQL은 개발자가 운영 DB에 직접 실행한다. 아래 SQL은 **초안** — 4장의 방법으로 Hibernate 생성 DDL과 대조한 뒤 확정
 
 ---

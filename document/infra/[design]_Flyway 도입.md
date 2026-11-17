@@ -6,7 +6,7 @@
 
 **상태: 구현·배포 완료 (2026-10-20, PR #21) — D1-a(운영 덤프 baseline), D2·D3 추천안 채택, D4는 V1 대조 결과로 범위 확장(아래 D4·5장), V2에 `headline` 추가**
 
-- 관련 문서: `document/infra/[design]_운영 DB 마이그레이션 (팀 기능 1차 배포).md` (10/15 수동 SQL), `docs/decision/10월 로드맵.md` 3주차 "Flyway 도입"
+- 관련 문서: `document/infra/[design]_운영 DB 마이그레이션 (팀 기능 1차 배포).md` (10/15 수동 SQL), `docs/roadmap/10월 로드맵.md` 3주차 "Flyway 도입"
 
 ---
 
